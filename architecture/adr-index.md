@@ -21,6 +21,27 @@ founder sign-off (M1-DECISION-001) before tagging the bootstrap baseline.
 | ADR-0042 | Cryptographic Key Management | proposed | M1 architecture; M4 implementation | INV-031 | unsafe old-key transition pattern | none | none | none | document-only in this patch; HSM/key-ledger gates planned M4 | yes | `.../architecture/adr/0042-cryptographic-key-management.md`, `.../SECURITY-VULN-DISCLOSURE.md` | Active proposal. No HSM, key ledger, or rotation-age script exists in this tree. |
 | ADR-0043 | Open-Source Release Strategy | proposed strategic pivot | M1 decision; M1/M6 release operations | INV-009, INV-027, INV-031 | closed-source commercial scope statement | none | none | none | proposed decision plus draft license text; release-channel implementation not present | yes | `.../architecture/adr/0043-open-source-release-strategy.md`, `.../LICENSE-source-available.md` | Founder sign-off and counsel review required before acceptance. |
 
+## Baseline ADRs (post-apply verified)
+
+The patch ADRs 0038-0043 amend or reference baseline ADRs from the v3.2.3.5
+predecessor. The baseline ADR files are not in this finalization repo. The rows
+below are placeholders pending the M0 verification step specified by the
+`adr-cross-link-verification` capability (`openspec/specs/adr-cross-link-verification/spec.md`).
+Once `scripts/check_adr_cross_links.py` (M0 deliverable) runs successfully, a
+reviewer merges the script-generated `architecture/adr-index.draft.md` here to
+populate full metadata.
+
+| ADR | Short name | Verification status | Reference site(s) |
+|---|---|---|---|
+| ADR-0011 | (control-plane authority predecessor) | post-apply-verified | Amended by ADR-0038. |
+| ADR-0024 | (audit erasure / tenant usage) | post-apply-verified | `invariants.md` INV-020, INV-021. |
+| ADR-0025 | (audit erasure boundary) | post-apply-verified | `invariants.md` INV-020. |
+| ADR-0027 | (verdict canonicalization) | post-apply-verified | `invariants.md` INV-018. |
+| ADR-0028 | (vault threat model) | post-apply-verified | `invariants.md` INV-019; rc2 `vault-authorization` spec. |
+| ADR-0030 | (bootstrap evidence: pass+fail fixtures) | post-apply-verified | `invariants.md` INV-023. |
+| ADR-0031 | (claim-provenance benchmark artifacts) | post-apply-verified | `invariants.md` INV-022; rc2 `claim-provenance` spec. |
+| ADR-0034 | (tenant DEK rotation) | post-apply-verified | DD-blocker M3-DEPENDENCY-002; rc2 `vault-authorization` spec. |
+
 ## Human decisions still needed
 
 - M1-DECISION-001: accept, amend, or reject ADR-0043 source model.
