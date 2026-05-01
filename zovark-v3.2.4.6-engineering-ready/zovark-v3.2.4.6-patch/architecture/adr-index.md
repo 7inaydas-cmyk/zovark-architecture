@@ -1,0 +1,19 @@
+# ADR Index
+
+This index covers ADR files present in this patch tree. `VERSION_METADATA.json` records the expected post-apply baseline count as 43 ADRs. This patch ships ADR-0038 through ADR-0043; ADR-0001 through ADR-0037 remain in the predecessor baseline and must be verified after apply.
+
+| ADR | Title | Status | Scope | Affected invariants | Supersedes | Superseded by | Amends | Amended by | Implementation status | Customer-facing impact | Related files | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ADR-0038 | Control Plane and Customer-Instance Authority Boundary | proposed | M1 architecture; M2/M10 enforcement | INV-001, INV-003, INV-029, INV-032 | none | none | ADR-0011 | none | document-only in this patch except schema-presence checks; runtime data-classification enforcement planned M2 | yes | `architecture/adr/0038-control-plane-and-customer-instance-authority-boundary.md`, `architecture/blueprint/schemas/control_plane_instance_status.schema.json` | Active proposal. Does not implement runtime data-classification enforcement or DR drills. |
+| ADR-0039 | Update Factory and Signed Bundle Distribution | proposed | M1 architecture; M4 implementation | INV-003, INV-009, INV-023, INV-031 | none | none | none | none | schema and example support in this patch; runtime implementation planned M4 | yes | `architecture/adr/0039-update-factory-and-signed-bundle-distribution.md`, `architecture/blueprint/schemas/update_bundle_signed.schema.json` | Active proposal. Verification CLI, release ledger, reproducible-build environment, SBOM generation, attestation generation, and rollback execution are planned deliverables. |
+| ADR-0040 | Research Pipeline and Gated Candidate Promotion | proposed | post-MVP/M6 | INV-007, INV-023, INV-024, INV-030, INV-031 | none | none | none | none | schema/example support in this patch; runtime implementation planned M6 | no | `architecture/adr/0040-research-pipeline-and-gated-candidate-promotion.md`, `architecture/blueprint/schemas/update_candidate.schema.json`, `architecture/blueprint/schemas/update_promotion_decision.schema.json` | Active proposal. Supports a future improvement loop; not design-partner MVP runtime behavior. |
+| ADR-0041 | Telemetry Boundary | proposed | M1 architecture; M2 enforcement | INV-029, INV-032 | none | none | none | none | schema and example checks implemented; runtime emitter scan/audit logging planned M2 | yes | `architecture/adr/0041-telemetry-boundary.md`, `architecture/telemetry-justification.md`, `architecture/blueprint/schemas/telemetry_envelope.schema.json` | Active proposal. `check_telemetry_boundary.py` is not present and remains an M2 deliverable. |
+| ADR-0042 | Cryptographic Key Management | proposed | M1 architecture; M4 implementation | INV-031 | unsafe old-key transition pattern | none | none | none | document-only in this patch; HSM/key-ledger gates planned M4 | yes | `architecture/adr/0042-cryptographic-key-management.md`, `SECURITY-VULN-DISCLOSURE.md` | Active proposal. No HSM, key ledger, or rotation-age script exists in this tree. |
+| ADR-0043 | Open-Source Release Strategy | proposed strategic pivot | M1 decision; M1/M6 release operations | INV-009, INV-027, INV-031 | closed-source commercial scope statement | none | none | none | proposed decision plus draft license text; release-channel implementation not present | yes | `architecture/adr/0043-open-source-release-strategy.md`, `LICENSE-source-available.md` | Founder sign-off and counsel review required before acceptance. |
+
+## Human Decisions Still Needed
+
+- M1-DECISION-001: accept, amend, or reject ADR-0043 source model.
+- ADR-0042 customer-side escrow recovery procedure.
+- ADR-0038 DR plan details: RPO/RTO, same-region HA vs cross-region DR, restore-drill cadence.
+- Post-apply cross-link gate for baseline ADRs 0001-0037 and baseline files.

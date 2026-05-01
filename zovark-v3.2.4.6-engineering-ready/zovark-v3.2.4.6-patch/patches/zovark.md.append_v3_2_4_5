@@ -1,0 +1,29 @@
+<!-- ===== BEGIN v3.2.4.5 append ===== -->
+<!-- Anchor: ZVK-PATCH-v3.2.4.5-zovark-section-16 -->
+<!-- Apply mode: idempotent-append at end of file -->
+<!-- Apply via: scripts/apply_v3_2_4_6.py --apply-fragments -->
+<!-- If the anchor is present, the apply is skipped (idempotent). -->
+
+## §16 — Future Direction: Control Plane, Update Factory, Research Pipeline
+
+Per ADR-0038 / ADR-0039 / ADR-0040 / ADR-0041 / ADR-0042 / ADR-0043, Zovark's
+architecture extends beyond the Customer Instance to a fleet-management
+Control Plane, an Update Factory producing two-distinct-role-signed
+reproducible bundles, and a Research Pipeline generating improvement
+candidates under gated promotion. These subsystems are **not** built in M1; M1
+only ensures the architecture cannot drift away from these decisions during
+M2-M10. The autonomy boundary (INV-030) — Research Pipeline output is never
+customer-runtime authoritative until promoted by the Update Factory and
+accepted by customer policy — is the single most important rule.
+
+zvadmin (described in §11) is the **customer's** operator console for managing
+their own Zovark instance. It is **not** the Control Plane (which is Zovark's
+fleet management). They are different subsystems with different infrastructure,
+different authentication models, and different data classifications.
+
+ADR-0043 (open-source release strategy) is currently `PROPOSED-STRATEGIC-PIVOT`
+pending founder sign-off (tracked as M1-DECISION-001 in DD_BLOCKERS.md). Until
+sign-off, the runtime-code licensing posture is not finalized; the schemas
+remain Apache-2.0 per ADR-0010.
+
+<!-- ===== END v3.2.4.5 append ===== -->

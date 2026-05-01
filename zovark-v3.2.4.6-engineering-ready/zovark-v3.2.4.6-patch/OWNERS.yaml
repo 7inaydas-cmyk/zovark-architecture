@@ -1,0 +1,206 @@
+# OWNERS.yaml — file stewardship registry
+#
+# Per M1-CI-009: file ownership is recorded centrally in this file rather than
+# inline annotations in every file. This avoids polluting generated artifacts
+# (schemas, public-schema-registry exports) with stewardship comments.
+#
+# Format: each entry binds a path glob to one or more owner roles.
+# Reviewer requirements (CODEOWNERS) are derived from this file by
+# scripts/generate_codeowners.py.
+#
+# Hard rule: every path under architecture/, scripts/check_*.py, and any
+# file referenced in VERSION_METADATA.json's "consumers" list must have
+# an entry. Unowned files in protected paths fail M1-CI-009.
+
+version: "1.0"
+
+_note_placeholders: |
+  Every member entry below is a PLACEHOLDER (e.g., "@zovark-architect-lead").
+  These MUST be replaced with real GitHub handles or real team aliases
+  before any production-code PR can land. M1 may keep them soft for
+  design-doc-only PRs while the team is still being assembled. The first
+  runtime PR (M2 onward) requires the placeholders to be replaced.
+  The check_post_apply.py script flags any remaining "@zovark-*-lead"
+  string in OWNERS.yaml as a soft-warning that becomes a hard-failure at
+  the M2 readiness gate.
+
+
+roles:
+  architect:
+    description: "Architecture decisions, ADR amendments, INV definitions."
+    members: ["@zovark-architect-lead"]
+  control-plane-owner:
+    description: "Control Plane subsystem (M2+); F-007 umbrella."
+    members: ["@zovark-control-plane-lead"]
+  update-factory-owner:
+    description: "Update Factory and signing infrastructure (M4+)."
+    members: ["@zovark-update-factory-lead"]
+  research-pipeline-owner:
+    description: "Research Pipeline subsystem (M6+)."
+    members: ["@zovark-research-lead"]
+  ingest-owner:
+    description: "Ingest pipeline; F-001."
+    members: ["@zovark-ingest-lead"]
+  replay-owner:
+    description: "Replay engine and tape recorder; F-002."
+    members: ["@zovark-replay-lead"]
+  audit-owner:
+    description: "Audit chain and retention; F-003."
+    members: ["@zovark-audit-lead"]
+  response-owner:
+    description: "EDR adapter and response governance; F-004."
+    members: ["@zovark-response-lead"]
+  detection-owner:
+    description: "Sigma generation and detection candidates; F-005."
+    members: ["@zovark-detection-lead"]
+  schema-owner:
+    description: "Schema definitions and registry."
+    members: ["@zovark-schema-lead"]
+  security-officer:
+    description: "Security review for Tier 3 candidates; vuln embargo queue; key management ceremonies."
+    members: ["@zovark-security-officer"]
+  release-engineer:
+    description: "Release builds and signing; counter-signs every release bundle."
+    members: ["@zovark-release-engineer"]
+  build:
+    description: "CI, pre-commit, gates, baseline immutability."
+    members: ["@zovark-build-lead"]
+  ops:
+    description: "Operations, on-call, air-gap drill."
+    members: ["@zovark-ops-lead"]
+
+stewardship:
+  # Architecture decisions and invariants
+  - path: "architecture/adr/0001-*.md"
+    owners: ["architect"]
+  - path: "architecture/adr/0019-*.md"
+    owners: ["architect"]
+  - path: "architecture/adr/0022-*.md"
+    owners: ["architect"]
+  - path: "architecture/adr/0036-*.md"
+    owners: ["architect", "schema-owner"]
+  - path: "architecture/adr/0037-*.md"
+    owners: ["architect"]
+  - path: "architecture/adr/0038-*.md"
+    owners: ["architect", "control-plane-owner"]
+  - path: "architecture/adr/0039-*.md"
+    owners: ["architect", "update-factory-owner", "security-officer"]
+  - path: "architecture/adr/0040-*.md"
+    owners: ["architect", "research-pipeline-owner"]
+  - path: "architecture/adr/0041-*.md"
+    owners: ["architect", "control-plane-owner", "security-officer"]
+  - path: "architecture/adr/0042-*.md"
+    owners: ["architect", "security-officer"]
+  - path: "architecture/adr/0043-*.md"
+    owners: ["architect"]
+  - path: "architecture/adr/*.md"
+    owners: ["architect"]
+  - path: "invariants.md"
+    owners: ["architect"]
+  - path: "adrs.md"
+    owners: ["architect"]
+
+  # Schemas
+  - path: "architecture/blueprint/schemas/*.schema.json"
+    owners: ["schema-owner", "architect"]
+  - path: "architecture/blueprint/schemas/update_*.schema.json"
+    owners: ["schema-owner", "update-factory-owner"]
+  - path: "architecture/blueprint/schemas/research_*.schema.json"
+    owners: ["schema-owner", "research-pipeline-owner"]
+  - path: "architecture/blueprint/schemas/control_plane_*.schema.json"
+    owners: ["schema-owner", "control-plane-owner"]
+  - path: "architecture/blueprint/schemas/telemetry_*.schema.json"
+    owners: ["schema-owner", "control-plane-owner", "security-officer"]
+  - path: "architecture/standards/open-standards-registry.yaml"
+    owners: ["schema-owner", "architect"]
+  - path: "architecture/telemetry-justification.md"
+    owners: ["control-plane-owner", "security-officer"]
+
+  # Feature registry
+  - path: "product/features/feature-registry.yaml"
+    owners: ["architect"]
+  - path: "product/features/F-007-*.md"
+    owners: ["control-plane-owner"]
+
+  # Enforcement scripts
+  - path: "scripts/check_*.py"
+    owners: ["build", "architect"]
+  - path: "scripts/check_telemetry_boundary.py"
+    owners: ["build", "control-plane-owner", "security-officer"]
+  - path: "scripts/check_no_direct_runtime_mutation.py"
+    owners: ["build", "research-pipeline-owner"]
+  - path: "scripts/check_update_bundle_signed.py"
+    owners: ["build", "update-factory-owner", "security-officer"]
+  - path: "scripts/check_key_quorum.py"
+    owners: ["build", "security-officer"]
+  - path: "scripts/check_release_metadata_consistency.py"
+    owners: ["build"]
+
+  # Bootstrap and verification
+  - path: "verify-bootstrap.sh"
+    owners: ["build", "architect"]
+  - path: "bootstrap-acceptance.sh"
+    owners: ["build"]
+  - path: "tests/bootstrap-fixtures/*/fixture.config"
+    owners: ["build"]
+  - path: "tests/bootstrap-fixtures/*/*.fixture/**"
+    owners: ["build"]
+
+  # Single source of truth
+  - path: "VERSION_METADATA.json"
+    owners: ["architect", "build"]
+
+  # CI and workflows
+  - path: ".github/workflows/*"
+    owners: ["build"]
+  - path: ".github/CODEOWNERS"
+    owners: ["build"]
+
+  # Core docs
+  - path: "zovark.md"
+    owners: ["architect"]
+  - path: "operating-system.md"
+    owners: ["architect"]
+  - path: "handover.md"
+    owners: ["architect"]
+  - path: "MANIFEST.md"
+    owners: ["architect"]
+  - path: "README.md"
+    owners: ["architect"]
+  - path: "STARTING-HERE.md"
+    owners: ["architect"]
+  - path: "DD_BLOCKERS.md"
+    owners: ["architect"]
+  - path: "FAILURE-LOG.md"
+    owners: ["build", "architect"]
+  - path: "M1-COMPLETION-CRITERIA.md"
+    owners: ["build", "architect"]
+
+  # Security and ops
+  - path: "SECURITY-VULN-DISCLOSURE.md"
+    owners: ["security-officer", "ops"]
+  - path: "ops/security/vuln-ledger.jsonl"
+    owners: ["security-officer"]
+  - path: "ops/compliance/*.json"
+    owners: ["build"]
+  - path: "ops/compliance/*.txt"
+    owners: ["build"]
+
+  # Apply notes (per-version)
+  - path: "APPLY-NOTES-*.md"
+    owners: ["architect"]
+  - path: "FIXES-*.md"
+    owners: ["architect"]
+
+# Tier-3 enforcement: any PR touching paths under these roots requires
+# 2 maintainer reviewers + 1 security-officer review per ADR-0040 §10.
+tier_3_protected_paths:
+  - "architecture/adr/**"
+  - "architecture/blueprint/schemas/**"
+  - "invariants.md"
+  - "scripts/check_*.py"
+  - ".github/workflows/**"
+  - "VERSION_METADATA.json"
+  - "verify-bootstrap.sh"
+  - "bootstrap-acceptance.sh"
+  - "OWNERS.yaml"

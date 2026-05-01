@@ -1,0 +1,19 @@
+{
+  "decision_id": "ZVK-DEC-2026-000099",
+  "candidate_id": "ZVK-CAND-2026-000099",
+  "applied_risk_tier": 3,
+  "decision": "approved",
+  "decided_by": [
+    {"reviewer_id": "alice@zovark.io", "reviewer_role": "maintainer", "reviewed_at": "2026-09-22T10:00:00Z"},
+    {"reviewer_id": "bob@zovark.io",   "reviewer_role": "maintainer", "reviewed_at": "2026-09-22T11:00:00Z"}
+  ],
+  "decided_at": "2026-09-22T12:00:00Z",
+  "soak_window_observed": {
+    "soak_start": "2026-09-15T12:00:00Z",
+    "soak_end": "2026-09-22T12:00:00Z",
+    "soak_duration_seconds": 604800
+  },
+  "evidence": {
+    "ci_run_ids": ["gh-actions-99999"]
+  }
+}

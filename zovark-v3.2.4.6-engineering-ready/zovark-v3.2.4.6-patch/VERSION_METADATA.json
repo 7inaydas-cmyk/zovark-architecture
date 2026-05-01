@@ -1,0 +1,136 @@
+{
+  "current_version": "v3.2.4.6",
+  "predecessor_version": "v3.2.3.5",
+  "supersedes": [
+    "v3.2.4.5"
+  ],
+  "supersedes_note": "v3.2.4.6 supersedes v3.2.4.5 due to bytecode-cache self-test break and missing license file. Underlying architectural content is unchanged from v3.2.4.5; current_version reflects the patch artifact, not the post-apply baseline tag.",
+  "predecessor_status": "frozen baseline",
+  "previous_baseline_stable_report_hash": "5b3feedf2522d08c02b6f29cba803dd0577d39ef4f0c1a211d56bf7cf3c121a3",
+  "previous_baseline_stable_report_hash_domain": "sha256(ops/compliance/bootstrap-acceptance-report.stable.json)",
+  "current_post_apply_stable_report_hash": null,
+  "current_post_apply_stable_report_hash_note": "Computed by the customer after apply via running scripts/bootstrap-acceptance.sh on the post-apply tree. Recorded into M1-COMPLETION-CRITERIA.md. Becomes immutable on tag v3.2.4.5-bootstrap-baseline only after the customer's clean-clone reproduction succeeds.",
+  "patch_tree_hash": null,
+  "patch_tree_hash_note": "Computed by scripts/check_patch_self_test.py over the patch contents. Echoed back from PATCH-MANIFEST.json's patch_tree_hash field at apply time.",
+  "counts": {
+    "adrs": 43,
+    "adr_continuity_range": [
+      1,
+      43
+    ],
+    "invariants": 32,
+    "invariants_covered": 17,
+    "invariants_partial": 1,
+    "invariants_deferred": 14,
+    "schemas": 23,
+    "features": 7,
+    "lifecycle_statuses": 8,
+    "verify_checks": 35,
+    "bootstrap_fixtures": 55
+  },
+  "deferred_invariants": [
+    {
+      "id": "INV-002",
+      "milestone_due": "M3"
+    },
+    {
+      "id": "INV-003",
+      "milestone_due": "M10"
+    },
+    {
+      "id": "INV-005",
+      "milestone_due": "M5"
+    },
+    {
+      "id": "INV-011",
+      "milestone_due": "M6"
+    },
+    {
+      "id": "INV-012",
+      "milestone_due": "M3"
+    },
+    {
+      "id": "INV-013",
+      "milestone_due": "M3"
+    },
+    {
+      "id": "INV-015",
+      "milestone_due": "M9"
+    },
+    {
+      "id": "INV-016",
+      "milestone_due": "M5"
+    },
+    {
+      "id": "INV-018",
+      "milestone_due": "M5"
+    },
+    {
+      "id": "INV-020",
+      "milestone_due": "M5"
+    },
+    {
+      "id": "INV-029",
+      "milestone_due": "M2"
+    },
+    {
+      "id": "INV-030",
+      "milestone_due": "M6"
+    },
+    {
+      "id": "INV-031",
+      "milestone_due": "M4"
+    },
+    {
+      "id": "INV-032",
+      "milestone_due": "M2"
+    }
+  ],
+  "_note_count_arithmetic": "covered (17) + partial (1: INV-001) + deferred (14) = 32. INV-006 is COVERED with runtime hash chain at M5. INV-001 is the only PARTIAL entry. The 14 deferred entries match exactly the deferred_invariants list above.",
+  "new_in_v3_2_4_5_inherited": {
+    "fixes_from_review": [
+      "P0-1 invariant count mismatch (covered=17, deferred=14, total=32) \u2014 was 18/13/32",
+      "P0-2 stale ship-time transcript \u2014 regenerated against final manifest",
+      "P0-3 manifest apply_mode disagreement \u2014 apply script now reads PATCH-MANIFEST.json as source of truth",
+      "P0-4 critical edits manual \u2014 patches/ directory ships anchored append fragments; apply script applies them idempotently",
+      "P1-1 ADR-0043 stale fixture count \u2014 removed; refers to VERSION_METADATA.json",
+      "P1-2 schema attribution key \u2014 verified consistent (x-zovark-standards-attribution, plural, matches v3.2.3.5 baseline)",
+      "P1-3 ADR-0042 key compromise transition \u2014 fixed; new replacement key + uncompromised counterpart + Root attestation",
+      "P1-4 ZIP hash artifact \u2014 companion .sha256 file shipped alongside the zip",
+      "REVIEW-2-1 schema contract holes \u2014 bundle requires distinct roles; promotion enforces tier-3 role composition; telemetry binds payload_kind to payload shape",
+      "REVIEW-2-3 OWNERS.yaml _note_placeholders \u2014 added",
+      "REVIEW-2-4 ADR-0043 strategic-pivot flag \u2014 explicit PROPOSED-STRATEGIC-PIVOT marker; founder sign-off tracked as M1-DECISION-001",
+      "REVIEW-2-7 post-apply verifier \u2014 scripts/check_post_apply.py shipped"
+    ]
+  },
+  "amendments_in_v3_2_4_5_vs_v3_2_4_4_inherited": {
+    "ADR-0042": "Key compromise transition rewritten to remove the unsafe 'new + old' pattern. Compromised keys are revoked permanently and never re-appear in a signing chain. New replacement key + uncompromised counterpart + Root attestation pattern preserves separation-of-duties without trusting the dead key.",
+    "ADR-0043": "Status changed from PROPOSED to PROPOSED-STRATEGIC-PIVOT. Stale '53+3=56' arithmetic removed; defers to VERSION_METADATA.json. Founder sign-off tracked as M1-DECISION-001.",
+    "update_bundle_signed.schema.json": "Added contains/minContains/maxContains constraint that requires exactly one signature from each of release-engineer + security-officer.",
+    "update_promotion_decision.schema.json": "Added Tier-3 if/then enforcement of role composition (>=2 maintainers + >=1 security-officer) plus tier-specific minimum soak duration (T1=86400s, T2=172800s, T3=604800s).",
+    "telemetry_envelope.schema.json": "Added allOf+if/then constraints that bind payload_kind to payload shape ($defs.StatusPayload, $defs.HealthPayload, $defs.FailureSignaturePayload, $defs.NonePayload).",
+    "OWNERS.yaml": "Added _note_placeholders field that explicitly flags the placeholder handles MUST be replaced with real GitHub handles before any production code PR.",
+    "scripts/jsonschema_minimal.py": "Extended to support contains/minContains/maxContains constructs needed by the tightened schemas above."
+  },
+  "policy": {
+    "no_approximate_counts": true,
+    "no_approximate_counts_note": "Counts in this file and downstream documents are exact integers. The release-metadata-consistency check rejects any document containing approximation words in count contexts.",
+    "no_unverified_test_count_claims": true,
+    "no_unverified_test_count_claims_note": "Documents in this patch do NOT claim 'all 35 PASS' or 'all 55 PASS' unless accompanied by ops/compliance/v3.2.4.6-shiptime-transcript.txt for ship-time-tested artifacts, or ops/compliance/v3.2.4.5-clean-rerun-transcript.txt for post-apply gates. The numbers above are structural expectations, not claimed results.",
+    "manifest_is_source_of_truth_for_apply": true,
+    "manifest_is_source_of_truth_for_apply_note": "scripts/apply_v3_2_4_6.py reads PATCH-MANIFEST.json's apply_mode field for every file; it does not maintain a separate hard-coded internal-file list."
+  },
+  "new_in_v3_2_4_6": {
+    "fixes_from_review": [
+      "__pycache__ created during shiptime tests broke repeat self-test runs; fixed with PYTHONDONTWRITEBYTECODE=1 in run_shiptime_tests.sh plus defensive ignore in check_patch_self_test.py",
+      "ADR-0043 named 'Zovark Source-Available v1.0' license; LICENSE-source-available.md now ships (DRAFT pending M1-DECISION-001)",
+      "verify_checks corrected to 35 (33 baseline + 2 patch smoke gates); v3.2.4.5 package metadata had drifted to 39 without matching executable gates"
+    ]
+  },
+  "amendments_in_v3_2_4_6_vs_v3_2_4_5": {
+    "scripts/run_shiptime_tests.sh": "Sets PYTHONDONTWRITEBYTECODE=1 to prevent __pycache__ creation during ship-time testing.",
+    "scripts/check_patch_self_test.py": "Added IGNORED_PATH_COMPONENTS set ({__pycache__, .pytest_cache, .mypy_cache}) so the self-test ignores Python bytecode caches even if some other invocation creates them.",
+    "LICENSE-source-available.md": "NEW. Tier B license text for ADR-0043 (DRAFT, pending founder sign-off via M1-DECISION-001 and counsel review).",
+    "VERSION_METADATA.json": "Records that v3.2.4.6 supersedes v3.2.4.5 and preserves the post-apply baseline tag as v3.2.4.5-bootstrap-baseline."
+  }
+}

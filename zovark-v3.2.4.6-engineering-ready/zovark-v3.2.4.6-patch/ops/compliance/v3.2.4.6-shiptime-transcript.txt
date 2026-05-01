@@ -1,0 +1,77 @@
+===================================================================
+Zovark v3.2.4.6 — ship-time evidence transcript
+===================================================================
+
+[1/5] check_release_metadata_consistency_v3245
+----------------------------------------------
+  adrs: 43
+  invariants: 32
+  schemas: 23
+  features: 7
+  verify_checks: 35
+  bootstrap_fixtures: 55
+  lifecycle_statuses: 8
+  invariants_covered: 17
+  invariants_partial: 1
+  invariants_deferred: 14
+  arithmetic: 17 + 1 + 14 = 32
+PASS: VERSION_METADATA.json consistent with v3.2.3.5 baseline + v3.2.4.6 patch package and self-arithmetic
+(exit 0)
+
+[2/5] check_control_plane_schemas_present (REAL fixtures, no markers)
+---------------------------------------------------------------------
+  pass.fixture (must exit 0):
+PASS: all 6 schemas present, well-formed, with metadata triple
+  -> exit 0
+  fail.fixture (must exit non-zero):
+EXPECTED-FAIL: missing: update_promotion_decision.schema.json
+  -> exit 1
+  RESULT: OK
+
+[3/5] check_telemetry_boundary_schema_present (REAL fixtures, no markers)
+-------------------------------------------------------------------------
+  pass.fixture (must exit 0):
+PASS: telemetry boundary schema is allowlist-shaped, additionalProperties:false at every data-shape level, four payload_kinds bound to payload shape
+  -> exit 0
+  fail.fixture (must exit non-zero):
+EXPECTED-FAIL: data-shape object schema at $.$defs.HealthPayload does not set additionalProperties: false
+  -> exit 1
+  RESULT: OK
+
+[4/5] Schema example validation (6 pass + 10 fail, including new contract negatives)
+------------------------------------------------------------------------------------
+  update_candidate.pass (expect VALID)                       OK
+  update_candidate.fail (expect INVALID)                     OK  (reason: corpus_evidence: items 0 < minItems 1)
+  update_bundle_signed.pass (expect VALID)                   OK
+  update_bundle_signed.fail (expect INVALID)                 OK  (reason: signatures: items 1 < minItems 2)
+  update_bundle_signed.fail_same_role (expect INVALID)       OK  (reason: signatures: contains: matched 2, want <= 1)
+  research_experiment_result.pass (expect VALID)             OK
+  research_experiment_result.fail (expect INVALID)           OK  (reason: runner_image_sha: value 'latest' does not match pattern '^sha256:[0-9a-f]{64}$')
+  control_plane_instance_status.pass (expect VALID)          OK
+  control_plane_instance_status.fail (expect INVALID)        OK  (reason: instance_pseudonym: value 'acme-corporation-prod-instance-01' does not match pattern '^pseudo-[0-9a-f]{32}$')
+  telemetry_envelope.pass (expect VALID)                     OK
+  telemetry_envelope.fail (expect INVALID)                   OK  (reason: raw_alert_content: additionalProperties: false; property not allowed)
+  telemetry_envelope.fail_kind_mismatch (expect INVALID)     OK  (reason: payload: required property 'bundle_version' missing)
+  update_promotion_decision.pass (expect VALID)              OK
+  update_promotion_decision.fail (expect INVALID)            OK  (reason: decided_by: items 2 < minItems 3)
+  update_promotion_decision.fail_tier3_no_security (expect INVALID) OK  (reason: decided_by: contains: matched 0, want >= 2)
+  update_promotion_decision.fail_tier3_short_soak (expect INVALID) OK  (reason: soak_window_observed.soak_duration_seconds: value 86400 < minimum 604800)
+  RESULT: all 16 examples behave as intended
+
+[5/5] check_patch_self_test
+---------------------------
+  This step is INTENTIONALLY OMITTED from the transcript because the
+  self-test verifies the manifest hash of every file including this
+  transcript itself, which creates a content-vs-hash chicken-and-egg.
+  The self-test is run separately by the apply script and by anyone
+  invoking 'scripts/check_patch_self_test.py --patch-root .' against
+  the unpacked patch.
+
+===================================================================
+End ship-time transcript.
+
+Note: the customer's POST-APPLY transcript (verify-bootstrap.sh +
+bootstrap-acceptance.sh on the patched repo) is a separate artifact
+produced after Step 8 of PATCH-README.md. This ship-time transcript
+covers the patch artifact only, not the post-apply repo.
+===================================================================

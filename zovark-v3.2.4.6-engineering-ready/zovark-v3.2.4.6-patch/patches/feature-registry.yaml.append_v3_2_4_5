@@ -1,0 +1,53 @@
+# ===== BEGIN v3.2.4.5 append =====
+# Anchor: ZVK-PATCH-v3.2.4.5-feature-registry
+# Apply mode: idempotent-append
+# This block is applied by scripts/apply_v3_2_4_6.py --apply-fragments.
+# If the anchor 'ZVK-PATCH-v3.2.4.5-feature-registry' is already present in
+# feature-registry.yaml, the apply is skipped (idempotent).
+
+# Add to allowed_statuses (the existing list of 6 becomes 8):
+allowed_statuses_additions:
+  - research_candidate    # NEW v3.2.4.5: Research Pipeline proposed
+  - under_review          # NEW v3.2.4.5: human/security review queue
+
+# F-007: control plane and update infrastructure umbrella
+features_additions:
+  - id: F-007
+    name: "Control plane and update infrastructure"
+    status: accepted
+    implementation_status: bootstrap_defined
+    runtime_status: not_started
+    owner: control-plane-owner
+    established_by: ADR-0038
+    related_adrs:
+      - ADR-0038  # Control Plane and Customer-Instance Authority Boundary
+      - ADR-0039  # Update Factory and Signed Bundle Distribution
+      - ADR-0040  # Research Pipeline and Gated Candidate Promotion
+      - ADR-0041  # Telemetry Boundary
+      - ADR-0042  # Cryptographic Key Management
+      - ADR-0043  # Open-Source Release Strategy (PROPOSED-STRATEGIC-PIVOT)
+    related_invariants:
+      - INV-029
+      - INV-030
+      - INV-031
+      - INV-032
+    schemas:
+      - update_candidate.schema.json
+      - update_bundle_signed.schema.json
+      - research_experiment_result.schema.json
+      - control_plane_instance_status.schema.json
+      - telemetry_envelope.schema.json
+      - update_promotion_decision.schema.json
+    runtime_milestone_table:
+      M2: "control plane local protocol + telemetry boundary enforcement"
+      M4: "update factory proof + key management"
+      M6: "research pipeline internal runner"
+      M9: "customer-controlled update policy"
+      M10: "air-gap operational proof"
+
+# Operational note: a feature with status=research_candidate must carry
+# corpus_evidence linking back to the Research Pipeline run that produced it.
+# A feature with status=under_review must carry review_evidence linking back
+# to the OpenSpec change that proposed promotion. check_feature_lifecycle_policy.py
+# enforces both at M2.
+# ===== END v3.2.4.5 append =====

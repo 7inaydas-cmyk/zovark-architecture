@@ -1,0 +1,14 @@
+{
+  "candidate_id": "ZVK-CAND-2026-000002",
+  "feature_id": "F-007",
+  "proposed_risk_tier": 2,
+  "source_commit": "0123456789abcdef0123456789abcdef01234567",
+  "generated_by": "research-pipeline",
+  "generated_at": "2026-09-15T03:14:22Z",
+  "proposed_change_summary": "Mapping change without corpus evidence; should fail because generated_by=research-pipeline requires corpus_evidence to have at least 1 entry.",
+  "affected_paths": [
+    "architecture/blueprint/mappings/wazuh-to-ocsf-1.4.0.yaml"
+  ],
+  "requires_security_review": false,
+  "corpus_evidence": []
+}

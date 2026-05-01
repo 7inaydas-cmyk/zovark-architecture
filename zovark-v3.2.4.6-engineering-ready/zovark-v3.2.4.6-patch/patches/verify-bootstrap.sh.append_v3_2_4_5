@@ -1,0 +1,24 @@
+# ===== BEGIN v3.2.4.5 append =====
+# Anchor: ZVK-PATCH-v3.2.4.5-verify-bootstrap
+# Apply mode: idempotent-append before the final summary line
+# Apply via: scripts/apply_v3_2_4_6.py --apply-fragments
+# If the anchor is present, the apply is skipped (idempotent).
+
+# v3.2.4.5: smoke gates for the new control-plane / telemetry-boundary schemas.
+# Full enforcement (telemetry-emission scanning, signed-bundle validation,
+# no-direct-runtime-mutation) flips on at M2/M4/M6 per VERSION_METADATA.json.
+
+run_check 34 "control_plane_schemas_present (v3.2.4.5 smoke; INV-029/031/032)" \
+  "python3 scripts/check_control_plane_schemas_present.py --quiet"
+
+run_check 35 "telemetry_boundary_schema_present (v3.2.4.5 smoke; INV-032)" \
+  "python3 scripts/check_telemetry_boundary_schema_present.py --quiet"
+
+# After applying this fragment, also update the trailing summary literal:
+#   echo "=== ALL 33/33 CHECKS PASSED ==="
+# becomes:
+#   echo "=== ALL 35/35 CHECKS PASSED ==="
+# scripts/apply_v3_2_4_6.py --apply-fragments performs this rewrite as well,
+# anchored on the literal "ALL 33/33 CHECKS PASSED" so it is a no-op if
+# already updated.
+# ===== END v3.2.4.5 append =====

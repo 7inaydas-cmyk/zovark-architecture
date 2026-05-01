@@ -1,0 +1,37 @@
+{
+  "bundle_id": "ZVK-BUNDLE-2026-000001",
+  "bundle_version": "v3.2.4.5",
+  "source_commit": "0123456789abcdef0123456789abcdef01234567",
+  "built_at": "2026-10-01T12:00:00Z",
+  "signatures": [
+    {
+      "role": "release-engineer",
+      "key_id": "hsm-rel-eng-2026",
+      "signature": "MEUCIQDxxxx...releaseEngineerSignaturePlaceholder...xxxxAA==",
+      "algorithm": "ECDSA-P384-SHA384"
+    },
+    {
+      "role": "security-officer",
+      "key_id": "hsm-sec-off-2026",
+      "signature": "MEUCIQDyyyy...securityOfficerSignaturePlaceholder...yyyBB==",
+      "algorithm": "ECDSA-P384-SHA384"
+    }
+  ],
+  "attestation": {
+    "sigstore_bundle_uri": "https://attest.zovark.io/bundles/ZVK-BUNDLE-2026-000001.sigstore",
+    "slsa_level": 3,
+    "build_workflow_ref": "github.com/zovark/zovark/.github/workflows/release.yml@refs/heads/main"
+  },
+  "sbom_uri": "https://sbom.zovark.io/bundles/ZVK-BUNDLE-2026-000001.cdx.json",
+  "compatibility_matrix": {
+    "schema_version_range": ">=v1.0.0,<v2.0.0",
+    "feature_registry_version_range": ">=v1.0.0,<v2.0.0",
+    "runtime_version_range": ">=v3.2.4.5,<v4.0.0"
+  },
+  "rollback_metadata": {
+    "rollback_to_bundle_id": "ZVK-BUNDLE-2026-000000",
+    "rollback_steps_uri": "https://docs.zovark.io/rollback/ZVK-BUNDLE-2026-000001"
+  },
+  "air_gap_package_uri": "https://airgap.zovark.io/bundles/ZVK-BUNDLE-2026-000001.tar.gz",
+  "verification_command": "zovark update verify"
+}

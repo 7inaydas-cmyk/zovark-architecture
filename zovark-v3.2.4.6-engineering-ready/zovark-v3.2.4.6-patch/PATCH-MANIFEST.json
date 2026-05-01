@@ -1,0 +1,520 @@
+{
+  "manifest_version": "1.0",
+  "patch_version": "v3.2.4.6",
+  "predecessor_baseline": "v3.2.3.5",
+  "predecessor_baseline_stable_report_hash": "5b3feedf2522d08c02b6f29cba803dd0577d39ef4f0c1a211d56bf7cf3c121a3",
+  "predecessor_baseline_stable_report_hash_domain": "sha256(ops/compliance/bootstrap-acceptance-report.stable.json)",
+  "patch_tree_hash": "10ee7252ceefaa7a16a6e0fc48190881ff61489b208585430c8ab2c133146f58",
+  "patch_tree_hash_domain": "sha256 of sorted '<relpath>|<sha256>' lines, joined by newline",
+  "file_count": 71,
+  "total_bytes": 274574,
+  "files": [
+    {
+      "path": "DD_BLOCKERS-v3.2.4.5-additions.md",
+      "sha256": "d7a83235fde56facbdbc36a9510ab38dfbc1f1a3b2a57c4ebc75030551ee0241",
+      "bytes": 4535,
+      "kind": "new",
+      "apply_mode": "patch-internal"
+    },
+    {
+      "path": "ENGINEERING-READY-HANDOFF.md",
+      "sha256": "a7d1157f0291241d92dd2d5e558434efd8fe31870f853edb50b78b17fa3da528",
+      "bytes": 2596,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "LICENSE-source-available.md",
+      "sha256": "41ad5fc55abe4403c3f9bd26c71a411cf4eb153b999216f8b88b7f48bc883f74",
+      "bytes": 9430,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "OWNERS.yaml",
+      "sha256": "5e2f93815d621c434754454985cf62bee206d1c936f89f683fb3c194c615dfe5",
+      "bytes": 7495,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "PATCH-README.md",
+      "sha256": "d81712789ab0985adbc63234d61cd6f6e901f5bd8582c20a60fb5021c1cf691b",
+      "bytes": 8286,
+      "kind": "new",
+      "apply_mode": "patch-internal"
+    },
+    {
+      "path": "SECURITY-VULN-DISCLOSURE.md",
+      "sha256": "7841e995ce1d509db9eb617af62f6b780c79e16e429318adaa9604c523c26419",
+      "bytes": 8142,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "VERSION_METADATA.json",
+      "sha256": "ba45695d0f12300edf509b7eada6a4dbf92babf4e6fdbd49429ee0cae3d2a7f5",
+      "bytes": 7730,
+      "kind": "new",
+      "apply_mode": "patch-internal"
+    },
+    {
+      "path": "ZOVARK-v3.2.4.6-FINAL.md",
+      "sha256": "30880c8953d0fd66a959c7b4612f42a77c47074df189c248f7009e966ddd375b",
+      "bytes": 1850,
+      "kind": "new",
+      "apply_mode": "patch-internal"
+    },
+    {
+      "path": "architecture/adr/0038-control-plane-and-customer-instance-authority-boundary.md",
+      "sha256": "6b217d938027670637c6c7e1477b9055498b1d74ea545d42eb1d69dccb824c91",
+      "bytes": 4744,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/adr/0039-update-factory-and-signed-bundle-distribution.md",
+      "sha256": "e6ee30c06c809391e1070b46832ab38640e8e48fc9abc7625b2072a120cdbdf9",
+      "bytes": 4936,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/adr/0040-research-pipeline-and-gated-candidate-promotion.md",
+      "sha256": "44b01e7ca888b4a43c0136984a47a0105cb0fc3da53210df8894bfd00302113f",
+      "bytes": 6279,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/adr/0041-telemetry-boundary.md",
+      "sha256": "c3d63f4e51aba3bfe8bc1ceaa0dfa56e11c7e39adb5f5568661c3025a5195e28",
+      "bytes": 4932,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/adr/0042-cryptographic-key-management.md",
+      "sha256": "9bc37feabe377188772c12561b047f097c691bf2947f95474824cf4f132b066b",
+      "bytes": 8815,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/adr/0043-open-source-release-strategy.md",
+      "sha256": "6a8fd0874f21775f63d349c24dc1ce15943aa23de64d60aa850201218551e134",
+      "bytes": 7522,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/adr-index.md",
+      "sha256": "2a8495dbc4aafc4e9904bf9c0b19b7f0df5f02ef788daab16c6d20a575ef468b",
+      "bytes": 3880,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/blueprint/schemas/control_plane_instance_status.schema.json",
+      "sha256": "6a9ebefade9029ea0be8a49f954b98cdf91d93b4833ca58ad7b32397685a3bd5",
+      "bytes": 2374,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/blueprint/schemas/examples/control_plane_instance_status.fail.json",
+      "sha256": "cc5efc44cff6c9f2d43e0eb520bf7b650301374aebec0702aee8379bcbfff5f8",
+      "bytes": 344,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/blueprint/schemas/examples/control_plane_instance_status.pass.json",
+      "sha256": "dbd9dcb37850c64598e700608fa71069b6759549dfe3c27c9618384b3973daa0",
+      "bytes": 647,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/blueprint/schemas/examples/research_experiment_result.fail.json",
+      "sha256": "aaad75e663580e8a0e688bb5f5b6b23363224c9befd74e796256f29a1cafb6a7",
+      "bytes": 346,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/blueprint/schemas/examples/research_experiment_result.pass.json",
+      "sha256": "79302f720e33e61a3d6000f9f417ca34b79ff77c3fde609afd46d973565f0681",
+      "bytes": 616,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/blueprint/schemas/examples/telemetry_envelope.fail.json",
+      "sha256": "daa158d3835adab89c62cf25684dff0923bf3cb28a715357437fbbeb2820269d",
+      "bytes": 583,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/blueprint/schemas/examples/telemetry_envelope.fail_kind_mismatch.json",
+      "sha256": "ab64405c173cb357d48556dc1af8e45eceeca82260a2d420ebbc09cf8da538c8",
+      "bytes": 499,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/blueprint/schemas/examples/telemetry_envelope.pass.json",
+      "sha256": "b91b3d0264915317b6b54cdced22c9cfb0a8cba79c2e36b95d311a0bbdf41c9a",
+      "bytes": 499,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/blueprint/schemas/examples/update_bundle_signed.fail.json",
+      "sha256": "94583b9a2dd4dffcbc45bbd0f8f20ceddce3a32809d6198e1dd2a18ae0036e03",
+      "bytes": 1121,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/blueprint/schemas/examples/update_bundle_signed.fail_same_role.json",
+      "sha256": "4682714a95c4e66072c1455153c10c8952c7dcb6673ad92cf191c61be2086de6",
+      "bytes": 1300,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/blueprint/schemas/examples/update_bundle_signed.pass.json",
+      "sha256": "1b4aaf00e0011f9e97dda19f5730a9ce81ed37249ea84bf9d67b8946a0b86544",
+      "bytes": 1425,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/blueprint/schemas/examples/update_candidate.fail.json",
+      "sha256": "1242d344c3520a5b0b730e6bbec0156a25b94c52870c00199904b55717804003",
+      "bytes": 567,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/blueprint/schemas/examples/update_candidate.pass.json",
+      "sha256": "cf9f537932830cca305db710138e9ee9c1d8d19aa38383c027374a25bf13cef3",
+      "bytes": 740,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/blueprint/schemas/examples/update_promotion_decision.fail.json",
+      "sha256": "ea3821a2d7f73486fb92dff732d4a6c5c0ddffbfc34e965c7d5973dca0105520",
+      "bytes": 630,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/blueprint/schemas/examples/update_promotion_decision.fail_tier3_no_security.json",
+      "sha256": "c1d0146d5803b2fa8649a998ffff8cdc63d9e32a579aafc7f8fcc2484b9b12b8",
+      "bytes": 772,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/blueprint/schemas/examples/update_promotion_decision.fail_tier3_short_soak.json",
+      "sha256": "72e4c46c5313d3374db78f1a02f3b41f9dca49433e86051c5df956c3de057715",
+      "bytes": 807,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/blueprint/schemas/examples/update_promotion_decision.pass.json",
+      "sha256": "d2542757db03b4a7153ef6e80634017803c5cfd989bc17c9513cdabbdf96a4c5",
+      "bytes": 966,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/blueprint/schemas/research_experiment_result.schema.json",
+      "sha256": "64be78de291089b704a2bf633662e036e32cede91930bfb68154ac1553ca6f9a",
+      "bytes": 2971,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/blueprint/schemas/telemetry_envelope.schema.json",
+      "sha256": "4ff2a7ab0ddbd710e00b14dcba0b30e6f8ccca7885a020421b2771a8186a1e3d",
+      "bytes": 4801,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/blueprint/schemas/update_bundle_signed.schema.json",
+      "sha256": "e0be104dae81b47c3c79209dab943389cbc99a1af54da60f39baab66c20e237d",
+      "bytes": 4508,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/blueprint/schemas/update_candidate.schema.json",
+      "sha256": "887c30d4c169567624aa5ebce2f9e8b38ab4cd503040db7a8b13cde394e8e2bc",
+      "bytes": 3245,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/blueprint/schemas/update_promotion_decision.schema.json",
+      "sha256": "03e6e99f55eed9d59d7f2eaa330d0df0732fb055b02f00e00d5d7aa590224b88",
+      "bytes": 4877,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/claims/claim-provenance.md",
+      "sha256": "4f7644054c303e3aebb711b990ad596d7ed203f227488c697ca709ae3991c178",
+      "bytes": 1198,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/customer-validation-workflow.md",
+      "sha256": "8d567b460ab16f1075e5c36fd601cedf87290ca990b39a394a3e19b49b2c85d5",
+      "bytes": 1404,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/disaster-recovery-restore-gap.md",
+      "sha256": "d69b91d4563cedd1c2593dd13bc080da68e64decaaef87b111dac8ef841ce075",
+      "bytes": 1159,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/mvp-scope.md",
+      "sha256": "fa6689d0811fee82ac5b7ea8d6cc8f979bdaa5a08a6ed398fe8145d1871a2b88",
+      "bytes": 2453,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/source-of-truth.md",
+      "sha256": "4053b35f1302387e741f5bb4c0f9a5fa0f541232d030eba1db556aa2ff5769bb",
+      "bytes": 1954,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "architecture/telemetry-justification.md",
+      "sha256": "b2ef9a5c57b5ed5d3759961639ab6922b238a3ed4bb4df2253c1b64c906970f6",
+      "bytes": 9483,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "invariants.md",
+      "sha256": "20bc287c74387785b39e593cd1eed8fa59a01fc2e91a3dd509b43ede18851953",
+      "bytes": 12592,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "ops/compliance/v3.2.4.6-shiptime-transcript.txt",
+      "sha256": "cda5dbe8fdb1a010cce2f9c6d5d5f22d8c5c81612b66a745507a12f51a5fba92",
+      "bytes": 4288,
+      "kind": "new",
+      "apply_mode": "patch-internal"
+    },
+    {
+      "path": "patches/feature-registry.yaml.append_v3_2_4_5",
+      "sha256": "8e1a57fd63803dcb841f2877ff99e4e9659c2f4a6c6137a302cebea73ffb6577",
+      "bytes": 2260,
+      "kind": "new",
+      "apply_mode": "fragment",
+      "target_file": "product/features/feature-registry.yaml",
+      "anchor": "ZVK-PATCH-v3.2.4.5-feature-registry"
+    },
+    {
+      "path": "patches/verify-bootstrap.sh.append_v3_2_4_5",
+      "sha256": "abc9d85aa1f8786402f0e2497eb019f05b7551f9bade945bc2da7a678910fc2a",
+      "bytes": 1170,
+      "kind": "new",
+      "apply_mode": "fragment",
+      "target_file": "verify-bootstrap.sh",
+      "anchor": "ZVK-PATCH-v3.2.4.5-verify-bootstrap",
+      "rewrite": {
+        "from": "ALL 33/33 CHECKS PASSED",
+        "to": "ALL 35/35 CHECKS PASSED"
+      }
+    },
+    {
+      "path": "patches/zovark.md.append_v3_2_4_5",
+      "sha256": "4ba3046302a3f51c5182fe8ef08627b291958b16bcab735f0138e1a5ea2a9984",
+      "bytes": 1642,
+      "kind": "new",
+      "apply_mode": "fragment",
+      "target_file": "zovark.md",
+      "anchor": "ZVK-PATCH-v3.2.4.5-zovark-section-16"
+    },
+    {
+      "path": "scripts/apply_v3_2_4_6.py",
+      "sha256": "4055dfac2bded22fb5f829f95bb40e95d2231d6c5174c318572620f25b2a775e",
+      "bytes": 10626,
+      "kind": "new",
+      "apply_mode": "patch-internal"
+    },
+    {
+      "path": "scripts/check_control_plane_schemas_present.py",
+      "sha256": "55aac4c8e93236a03000f60498e06c2df1563846eb69a55f423fd37f213807a9",
+      "bytes": 3051,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "scripts/check_patch_self_test.py",
+      "sha256": "32becad4cd6d093a5cdcd5dfbbd4971bc02eb0f9b312badefec274d178d44bcc",
+      "bytes": 4735,
+      "kind": "new",
+      "apply_mode": "patch-internal"
+    },
+    {
+      "path": "scripts/check_post_apply.py",
+      "sha256": "07d6948eaf35d24b6897a9372fb8e8d77c4b5a1799f73de7a1d596136445b191",
+      "bytes": 7497,
+      "kind": "new",
+      "apply_mode": "patch-internal"
+    },
+    {
+      "path": "scripts/check_release_metadata_consistency_v3245.py",
+      "sha256": "a8eaf21f0870cca5cdf0ca60ceb1eb1cf94961c1468983416db359f04269f81f",
+      "bytes": 6988,
+      "kind": "new",
+      "apply_mode": "patch-internal"
+    },
+    {
+      "path": "scripts/check_telemetry_boundary_schema_present.py",
+      "sha256": "ccb8d4d05a0c581bd3b84f6e7130d30643f523efa164a250f2cf10b6aa4e6129",
+      "bytes": 6106,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "scripts/jsonschema_minimal.py",
+      "sha256": "d228636f433f98a5b29235f164ca2aa16152ca13e3ab8298f88ec5376bc0553f",
+      "bytes": 11591,
+      "kind": "new",
+      "apply_mode": "patch-internal"
+    },
+    {
+      "path": "scripts/run_shiptime_tests.sh",
+      "sha256": "7eea0c03bb82f190fdf530064f90bcdda54b42265182c1611846cc5f2414639c",
+      "bytes": 5274,
+      "kind": "new",
+      "apply_mode": "patch-internal"
+    },
+    {
+      "path": "tests/bootstrap-fixtures/control_plane_schemas_present/fail.fixture/architecture/blueprint/schemas/control_plane_instance_status.schema.json",
+      "sha256": "6a9ebefade9029ea0be8a49f954b98cdf91d93b4833ca58ad7b32397685a3bd5",
+      "bytes": 2374,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "tests/bootstrap-fixtures/control_plane_schemas_present/fail.fixture/architecture/blueprint/schemas/research_experiment_result.schema.json",
+      "sha256": "64be78de291089b704a2bf633662e036e32cede91930bfb68154ac1553ca6f9a",
+      "bytes": 2971,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "tests/bootstrap-fixtures/control_plane_schemas_present/fail.fixture/architecture/blueprint/schemas/telemetry_envelope.schema.json",
+      "sha256": "4ff2a7ab0ddbd710e00b14dcba0b30e6f8ccca7885a020421b2771a8186a1e3d",
+      "bytes": 4801,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "tests/bootstrap-fixtures/control_plane_schemas_present/fail.fixture/architecture/blueprint/schemas/update_bundle_signed.schema.json",
+      "sha256": "e0be104dae81b47c3c79209dab943389cbc99a1af54da60f39baab66c20e237d",
+      "bytes": 4508,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "tests/bootstrap-fixtures/control_plane_schemas_present/fail.fixture/architecture/blueprint/schemas/update_candidate.schema.json",
+      "sha256": "887c30d4c169567624aa5ebce2f9e8b38ab4cd503040db7a8b13cde394e8e2bc",
+      "bytes": 3245,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "tests/bootstrap-fixtures/control_plane_schemas_present/fixture.config",
+      "sha256": "05fdee050795cda00efe4367db109a7f6a33449d44c2960c4f0f4678dddd030d",
+      "bytes": 1016,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "tests/bootstrap-fixtures/control_plane_schemas_present/pass.fixture/architecture/blueprint/schemas/control_plane_instance_status.schema.json",
+      "sha256": "6a9ebefade9029ea0be8a49f954b98cdf91d93b4833ca58ad7b32397685a3bd5",
+      "bytes": 2374,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "tests/bootstrap-fixtures/control_plane_schemas_present/pass.fixture/architecture/blueprint/schemas/research_experiment_result.schema.json",
+      "sha256": "64be78de291089b704a2bf633662e036e32cede91930bfb68154ac1553ca6f9a",
+      "bytes": 2971,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "tests/bootstrap-fixtures/control_plane_schemas_present/pass.fixture/architecture/blueprint/schemas/telemetry_envelope.schema.json",
+      "sha256": "4ff2a7ab0ddbd710e00b14dcba0b30e6f8ccca7885a020421b2771a8186a1e3d",
+      "bytes": 4801,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "tests/bootstrap-fixtures/control_plane_schemas_present/pass.fixture/architecture/blueprint/schemas/update_bundle_signed.schema.json",
+      "sha256": "e0be104dae81b47c3c79209dab943389cbc99a1af54da60f39baab66c20e237d",
+      "bytes": 4508,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "tests/bootstrap-fixtures/control_plane_schemas_present/pass.fixture/architecture/blueprint/schemas/update_candidate.schema.json",
+      "sha256": "887c30d4c169567624aa5ebce2f9e8b38ab4cd503040db7a8b13cde394e8e2bc",
+      "bytes": 3245,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "tests/bootstrap-fixtures/control_plane_schemas_present/pass.fixture/architecture/blueprint/schemas/update_promotion_decision.schema.json",
+      "sha256": "03e6e99f55eed9d59d7f2eaa330d0df0732fb055b02f00e00d5d7aa590224b88",
+      "bytes": 4877,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "tests/bootstrap-fixtures/telemetry_boundary_schema_present/fail.fixture/architecture/blueprint/schemas/telemetry_envelope.schema.json",
+      "sha256": "646973ed758a795223602cabedff2bae8765ed0cbbd1c473513fd313ef14b8de",
+      "bytes": 5870,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "tests/bootstrap-fixtures/telemetry_boundary_schema_present/fixture.config",
+      "sha256": "2888dce1a0d62318776b681418176310401811191f2dc73b0bf75c54fa3a740e",
+      "bytes": 931,
+      "kind": "new",
+      "apply_mode": "copy"
+    },
+    {
+      "path": "tests/bootstrap-fixtures/telemetry_boundary_schema_present/pass.fixture/architecture/blueprint/schemas/telemetry_envelope.schema.json",
+      "sha256": "4ff2a7ab0ddbd710e00b14dcba0b30e6f8ccca7885a020421b2771a8186a1e3d",
+      "bytes": 4801,
+      "kind": "new",
+      "apply_mode": "copy"
+    }
+  ]
+}

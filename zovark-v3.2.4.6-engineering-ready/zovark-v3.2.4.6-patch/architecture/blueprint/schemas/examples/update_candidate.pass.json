@@ -1,0 +1,18 @@
+{
+  "candidate_id": "ZVK-CAND-2026-000001",
+  "feature_id": "F-007",
+  "proposed_risk_tier": 2,
+  "source_commit": "0123456789abcdef0123456789abcdef01234567",
+  "generated_by": "research-pipeline",
+  "generated_at": "2026-09-15T03:14:22Z",
+  "proposed_change_summary": "Improve Wazuh rule_id 5710 → OCSF authentication.success mapping to include source_endpoint.ip.",
+  "affected_paths": [
+    "architecture/blueprint/mappings/wazuh-to-ocsf-1.4.0.yaml"
+  ],
+  "requires_security_review": false,
+  "corpus_evidence": [
+    "wazuh-mapping-corpus:0a1b2c3d4e5f6789",
+    "ocsf-conformance-corpus:fedcba98765432101"
+  ],
+  "rationale": "Source endpoint IP is required for downstream campaign correlation but missing in the current mapping."
+}
