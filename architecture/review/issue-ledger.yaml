@@ -92,8 +92,16 @@ issues:
     severity: "P1"
     yc_blocker: false
     architecture_blocker: true
-    status: "accepted"
+    status: "fixed"
     github_issue: 2
+    fixed_by_openspec_change: "fix-claim-provenance"
+    verification: |
+      Rules and script interface contract documented in
+      architecture/claims/claim-provenance.md and captured as
+      openspec/specs/claim-provenance/spec.md. Script implementation
+      (scripts/check_claim_provenance.py) remains the M0 deliverable
+      with explicit acceptance criteria; not blocking the architecture
+      release-candidate freeze.
     source_files:
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/architecture/claims/claim-provenance.md"
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/invariants.md"

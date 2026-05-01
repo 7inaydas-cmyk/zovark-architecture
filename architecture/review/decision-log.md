@@ -57,3 +57,17 @@ The change also lands `openspec/specs/product-wedge/spec.md` (after archive) as 
 **Implication for freeze.** Open `severity:P0` count drops to 0. The remaining open issues (P1 deferred + P2 + P3 accepted-track) do not block freeze.
 
 **Links.** OpenSpec change `openspec/changes/archive/fix-product-wedge/`. GitHub issue #1 (closed).
+
+---
+
+### TR-003 — ARCH-P1-001 fixed (rules + spec) by `fix-claim-provenance`
+
+**Decision.** ARCH-P1-001 (GitHub #2, claim-provenance enforcement missing) is closed by the OpenSpec change `fix-claim-provenance`. Status: `fixed`.
+
+**What landed.** `architecture/claims/claim-provenance.md` (previously empty) now contains the source-of-truth rules: four allowed tag formats, quantified-claim category list, customer-facing classification rules, and the M0 verification script's interface contract. The spec is captured as `openspec/specs/claim-provenance/spec.md` and governs future changes.
+
+**What is explicitly held as M0 deliverable.** `scripts/check_claim_provenance.py` is **not** implemented as part of this change. The interface contract is locked. The four-point M0 acceptance criteria are documented. The implementation lands when M0 work begins.
+
+**Implication for rc2.** Finalization-checklist criterion #4 (Claim provenance) moves from FAIL to PASS — rules are authoritative, spec governs, M0 deliverable has explicit acceptance criteria. The category passes under the rc2 rule "claim provenance either fixed or explicitly marked as M0 deliverable with acceptance criteria."
+
+**Links.** OpenSpec change `openspec/changes/archive/2026-05-01-fix-claim-provenance/`. GitHub issue #2 (closed).
