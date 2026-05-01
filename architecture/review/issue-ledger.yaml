@@ -35,108 +35,206 @@ issues:
 
   - id: "ARCH-P0-001"
     title: "Product wedge framing in architecture content does not match governance framing"
-    bucket: "A"
     severity: "P0"
+    yc_blocker: true
+    architecture_blocker: true
     status: "proposed"
-    files:
+    github_issue: null
+    source_files:
       - "architecture/source-of-truth.md"
       - "architecture/review/finalization-checklist.md"
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/architecture/mvp-scope.md"
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/ZOVARK-v3.2.4.6-FINAL.md"
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/ENGINEERING-READY-HANDOFF.md"
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/OWNERS.yaml"
-    evidence:
-      - "Governance: 'Zovark is consistently described as the tape recorder for cybersecurity investigations.' (architecture/review/finalization-checklist.md)"
-      - "Governance core flow: 'EDR alerts → investigation tape → replayable evidence → verdict → EDR handoff.' (architecture/review/finalization-checklist.md)"
-      - "mvp-scope.md product wedge instead reads: 'Zovark records tenant-scoped security investigations, preserves evidence, reconstructs timelines, produces evidence-backed findings, derives deterministic verdicts when the verdict subsystem exists, and supports policy-gated external-action handoff.' — no mention of tape, EDR-driven flow, or replayable evidence terminology."
-      - "Repo-wide grep: 'tape recorder' appears only as a component name in OWNERS.yaml line 45 ('Replay engine and tape recorder; F-002') and in ADR-0043 line 59 ('Tape recorder implementation'); 'investigation tape' / 'replayable evidence' do not appear anywhere."
-      - "EDR is treated as one adapter among many (OWNERS.yaml line 51 'EDR adapter and response governance; F-004'), not as the canonical entry/exit of the wedge."
+    checklist_categories:
+      - "Product wedge clarity"
+    problem: |
+      Governance docs (architecture/source-of-truth.md, architecture/review/finalization-checklist.md)
+      define Zovark as "the tape recorder for cybersecurity investigations" with the core flow
+      EDR alerts → investigation tape → replayable evidence → verdict → EDR handoff.
+      The architecture content uses different vocabulary and a different bookending: mvp-scope.md
+      reads "Zovark records tenant-scoped security investigations, preserves evidence, reconstructs
+      timelines, produces evidence-backed findings, derives deterministic verdicts when the verdict
+      subsystem exists, and supports policy-gated external-action handoff." Repo-wide grep shows
+      "tape recorder" appearing only as a component name in OWNERS.yaml line 45 ("Replay engine
+      and tape recorder; F-002") and in ADR-0043 line 59. "investigation tape" and
+      "replayable evidence" do not appear anywhere. EDR is treated as one adapter among many
+      (OWNERS.yaml line 51 "EDR adapter and response governance; F-004"), not as the canonical
+      entry/exit of the wedge.
+    required_fix: |
+      Reconcile the wedge framing across the source-of-truth hierarchy. Either update governance
+      to match the architecture's actual wedge, or update architecture content
+      (mvp-scope, ZOVARK-FINAL, ENGINEERING-READY-HANDOFF, top-of-doc descriptions) to express
+      the "tape recorder for cybersecurity investigations" framing with the EDR-bookended flow
+      consistently. The chosen framing must appear as the primary product description in every
+      top-level architecture and customer-facing doc.
+    acceptance_criteria:
+      - "Primary product description uses tape-recorder framing in source-of-truth, mvp-scope, ZOVARK-FINAL, and ENGINEERING-READY-HANDOFF."
+      - "Core flow is described as EDR alerts → investigation tape → replayable evidence → verdict → EDR handoff."
+      - "Generic AI-SOC-platform language is removed or clearly subordinated."
+      - "Investigation tape and EDR handoff appear as central concepts in the architecture overview."
+      - "Customer-facing text is understandable without deep architecture context."
+    suggested_openspec_change: "fix-product-wedge"
     notes: |
-      Finalization checklist criterion #1 is product-wedge clarity. The architecture content
-      uses different vocabulary from the governance framing and does not describe an
-      EDR-bookended flow. Either update governance to match the architecture's actual
-      wedge, or update architecture content (mvp-scope, FINAL, HANDOFF) to express the
-      "tape recorder / EDR-bookended investigation tape" framing consistently. Until
-      reconciled, the wedge is incoherent across the source-of-truth hierarchy.
+      Finalization checklist criterion #1 is product-wedge clarity. Until reconciled, the wedge
+      is incoherent across the source-of-truth hierarchy.
 
   - id: "ARCH-P1-001"
     title: "Claim-provenance enforcement missing from M0 deliverables"
-    bucket: "C"
     severity: "P1"
+    yc_blocker: false
+    architecture_blocker: true
     status: "proposed"
-    files:
+    github_issue: null
+    source_files:
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/architecture/claims/claim-provenance.md"
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/invariants.md"
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/ENGINEERING-READY-HANDOFF.md"
-    evidence:
-      - "claim-provenance.md: 'No claim-provenance checker exists in this patch tree. scripts/check_claim_provenance.py is an M0 deliverable before customer-facing architecture review.'"
-      - "invariants.md INV-022: 'Enforcement by scripts/check_claim_provenance.py is an M0 deliverable and is not present in this patch tree.'"
-      - "ENGINEERING-READY-HANDOFF.md: '2. Implement scripts/check_claim_provenance.py.'"
+    checklist_categories:
+      - "Claim provenance"
+      - "Evidence status"
+    problem: |
+      claim-provenance.md states: "No claim-provenance checker exists in this patch tree.
+      scripts/check_claim_provenance.py is an M0 deliverable before customer-facing architecture review."
+      invariants.md INV-022 cites the same gap: "Enforcement by scripts/check_claim_provenance.py
+      is an M0 deliverable and is not present in this patch tree." ENGINEERING-READY-HANDOFF.md
+      lists "Implement scripts/check_claim_provenance.py" as a numbered handoff TODO. Without
+      the checker, no mechanism validates that customer-facing claims meet provenance rules.
+    required_fix: |
+      Implement scripts/check_claim_provenance.py to scan architecture and customer-facing
+      docs for quantified claims (latency, throughput, capacity, RPO/RTO, false-positive,
+      retention, schedule, cost) and verify each carries one of [hypothesis], [measured:...],
+      [vendor-cited:...], or [policy-commitment:...] tags. Document the rules in
+      architecture/claims/claim-provenance.md. Wire into a CI check before customer-facing
+      review.
+    acceptance_criteria:
+      - "scripts/check_claim_provenance.py exists, executable, returns non-zero on missing tags."
+      - "architecture/claims/claim-provenance.md documents the four tag formats and the doc set the checker covers."
+      - "Customer-facing docs contain no [hypothesis] claims after the rule lands."
+      - "Measured claims point to artifacts that exist (or the checker fails)."
+    suggested_openspec_change: "fix-claim-provenance"
     notes: |
-      M0 is described as bootstrap (before engineering work starts), but claim-provenance
-      enforcement is missing, leaving no mechanism to validate that customer-facing
-      claims meet provenance rules. Promote to P0 if customer-facing review is imminent.
+      Promote to P0 if customer-facing review timing moves up. Currently P1 because no
+      customer-facing review is imminent.
 
   - id: "ARCH-P1-002"
-    title: "ADR-0043 strategic-pivot decision (open-source) blocks bootstrap baseline tag"
-    bucket: "D"
+    title: "ADR-0043 strategic-pivot decision blocks bootstrap baseline tag"
     severity: "P1"
+    yc_blocker: true
+    architecture_blocker: false
     status: "proposed"
-    files:
+    github_issue: null
+    source_files:
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/architecture/adr/0043-open-source-release-strategy.md"
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/DD_BLOCKERS-v3.2.4.5-additions.md"
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/PATCH-README.md"
-    evidence:
-      - "ADR-0043: 'Status: PROPOSED — STRATEGIC PIVOT pending founder sign-off.'"
-      - "DD_BLOCKERS: 'M1-DECISION-001: accept, amend, or reject ADR-0043 source model. ... Deadline: before tag v3.2.4.5-bootstrap-baseline.'"
-      - "PATCH-README.md Step 9: 'Before tagging v3.2.4.5-bootstrap-baseline: ... M1-DECISION-001 (founder sign-off on ADR-0043) is resolved.'"
+    checklist_categories:
+      - "ADR inventory and supersession"
+    problem: |
+      ADR-0043 status reads "PROPOSED — STRATEGIC PIVOT pending founder sign-off."
+      DD_BLOCKERS-v3.2.4.5-additions.md M1-DECISION-001 says "accept, amend, or reject
+      ADR-0043 source model. ... Deadline: before tag v3.2.4.5-bootstrap-baseline."
+      PATCH-README.md Step 9 says "Before tagging v3.2.4.5-bootstrap-baseline:
+      ... M1-DECISION-001 (founder sign-off on ADR-0043) is resolved."
+      The decision affects investor and customer narrative on open-source vs. closed-source
+      commercial source model.
+    required_fix: |
+      Founder makes a decision (accept, amend, or reject) on ADR-0043. Update ADR status,
+      adr-index, and any narrative docs accordingly. Architecture review can proceed in
+      parallel; only the bootstrap baseline tag is blocked.
+    acceptance_criteria:
+      - "ADR-0043 status no longer reads 'proposed strategic pivot'."
+      - "adr-index.md status column for ADR-0043 reflects the decision."
+      - "M1-DECISION-001 entry in DD_BLOCKERS / decision-log is closed with the chosen outcome."
+      - "If accepted: source-available license + open-core scope are coherent in customer-facing docs."
+    suggested_openspec_change: ""
     notes: |
-      Founder sign-off is explicitly a blocking decision before tagging/finalizing the
-      bootstrap baseline. Architecture review can proceed in parallel, but the baseline
-      tag (and therefore engineering kickoff for several M1 streams) is blocked until
-      this decision is made.
+      Not architecture-mechanical; recorded here for tracking. Defer architecturally; the
+      decision is human and outside the architecture-review loop.
 
   - id: "ARCH-P2-001"
     title: "ADR-0042 key compromise drill — schedule vs. contingency ambiguity"
-    bucket: "C"
     severity: "P2"
+    yc_blocker: false
+    architecture_blocker: false
     status: "proposed"
-    files:
+    github_issue: null
+    source_files:
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/architecture/adr/0042-cryptographic-key-management.md"
-    evidence:
-      - "ADR-0042 line 66: 'This is the worst-case event and has no automated path; it is an operational drill rehearsed twice per year [policy-commitment:security-officer,semiannual-review].'"
-      - "ADR-0042 line 85: 'Operational overhead: HSM procurement, ceremony procedures, rotation calendar, compromise drill twice a year.'"
-    notes: |
-      'Twice per year' is mentioned, but whether this is a contingency-only response
-      (run on-demand if compromise happens) versus a scheduled calendar drill is
-      ambiguous; future audit and ops teams may interpret differently.
+    checklist_categories:
+      - "Claim provenance"
+    problem: |
+      ADR-0042 line 66 states "This is the worst-case event and has no automated path; it is
+      an operational drill rehearsed twice per year [policy-commitment:security-officer,semiannual-review]."
+      Line 85 lists "compromise drill twice a year." Whether "twice per year" describes a
+      contingency-only response (run on-demand if compromise happens) or a scheduled calendar
+      drill is ambiguous; future audit and ops teams may interpret differently.
+    required_fix: |
+      Clarify the intent in ADR-0042. If scheduled: state cadence (e.g., March + September),
+      who runs it, what artifacts are produced. If contingency-only: state expected response
+      time and what the "twice per year" reference describes (e.g., review of the procedure).
+    acceptance_criteria:
+      - "ADR-0042 distinguishes between scheduled drill cadence and contingency response."
+      - "If scheduled: cadence, owner, and artifacts are listed."
+      - "Policy-commitment tag matches the chosen interpretation."
+    suggested_openspec_change: ""
+    notes: ""
 
   - id: "ARCH-P2-002"
     title: "ADR-0038 control-plane DR plan deferred without design sketch"
-    bucket: "B"
     severity: "P2"
+    yc_blocker: false
+    architecture_blocker: false
     status: "proposed"
-    files:
+    github_issue: null
+    source_files:
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/architecture/adr/0038-control-plane-and-customer-instance-authority-boundary.md"
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/architecture/adr-index.md"
-    evidence:
-      - "ADR-0038: 'Loss of the Control Plane DB must not affect customer instance data authority.'"
-      - "Patch adr-index.md note under ADR-0038: 'Does not implement runtime data-classification enforcement or DR drills.'"
-      - "Patch adr-index.md Human Decisions: 'ADR-0038 DR plan details: RPO/RTO, same-region HA vs cross-region DR, restore-drill cadence.'"
-    notes: |
-      Data-authority isolation is core to the trust model (INV-029), but the control
-      plane's own resilience strategy is completely deferred with no design sketch,
-      creating risk for M2+ implementation decisions.
+    checklist_categories:
+      - "Audit, DR, and tenant lifecycle"
+    problem: |
+      ADR-0038 states "Loss of the Control Plane DB must not affect customer instance data authority."
+      The patch adr-index.md notes under ADR-0038: "Does not implement runtime data-classification
+      enforcement or DR drills." Human Decisions section flags "ADR-0038 DR plan details:
+      RPO/RTO, same-region HA vs cross-region DR, restore-drill cadence."
+      Data-authority isolation is core to the trust model (INV-029), but the control plane's
+      own resilience strategy is completely deferred with no design sketch.
+    required_fix: |
+      Add a DR sketch to ADR-0038: target RPO and RTO, same-region HA vs cross-region DR
+      decision, restore-drill cadence, data-authority guarantees during partial control-plane
+      loss. Does not need to be a runbook — a design sketch is sufficient until M2.
+    acceptance_criteria:
+      - "ADR-0038 contains an RPO/RTO target."
+      - "HA vs DR posture is explicit (e.g., same-region HA + cross-region cold standby)."
+      - "Restore-drill cadence is named (commitment, not implementation)."
+      - "Data-authority guarantees during control-plane loss are stated."
+    suggested_openspec_change: ""
+    notes: ""
 
   - id: "ARCH-P3-001"
     title: "ADR-0040 Research Pipeline corpora composition under-specified"
-    bucket: "C"
     severity: "P3"
+    yc_blocker: false
+    architecture_blocker: false
     status: "proposed"
-    files:
+    github_issue: null
+    source_files:
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/architecture/adr/0040-research-pipeline-and-gated-candidate-promotion.md"
-    evidence:
-      - "ADR-0040 line 25: 'Runs nightly against fixed corpora (replay fixtures, dead-code corpora, security-test corpora, benchmark corpora). Corpora land at M5; Research Pipeline runs first at M6.'"
-    notes: |
-      Corpus composition (count, diversity, sources) is not sketched; the M5 team will
-      inherit ambiguity about what 'fixed corpora' means operationally.
+    checklist_categories:
+      - "Evidence status"
+    problem: |
+      ADR-0040 line 25: "Runs nightly against fixed corpora (replay fixtures, dead-code corpora,
+      security-test corpora, benchmark corpora). Corpora land at M5; Research Pipeline runs
+      first at M6." Corpus composition (count, diversity, sources) is not sketched; the M5
+      team will inherit ambiguity about what "fixed corpora" means operationally.
+    required_fix: |
+      Add a one-paragraph sketch to ADR-0040 listing corpus categories, expected size envelope,
+      and expected refresh cadence. Does not need to enumerate every corpus — just enough that
+      M5 can scope the deliverable.
+    acceptance_criteria:
+      - "ADR-0040 lists corpus categories with brief descriptions."
+      - "Each category has an expected size envelope (order of magnitude is enough)."
+      - "Refresh / curation cadence is named."
+    suggested_openspec_change: ""
+    notes: ""
