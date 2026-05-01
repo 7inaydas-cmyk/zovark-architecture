@@ -71,3 +71,17 @@ The change also lands `openspec/specs/product-wedge/spec.md` (after archive) as 
 **Implication for rc2.** Finalization-checklist criterion #4 (Claim provenance) moves from FAIL to PASS — rules are authoritative, spec governs, M0 deliverable has explicit acceptance criteria. The category passes under the rc2 rule "claim provenance either fixed or explicitly marked as M0 deliverable with acceptance criteria."
 
 **Links.** OpenSpec change `openspec/changes/archive/2026-05-01-fix-claim-provenance/`. GitHub issue #2 (closed).
+
+---
+
+### TR-004 — Vault authorization spec lands; one event-type follow-up
+
+**Decision.** `fix-vault-authorization-audit` lands the authorization record spec, verification rules, replay protection, compromise response, and M3 IPC-schema deliverable acceptance criteria. Finalization-checklist criterion #9 (Vault / authorization) moves from UNAUDITED to PASS-with-tracked-gaps for rc2.
+
+**Tracked rc2-V follow-up.** The `vault-authorization` spec introduces a new audit event type `vault_authorization_use_rejected` that is referenced from `replay-and-audit`'s event-type enum. The enum addition is a `MODIFIED Requirements` change against `replay-and-audit` and is intentionally deferred to the rc2 verification block (RC2-V) so the cross-capability linkage lands as a single batched cleanup rather than as a per-capability ripple. Until that lands, the event type exists in the `vault-authorization` spec but not in the `replay-and-audit` enum — implementations SHOULD treat the type as accepted and reviewers SHALL NOT flag it as undefined.
+
+**M3 deliverables tracked.** Three IPC schemas (`vault_request`, `vault_response`, `vault_audit_envelope`) plus `scripts/check_vault_ipc_contract.py` are recorded as M3 deliverables with explicit acceptance criteria, mirroring the M0 hand-off used by `fix-claim-provenance`. The architecture release-candidate freeze is not blocked on these.
+
+**Cross-link gap.** Baseline ADR-0028 (vault threat model) and ADR-0034 (tenant DEK rotation) are referenced but not in this tree. The next rc2 change (`fix-adr-cross-link-verification`) defines the post-apply audit that confirms they exist and don't contradict patch ADRs 0038-0043.
+
+**Links.** OpenSpec change `openspec/changes/archive/2026-05-01-fix-vault-authorization-audit/`. No GitHub issue (driven directly by rc2 target).
