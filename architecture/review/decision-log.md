@@ -85,3 +85,28 @@ The change also lands `openspec/specs/product-wedge/spec.md` (after archive) as 
 **Cross-link gap.** Baseline ADR-0028 (vault threat model) and ADR-0034 (tenant DEK rotation) are referenced but not in this tree. The next rc2 change (`fix-adr-cross-link-verification`) defines the post-apply audit that confirms they exist and don't contradict patch ADRs 0038-0043.
 
 **Links.** OpenSpec change `openspec/changes/archive/2026-05-01-fix-vault-authorization-audit/`. No GitHub issue (driven directly by rc2 target).
+
+---
+
+### TR-005 — Architecture rc2 freeze
+
+**Decision.** Tag `architecture-rc2` against commit on 2026-05-01. Documents-only score 8.5/10. Twelve checklist categories at PASS, PASS-with-tracked-gaps, or PRESENT; zero at FAIL or UNAUDITED.
+
+**rc2 changes archived (8 total).** All applied + archived in this rc2 cycle:
+
+1. `fix-claim-provenance` — rules + spec; M0 script explicit. (Closed GH #2.)
+2. `fix-investigation-tape-schema` — full tape object spec.
+3. `fix-edr-handoff-schema` — 14-field handoff record spec.
+4. `fix-replay-and-audit-semantics` — replay state + audit chain spec.
+5. `fix-vault-authorization-audit` — vault auth record spec; M3 IPC deliverables tracked. (Drove criterion #9 from UNAUDITED to PASS-with-tracked-gaps.)
+6. `fix-adr-cross-link-verification` — post-apply baseline-ADR verification spec; 8 baseline ADRs surfaced as placeholder rows.
+7. `fix-replay-and-audit-event-type-extension` — closes the deferred follow-up from TR-004 (adds `vault_authorization_use_rejected` to the closed event-type enum).
+8. (rc1's `fix-product-wedge` predates rc2 but ships in the same release-candidate lineage.)
+
+**rc2 spec set.** 7 capabilities now under `openspec/specs/`: `product-wedge`, `claim-provenance`, `investigation-tape`, `edr-handoff`, `replay-and-audit`, `vault-authorization`, `adr-cross-link`.
+
+**Tracked M0/M3 deliverables.** Four scripts and three schemas with explicit acceptance criteria, drawn directly from the rc2 spec set. Implementation begins when M0/M3 work starts; rc2 freeze is not blocked on them.
+
+**Open issues at rc2 freeze.** ARCH-P1-002 (deferred, founder), ARCH-P2-001 (track), ARCH-P2-002 (track), ARCH-P3-001 (track). All explicitly non-blocking per rc2 target.
+
+**Links.** Release-candidate scorecard at `architecture/review/release-candidate-scorecard.md` (rc2 entry). All 8 archived changes under `openspec/changes/archive/2026-05-01-*`.

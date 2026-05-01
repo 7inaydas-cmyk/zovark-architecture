@@ -74,6 +74,7 @@ handoff_executed
 handoff_rolled_back
 vault_authorization_issued
 vault_authorization_revoked
+vault_authorization_use_rejected
 disaster_recovery_restore_completed
 ```
 

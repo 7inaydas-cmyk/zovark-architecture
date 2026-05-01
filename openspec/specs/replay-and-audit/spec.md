@@ -86,7 +86,7 @@ Every audit chain entry SHALL include:
 - `this_entry_hash` — content hash of this entry's canonical bytes.
 - `signed_root` — `{ ref, signed_at }` or null until the next root signature lands.
 
-The fixed `event_type` enum: `tape_recording_started`, `tape_recording_closed`, `tape_replayed`, `handoff_dispatched`, `handoff_executed`, `handoff_rolled_back`, `vault_authorization_issued`, `vault_authorization_revoked`, `disaster_recovery_restore_completed`.
+The fixed `event_type` enum: `tape_recording_started`, `tape_recording_closed`, `tape_replayed`, `handoff_dispatched`, `handoff_executed`, `handoff_rolled_back`, `vault_authorization_issued`, `vault_authorization_revoked`, `vault_authorization_use_rejected`, `disaster_recovery_restore_completed`.
 
 Adding a new event type requires a `MODIFIED Requirements` change against this spec.
 
