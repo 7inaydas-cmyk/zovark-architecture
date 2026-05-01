@@ -110,3 +110,32 @@ The change also lands `openspec/specs/product-wedge/spec.md` (after archive) as 
 **Open issues at rc2 freeze.** ARCH-P1-002 (deferred, founder), ARCH-P2-001 (track), ARCH-P2-002 (track), ARCH-P3-001 (track). All explicitly non-blocking per rc2 target.
 
 **Links.** Release-candidate scorecard at `architecture/review/release-candidate-scorecard.md` (rc2 entry). All 8 archived changes under `openspec/changes/archive/2026-05-01-*`.
+
+---
+
+### TR-006 — Architecture rc3 freeze (evidence-backed)
+
+**Decision.** Tag `architecture-rc3` against commit on 2026-05-01. Both documents-only and evidence-backed scores 8.5/10. All 12 finalization-checklist categories at PASS or PASS-with-explicit-DEFERRAL; zero UNAUDITED, zero PASS-with-tracked-gaps.
+
+**rc3 changes archived (3 total).** Narrow hardening pass per the rc3 plan; no broad architecture review:
+
+1. `fix-claim-provenance-enforcement` — implements `scripts/check_claim_provenance.py`. Spec MODIFIED to extend cadence allowlist (adds `quarterly-review`, `release-review`, `milestone-review`, plus per-event cadences) and acknowledge `BOOTSTRAP_PENDING_OWNERS` for roles awaiting M2 OWNERS.yaml registration (`product-owner`, `support-owner`, `release-engineering`, `research-owner`).
+2. `fix-adr-cross-link-enforcement` — implements `scripts/check_adr_cross_links.py` with auto-detected bootstrap mode (current state) and post-apply mode (after v3.2.3.5 baseline merge). Spec MODIFIED to codify both modes. (Renamed from the user's suggested `fix-adr-cross-link-verification` to avoid name collision with the rc2 archive of the same name.)
+3. `finalize-architecture-rc3-scorecard` — governance bookkeeping. Adds `release-candidate-process` capability codifying the rc-N tag rules, score thresholds per stage, and the requirement that `PASS-with-explicit-DEFERRAL` annotations name owner + milestone + acceptance.
+
+**Evidence-script results at freeze.** All three architecture enforcement scripts pass:
+
+- `scripts/check_mvp_scope_consistency.py` → "MVP scope consistency check passed".
+- `scripts/check_claim_provenance.py` → "Claim provenance check passed".
+- `scripts/check_adr_cross_links.py` → "ADR cross-link verification (bootstrap mode) passed" with banner listing the 8 baseline ADRs awaiting post-apply verification.
+
+**Categories reclassified at rc3.** The two rc2 `PASS-with-tracked-gaps` categories were upgraded to `PASS-with-explicit-DEFERRAL` with owner/milestone/acceptance:
+
+- **#8 Audit, DR, lifecycle** — DEFERRED for control-plane DR sketch (ARCH-P2-002). Owner: architect. Milestone: M2. Acceptance: ADR-0038 contains RPO/RTO targets, HA vs. DR posture, restore-drill cadence, data-authority guarantees during partial control-plane loss.
+- **#9 Vault / authorization** — DEFERRED for M3 IPC schemas. Owner: schema-owner. Milestone: M3. Acceptance: three vault IPC schemas with pass/fail fixtures + `check_vault_ipc_contract.py`.
+
+**Open issues at rc3 freeze.** ARCH-P1-002 (deferred, founder), ARCH-P2-001 (track), ARCH-P2-002 (track, DEFERRED in scorecard), ARCH-P3-001 (track). Zero P0; zero accepted-open P1.
+
+**Bridge to product.** rc3 enables the smallest meaningful build slice: 1 EDR sample → 1 tape → 1 timeline → 1 evidence ledger → 1 verdict → 1 handoff recommendation → 1 replay report. That slice exercises every governing spec and every M0 enforcement script.
+
+**Links.** Release-candidate scorecard at `architecture/review/release-candidate-scorecard.md` (rc3 entry). Three rc3 archived changes under `openspec/changes/archive/2026-05-01-fix-claim-provenance-enforcement`, `2026-05-01-fix-adr-cross-link-enforcement`, `2026-05-01-finalize-architecture-rc3-scorecard`.
