@@ -1,7 +1,7 @@
 # claim-provenance Specification
 
 ## Purpose
-TBD - created by archiving change fix-claim-provenance. Update Purpose after archive.
+Defines the four allowed provenance tags for quantified claims, the customer-facing classification rules, and the interface contract for the M0 verification script `scripts/check_claim_provenance.py`.
 ## Requirements
 ### Requirement: Quantified claims SHALL carry exactly one provenance tag
 

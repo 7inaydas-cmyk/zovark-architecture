@@ -1,7 +1,7 @@
 # vault-authorization Specification
 
 ## Purpose
-TBD - created by archiving change fix-vault-authorization-audit. Update Purpose after archive.
+Defines the vault authorization record (referenced by `edr-handoff.authorization_record_ref`) — fields, verification rules, replay protection, compromise response, and the M3 vault IPC schema deliverables (`vault_request`, `vault_response`, `vault_audit_envelope`).
 ## Requirements
 ### Requirement: Vault authorization record SHALL bind action+tenant+target+policy+nonce
 

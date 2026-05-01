@@ -1,7 +1,7 @@
 # adr-cross-link Specification
 
 ## Purpose
-TBD - created by archiving change fix-adr-cross-link-verification. Update Purpose after archive.
+Defines the post-apply verification contract for baseline ADRs (0001–0037) referenced by patch ADRs (0038–0043) and the rc2/rc3 spec set, including the bootstrap-mode (no baseline present) and post-apply-mode behaviors of `scripts/check_adr_cross_links.py`.
 ## Requirements
 ### Requirement: Cross-link verification SHALL check existence, status, and non-contradiction
 

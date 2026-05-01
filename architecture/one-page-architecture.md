@@ -22,8 +22,8 @@ Smallest path that exercises every governing spec. Per rc3 scorecard.
 ## 3. Core architecture objects
 
 ### Investigation Tape (`investigation-tape`)
-System-of-record umbrella for one investigation.
-Fields: `tape_id`, `tenant_id`, `created_at`, `schema_version`, `source_alert_ref`, `raw_evidence[]` (evidence ledger), `timeline[]`, `findings[]`, `verdict`, `recorded_io[]` (when models/tools used), `handoff_ref`, `audit_ref`, `replay_state_ref`. Lifecycle: `recording → closed → replaying → closed`.
+System-of-record umbrella for one investigation. Immutable once closed.
+Fields: `tape_id`, `tenant_id`, `created_at`, `schema_version`, `source_alert_ref`, `raw_evidence[]` (evidence ledger), `timeline[]`, `findings[]`, `verdict`, `recorded_io[]` (when models/tools used), `handoff_ref`, `audit_ref`. Lifecycle: `recording → closed` (one-way; no `replaying` tape state — replay status lives in `replay-and-audit`).
 
 ### Evidence ledger (`investigation-tape.raw_evidence[]`)
 Immutable list inside the tape. Each entry: `evidence_id`, `hash` (SHA-256+), `source_type`, `ingested_at`, `retention_class` (post-MVP).

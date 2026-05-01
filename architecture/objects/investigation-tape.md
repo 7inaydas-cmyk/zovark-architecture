@@ -115,28 +115,34 @@ Present only when an EDR handoff occurred:
 | `handoff_ref` | string | Reference to the EDR handoff record (defined in `edr-handoff` capability). |
 | `handoff_summary` | object | Inline subset: `action_type`, `target`, `approval_mode`, `execution_status`. MUST match the referenced record. |
 
-### 8. Audit and replay
+### 8. Audit (replay status is not a tape field)
 
 | Field | Type | Notes |
 |---|---|---|
 | `audit_ref` | string | Reference to audit chain entry (defined in `replay-and-audit` capability). Required when state is `closed`. |
-| `replay_state_ref` | string | Optional. Present only while `replaying`. |
+
+The tape does NOT carry a `replay_state_ref` field. Replay status is governed
+entirely by the `replay-and-audit` capability — a `replay_state` object holds
+its own state and references the tape via `tape_ref`. The tape side queries the
+replay-state store; it does not store a back-reference.
 
 ## Lifecycle
 
-Three states with explicit transitions:
+Two states; one-way transition:
 
 ```
-recording  ──seal──▶  closed  ──replay-start──▶  replaying  ──replay-end──▶  closed
+recording  ──seal──▶  closed
 ```
 
 - `recording` → `closed`: tape sealed, audit chain entry signed, verdict set,
   no further field appends.
-- `closed` → `replaying`: a replay starts; tape is read-only.
-- `replaying` → `closed`: replay finishes.
 
-A tape SHALL NOT transition from `closed` back to `recording`. A tape SHALL NOT
-transition from `replaying` back to `recording`.
+A `closed` tape SHALL NOT transition to any other state. There is no
+`replaying` tape state — replays are tracked by the `replay_state` object
+(see `replay-and-audit`), whose own state enum carries
+`pending, running, succeeded, mismatch, failed`. The tape itself is genuinely
+immutable after `closed`: no field — including `state` — changes during
+replay, so the tape's canonical-bytes hash stays stable for life.
 
 ## Customer-facing surface
 
@@ -148,7 +154,7 @@ When a design partner / auditor / operator accesses a tape, they SEE:
 - All `findings` with severity, evidence links, and (when present) confidence bands.
 - The full `verdict`.
 - `handoff_summary` (when present).
-- `replay_available` boolean (derived from `replay_state_ref`).
+- `replay_available` boolean (derived by querying the `replay-and-audit` store for any `replay_state` with `tape_ref` matching this tape's `tape_id`).
 
 They DO NOT SEE:
 

@@ -1,7 +1,7 @@
 # product-wedge Specification
 
 ## Purpose
-TBD - created by archiving change fix-product-wedge. Update Purpose after archive.
+Defines Zovark's canonical product positioning ("the tape recorder for cybersecurity investigations"), the canonical core-flow phrasing, and the rules that govern how this framing must appear verbatim across architecture and customer-facing documentation.
 ## Requirements
 ### Requirement: Canonical product-wedge statement
 

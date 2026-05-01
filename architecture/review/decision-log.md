@@ -139,3 +139,30 @@ The change also lands `openspec/specs/product-wedge/spec.md` (after archive) as 
 **Bridge to product.** rc3 enables the smallest meaningful build slice: 1 EDR sample → 1 tape → 1 timeline → 1 evidence ledger → 1 verdict → 1 handoff recommendation → 1 replay report. That slice exercises every governing spec and every M0 enforcement script.
 
 **Links.** Release-candidate scorecard at `architecture/review/release-candidate-scorecard.md` (rc3 entry). Three rc3 archived changes under `openspec/changes/archive/2026-05-01-fix-claim-provenance-enforcement`, `2026-05-01-fix-adr-cross-link-enforcement`, `2026-05-01-finalize-architecture-rc3-scorecard`.
+
+---
+
+### TR-007 — Post-rc3 spec hygiene from independent review
+
+**Decision.** External review (Codex) of the rc3-tagged architecture identified three spec hygiene issues. All confirmed; all fixed on `main`. No new tag — score remains 8.5/8.5 (the changes resolve drift and clarify wording, not add evidence).
+
+**Issues fixed:**
+
+1. **Lifecycle vs. immutability tension in `investigation-tape`.** The binding spec listed three tape states (`recording`, `closed`, `replaying`) but also asserted the tape "is not mutated" during replay. If `state` participates in canonical-bytes hashing (per `replay-and-audit`), toggling it during replay breaks immutability.
+   **Fix:** OpenSpec change `fix-tape-replay-relationship` (archived as `2026-05-01-fix-tape-replay-relationship`). MODIFIED `investigation-tape` to collapse the tape-side state enum to `{recording, closed}` (one-way). Replay status now lives entirely in `replay-and-audit`'s `replay_state.state` enum (`pending, running, succeeded, mismatch, failed`).
+
+2. **Drift between binding spec and derived docs (`replay_state_ref`).** `architecture/objects/investigation-tape.md` and `architecture/one-page-architecture.md` both listed `replay_state_ref` as a tape field, but the binding spec did not authorize it. Per source-of-truth hierarchy, the binding spec wins.
+   **Fix:** same change as above. Removed `replay_state_ref` from both derived docs. Customer-facing `replay_available` is now explicitly defined as derived from a query against the `replay-and-audit` store (any `replay_state` whose `tape_ref` matches), not a tape field.
+
+3. **TBD Purpose-field placeholders in 9 archived specs.** Every spec at `openspec/specs/*/spec.md` had OpenSpec's auto-generated `Purpose: TBD - created by archiving change ...` line.
+   **Fix:** direct edit (Purpose is OpenSpec metadata, not a Requirement). All 9 spec files now have a one-sentence Purpose describing the capability — `product-wedge`, `claim-provenance`, `investigation-tape`, `edr-handoff`, `replay-and-audit`, `vault-authorization`, `adr-cross-link`, `release-candidate-process`, `build-planning-artifacts`.
+
+**Verification.** All 3 architecture enforcement scripts re-run and pass after the fixes:
+
+- `scripts/check_mvp_scope_consistency.py` → "MVP scope consistency check passed"
+- `scripts/check_claim_provenance.py` → "Claim provenance check passed"
+- `scripts/check_adr_cross_links.py` → "ADR cross-link verification (bootstrap mode) passed"
+
+**Implication for rc3 tag.** No re-tag. The rc3 tag points at commit `913316d` which had these issues; the tag is preserved as the historical record of the rc3 freeze decision. Subsequent commits on `main` (this hygiene round + future MVP build work) live forward of the tag. A future `architecture-rc4` (or `architecture-final`) tag will follow the natural rc-N progression after substantive change.
+
+**Links.** OpenSpec change `openspec/changes/archive/2026-05-01-fix-tape-replay-relationship/`. Direct edits to all 9 specs' Purpose fields. No new GitHub issues filed (driven by external review rather than internal triage).

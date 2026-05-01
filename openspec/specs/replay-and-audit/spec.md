@@ -1,7 +1,7 @@
 # replay-and-audit Specification
 
 ## Purpose
-TBD - created by archiving change fix-replay-and-audit-semantics. Update Purpose after archive.
+Defines the `replay_state` object and the audit-chain entry, including replay determinism rules (recorded-output vs. forensic re-execution; schema/tool/model version pinning; deterministic verdict recompute), canonical-bytes serialization, concurrent-insert ordering, root signature semantics, unsigned-tail handling, and the DR restore-gap event.
 ## Requirements
 ### Requirement: Replay state object SHALL pin schema, tools, and models
 

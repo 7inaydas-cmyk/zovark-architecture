@@ -1,7 +1,7 @@
 # edr-handoff Specification
 
 ## Purpose
-TBD - created by archiving change fix-edr-handoff-schema. Update Purpose after archive.
+Defines the EDR handoff record — the structured action recommendation produced from an investigation tape — including required fields, approval modes, idempotency rules, rollback classes, and the linkage to investigation tape, vault authorization, and audit chain.
 ## Requirements
 ### Requirement: EDR handoff record SHALL carry a unique handoff_id and tenant scope
 

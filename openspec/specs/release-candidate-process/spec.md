@@ -1,7 +1,7 @@
 # release-candidate-process Specification
 
 ## Purpose
-TBD - created by archiving change finalize-architecture-rc3-scorecard. Update Purpose after archive.
+Codifies the architecture release-candidate tag progression (`rc1` process established, `rc2` conceptual finalization, `rc3` evidence-backed freeze), the score thresholds per stage, and the requirement that any `PASS-with-explicit-DEFERRAL` annotation name owner + milestone + acceptance criteria.
 ## Requirements
 ### Requirement: Release-candidate tags SHALL follow the rc-N progression
 

@@ -1,7 +1,7 @@
 # build-planning-artifacts Specification
 
 ## Purpose
-TBD - created by archiving change create-one-page-architecture-map. Update Purpose after archive.
+Governs build-planning derived artifacts — the one-page architecture map (`architecture/one-page-architecture.md`) and its companion Mermaid diagram (`architecture/one-page-architecture.mmd`) — including content rules, the page-fit budget, and the requirement that the artifacts not introduce new architecture decisions.
 ## Requirements
 ### Requirement: One-page architecture map SHALL exist
 
