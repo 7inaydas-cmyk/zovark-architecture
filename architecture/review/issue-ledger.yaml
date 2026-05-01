@@ -38,7 +38,7 @@ issues:
     severity: "P0"
     yc_blocker: true
     architecture_blocker: true
-    status: "proposed"
+    status: "accepted"
     github_issue: 1
     source_files:
       - "architecture/source-of-truth.md"
@@ -85,7 +85,7 @@ issues:
     severity: "P1"
     yc_blocker: false
     architecture_blocker: true
-    status: "proposed"
+    status: "accepted"
     github_issue: 2
     source_files:
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/architecture/claims/claim-provenance.md"
@@ -123,7 +123,7 @@ issues:
     severity: "P1"
     yc_blocker: true
     architecture_blocker: false
-    status: "proposed"
+    status: "deferred"
     github_issue: 3
     source_files:
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/architecture/adr/0043-open-source-release-strategy.md"
@@ -158,7 +158,7 @@ issues:
     severity: "P2"
     yc_blocker: false
     architecture_blocker: false
-    status: "proposed"
+    status: "accepted"
     github_issue: 4
     source_files:
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/architecture/adr/0042-cryptographic-key-management.md"
@@ -186,7 +186,7 @@ issues:
     severity: "P2"
     yc_blocker: false
     architecture_blocker: false
-    status: "proposed"
+    status: "accepted"
     github_issue: 5
     source_files:
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/architecture/adr/0038-control-plane-and-customer-instance-authority-boundary.md"
@@ -217,7 +217,7 @@ issues:
     severity: "P3"
     yc_blocker: false
     architecture_blocker: false
-    status: "proposed"
+    status: "accepted"
     github_issue: 6
     source_files:
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/architecture/adr/0040-research-pipeline-and-gated-candidate-promotion.md"
