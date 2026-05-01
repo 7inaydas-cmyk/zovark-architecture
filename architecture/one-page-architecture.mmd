@@ -1,0 +1,44 @@
+%% Zovark — One-Page Architecture (rc3 freeze)
+%% Wedge: Zovark is the tape recorder for cybersecurity investigations.
+%% Core flow: EDR alerts → investigation tape → replayable evidence
+%%            → deterministic verdict → verified EDR handoff → rollback/reversal record.
+%%
+%% MVP slice subgraph: the seven-step path that exercises every governing spec.
+%% Deferred subgraph: out-of-MVP items. No edges to MVP — the absence is intentional.
+
+flowchart LR
+    A[Static EDR JSON Sample] --> B[Normalize Events]
+    B --> C[Investigation Tape - investigation-tape]
+    C --> D[Evidence Ledger - tape.raw_evidence]
+    C --> E[Timeline - tape.timeline]
+    D --> F[Evidence-Backed Findings - tape.findings]
+    E --> F
+    F --> G[Deterministic Verdict - tape.verdict]
+    G --> H[EDR Handoff Recommendation - edr-handoff record]
+    C --> I[Replay Report - replay-and-audit]
+    D --> I
+    G --> I
+    H --> I
+
+    subgraph MVP_Slice ["MVP Slice (first build)"]
+        A
+        B
+        C
+        D
+        E
+        F
+        G
+        H
+        I
+    end
+
+    subgraph Deferred ["Deferred (not in first slice)"]
+        J[Live EDR Vendor API]
+        K[Credential Vault Runtime - vault-authorization]
+        L[Autonomous Action Mode]
+        M[Production Multi-Tenancy]
+        N[Sigma / SIEM Publication]
+        O[Control-Plane DR - ARCH-P2-002 - M2]
+        P[M3 Vault IPC Schemas]
+        Q[Customer-Facing Dashboards]
+    end
