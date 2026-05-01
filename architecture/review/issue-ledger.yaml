@@ -39,7 +39,7 @@ issues:
     yc_blocker: true
     architecture_blocker: true
     status: "proposed"
-    github_issue: null
+    github_issue: 1
     source_files:
       - "architecture/source-of-truth.md"
       - "architecture/review/finalization-checklist.md"
@@ -86,7 +86,7 @@ issues:
     yc_blocker: false
     architecture_blocker: true
     status: "proposed"
-    github_issue: null
+    github_issue: 2
     source_files:
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/architecture/claims/claim-provenance.md"
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/invariants.md"
@@ -124,7 +124,7 @@ issues:
     yc_blocker: true
     architecture_blocker: false
     status: "proposed"
-    github_issue: null
+    github_issue: 3
     source_files:
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/architecture/adr/0043-open-source-release-strategy.md"
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/DD_BLOCKERS-v3.2.4.5-additions.md"
@@ -159,7 +159,7 @@ issues:
     yc_blocker: false
     architecture_blocker: false
     status: "proposed"
-    github_issue: null
+    github_issue: 4
     source_files:
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/architecture/adr/0042-cryptographic-key-management.md"
     checklist_categories:
@@ -187,7 +187,7 @@ issues:
     yc_blocker: false
     architecture_blocker: false
     status: "proposed"
-    github_issue: null
+    github_issue: 5
     source_files:
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/architecture/adr/0038-control-plane-and-customer-instance-authority-boundary.md"
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/architecture/adr-index.md"
@@ -218,7 +218,7 @@ issues:
     yc_blocker: false
     architecture_blocker: false
     status: "proposed"
-    github_issue: null
+    github_issue: 6
     source_files:
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/architecture/adr/0040-research-pipeline-and-gated-candidate-promotion.md"
     checklist_categories:
