@@ -1,0 +1,20 @@
+schema_version: "1.0"
+
+severity_values:
+  P0: "Blocks architecture finalization."
+  P1: "Important before customer or technical review."
+  P2: "Track but can defer."
+  P3: "Nice-to-have or style."
+  wont_fix: "Accepted risk or intentionally out of scope."
+
+status_values:
+  - proposed
+  - accepted
+  - rejected
+  - deferred
+  - fixed
+  - verified
+
+issue_template:
+  id: "ARCH-P0-000"
+...
