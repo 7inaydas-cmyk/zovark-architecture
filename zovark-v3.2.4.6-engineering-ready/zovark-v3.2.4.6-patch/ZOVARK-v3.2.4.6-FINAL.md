@@ -4,6 +4,14 @@
 
 v3.2.4.6 is the current patch package for starting M1 engineering work after it is applied to the v3.2.3.5 baseline and post-apply gates pass. It remains a bootstrap/architecture package: it does not implement runtime tenant isolation, replay, audit chain, update factory, telemetry emitter enforcement, HSM integration, or Research Pipeline runtime.
 
+## Product wedge
+
+**Zovark is the tape recorder for cybersecurity investigations.**
+
+Core flow: **EDR alerts → investigation tape → replayable evidence → deterministic verdict → verified EDR handoff → rollback/reversal record.**
+
+The **investigation tape** is the central recorded object — raw evidence, timeline, findings, verdict, EDR handoff record, rollback plan, replay state, and audit references travel together. The **EDR handoff** is replayable, evidence-linked, and reversible. (Schemas for the investigation tape object and EDR handoff record are out of scope for this package; they are defined under the architecture's respective sections.)
+
 ## What This Package Adds
 
 - Source-of-truth hierarchy: `architecture/source-of-truth.md`.

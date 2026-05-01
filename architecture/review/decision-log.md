@@ -36,3 +36,24 @@ do not block freeze; they are listed under "Remaining non-blocking issues" on th
 release-candidate scorecard.
 
 **Links.** GitHub issues #1–#6; `architecture/review/issue-ledger.yaml`.
+
+---
+
+### TR-002 — ARCH-P0-001 fixed by `fix-product-wedge`
+
+**Decision.** ARCH-P0-001 (GitHub #1, wedge framing mismatch) is closed by the OpenSpec change `fix-product-wedge`. Status: `fixed`.
+
+**What landed.** Canonical product-wedge statement and core-flow phrasing applied verbatim to:
+
+- `architecture/source-of-truth.md` (already aligned; no change needed)
+- `zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/architecture/mvp-scope.md` — replaced `## Product Wedge` opening
+- `zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/ZOVARK-v3.2.4.6-FINAL.md` — added `## Product wedge` after `## Summary`
+- `zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/ENGINEERING-READY-HANDOFF.md` — added `## Product wedge` after `## Purpose`
+
+The change also lands `openspec/specs/product-wedge/spec.md` (after archive) as the governing spec for any future wedge revision.
+
+**Verification.** `grep -rlF "Zovark is the tape recorder for cybersecurity investigations."` returns 4 expected hits across the four documents. Drift-framing scan returned only an exclusionary guardrail in `architecture/review/finalization-checklist.md:10` (acceptable).
+
+**Implication for freeze.** Open `severity:P0` count drops to 0. The remaining open issues (P1 deferred + P2 + P3 accepted-track) do not block freeze.
+
+**Links.** OpenSpec change `openspec/changes/archive/fix-product-wedge/`. GitHub issue #1 (closed).

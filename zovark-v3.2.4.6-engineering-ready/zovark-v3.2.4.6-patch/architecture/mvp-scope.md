@@ -2,7 +2,13 @@
 
 ## Product Wedge
 
-Zovark records tenant-scoped security investigations, preserves evidence, reconstructs timelines, produces evidence-backed findings, derives deterministic verdicts when the verdict subsystem exists, and supports policy-gated external-action handoff. The first user is a design-partner security team reviewing incident evidence and deciding whether the product is useful in real incident review.
+**Zovark is the tape recorder for cybersecurity investigations.**
+
+Core flow: **EDR alerts → investigation tape → replayable evidence → deterministic verdict → verified EDR handoff → rollback/reversal record.**
+
+The **investigation tape** is the central recorded object — raw evidence, timeline, findings, verdict, EDR handoff record, rollback plan, replay state, and audit references travel together. The **EDR handoff** is replayable, evidence-linked, and reversible. (The investigation tape object schema and EDR handoff record schema are out of scope for the MVP-scope document; they are defined separately under their respective architecture sections.)
+
+The first user is a design-partner security team reviewing incident evidence and deciding whether the product is useful in real incident review.
 
 ## M0 / Bootstrap
 

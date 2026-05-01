@@ -4,6 +4,14 @@
 
 This package is an engineering-ready architecture and patch bundle for starting M1 build work after applying it to the v3.2.3.5 baseline. It is still an architecture/bootstrap package, not a runtime implementation.
 
+## Product wedge
+
+**Zovark is the tape recorder for cybersecurity investigations.**
+
+Core flow: **EDR alerts → investigation tape → replayable evidence → deterministic verdict → verified EDR handoff → rollback/reversal record.**
+
+The **investigation tape** is the central recorded object — raw evidence, timeline, findings, verdict, EDR handoff record, rollback plan, replay state, and audit references travel together. The **EDR handoff** is replayable, evidence-linked, and reversible. (Schemas for the investigation tape object and EDR handoff record are out of scope for this handoff document; engineering should track them as M1+ deliverables under their respective architecture sections.)
+
 ## Source Of Truth
 
 - Patch contents and hashes: `PATCH-MANIFEST.json`.

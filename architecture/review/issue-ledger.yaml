@@ -38,8 +38,15 @@ issues:
     severity: "P0"
     yc_blocker: true
     architecture_blocker: true
-    status: "accepted"
+    status: "fixed"
     github_issue: 1
+    fixed_by_openspec_change: "fix-product-wedge"
+    verification: |
+      grep -rlF "Zovark is the tape recorder for cybersecurity investigations." returns
+      4 expected hits: architecture/source-of-truth.md, mvp-scope.md, ZOVARK-v3.2.4.6-FINAL.md,
+      ENGINEERING-READY-HANDOFF.md. grep -rlF "EDR alerts → investigation tape → replayable evidence"
+      returns 6 hits including those 4 plus finalization-checklist (rubric reference) and
+      issue-ledger (evidence reference). No drift framing found.
     source_files:
       - "architecture/source-of-truth.md"
       - "architecture/review/finalization-checklist.md"
