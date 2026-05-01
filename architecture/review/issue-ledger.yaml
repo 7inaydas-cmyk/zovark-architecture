@@ -98,10 +98,13 @@ issues:
     verification: |
       Rules and script interface contract documented in
       architecture/claims/claim-provenance.md and captured as
-      openspec/specs/claim-provenance/spec.md. Script implementation
-      (scripts/check_claim_provenance.py) remains the M0 deliverable
-      with explicit acceptance criteria; not blocking the architecture
-      release-candidate freeze.
+      openspec/specs/claim-provenance/spec.md. The M0 deliverable
+      script scripts/check_claim_provenance.py is implemented in rc3
+      (OpenSpec change fix-claim-provenance-enforcement, archived as
+      2026-05-01-fix-claim-provenance-enforcement) and passes against
+      the current repo. Spec MODIFIED to extend cadence allowlist and
+      acknowledge BOOTSTRAP_PENDING_OWNERS for roles awaiting M2
+      OWNERS.yaml registration.
     source_files:
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/architecture/claims/claim-provenance.md"
       - "zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/invariants.md"
