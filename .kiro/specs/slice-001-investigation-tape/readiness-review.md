@@ -311,7 +311,7 @@ This is deterministic because canonical JSON sorts keys lexicographically, so `t
 ### 6.5 Golden value test
 
 `test_hashing.py` includes a golden value test:
-- `sha256_of_string("genesis")` must equal `"a4e624d686e03ed2767c0abd85c46475d7ee7f32694f46ef84caf8e6a339b1d5"` (pre-computed).
+- `sha256_of_string("genesis")` must equal `"aeebad4a796fcc2e15dc4c6061b45ed9b373f26adfc798ca7d2d8cc58182718e"` (verified: `hashlib.sha256(b"genesis").hexdigest()`).
 - This test will catch any regression in the canonical serializer or hash function.
 
 ---
