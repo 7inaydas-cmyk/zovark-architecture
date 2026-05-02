@@ -1,78 +1,126 @@
 # product-wedge Specification
 
 ## Purpose
-Defines Zovark's canonical product positioning ("the tape recorder for cybersecurity investigations"), the canonical core-flow phrasing, and the rules that govern how this framing must appear verbatim across architecture and customer-facing documentation.
-## Requirements
-### Requirement: Canonical product-wedge statement
+Defines Zovark's canonical product positioning, the canonical core-flow phrasing, and
+the rules that govern how these framings must appear across architecture and
+customer-facing documentation.
 
-The architecture and customer-facing documentation set SHALL use a single canonical product-wedge statement to describe Zovark. The canonical statement is:
+This spec was modified by the `reposition-to-audit-grade-evidence-layer` OpenSpec
+change (2026-05-02). The internal architecture metaphor ("tape recorder") is
+preserved for engineering use. The external product wedge and customer-facing
+language now lead with the audit-grade evidence layer framing.
+
+## Requirements
+
+### Requirement: External canonical product-wedge statement
+
+Customer-facing documents, investor materials, and external positioning SHALL use
+the following canonical external wedge statement:
+
+> **Zovark is the audit-grade evidence layer for AI-assisted SOC response.**
+
+The customer-facing one-sentence description is:
+
+> **Before your SOC isolates a host or disables a user, Zovark shows the evidence, explains the verdict, records the approval path, and creates a replayable proof package.**
+
+These statements MUST appear verbatim in external-facing documents. Alternative
+framings (e.g., "AI SOC platform", "agent framework", "investigation engine",
+"tape recorder") MUST NOT be used as the primary external positioning.
+
+#### Scenario: External document leads with the audit-grade evidence layer statement
+
+- **WHEN** a customer-facing, investor-facing, or partner-facing document states
+  Zovark's product positioning
+- **THEN** the external canonical statement appears verbatim
+- **AND** no alternative primary positioning statement contradicts it
+
+#### Scenario: "tape recorder" framing is not used externally as the headline
+
+- **WHEN** any external document refers to Zovark's product positioning
+- **THEN** "tape recorder" does not appear as the primary description
+- **AND** if used at all, it is explicitly subordinated as an internal engineering
+  metaphor (e.g., "Internally, Zovark uses an investigation tape as its proof
+  substrate.")
+
+### Requirement: Internal canonical product-wedge statement
+
+Internal architecture documents, engineering specs, and ADRs SHALL use the
+following canonical internal wedge statement:
 
 > **Zovark is the tape recorder for cybersecurity investigations.**
 
-The statement MUST appear verbatim (case- and punctuation-preserving) wherever Zovark's product positioning is stated in top-level architecture and customer-facing documents. Paraphrases, near-paraphrases, or alternative wedge framings (e.g., "AI SOC platform", "agent framework", "investigation engine") MUST NOT be used as the primary positioning statement.
+This statement governs internal architecture documents. It MUST NOT appear as the
+primary positioning in customer-facing or investor-facing documents.
 
-#### Scenario: Source-of-truth contains the canonical statement
+#### Scenario: Internal architecture document uses the tape recorder statement
 
-- **WHEN** `architecture/source-of-truth.md` is read
-- **THEN** the canonical statement appears verbatim in the document
-- **AND** no other product-positioning statement contradicts it
-
-#### Scenario: MVP scope document contains the canonical statement
-
-- **WHEN** `mvp-scope.md` (the active MVP scope document) is read
-- **THEN** the canonical statement appears verbatim
-- **AND** any first-paragraph product-wedge prose follows the canonical statement, not replaces it
-
-#### Scenario: Top-level architecture-package documents contain the canonical statement
-
-- **WHEN** `ZOVARK-v3.2.4.6-FINAL.md` and `ENGINEERING-READY-HANDOFF.md` are read (or their successors in later patch versions)
-- **THEN** the canonical statement appears verbatim under a clearly named section near the top of the document
-
-#### Scenario: Generic platform framing is not used as positioning
-
-- **WHEN** any architecture or customer-facing document refers to Zovark's product positioning
-- **THEN** the canonical statement is used
-- **AND** generic framings such as "AI SOC platform" do not appear as the primary description; if used at all, they are explicitly subordinated (e.g., "Zovark uses AI SOC techniques internally, but the product is the tape recorder.")
+- **WHEN** `architecture/source-of-truth.md`, `architecture/one-page-architecture.md`,
+  or any `openspec/specs/` document states Zovark's product positioning
+- **THEN** the internal canonical statement appears verbatim
+- **AND** no other internal positioning statement contradicts it
 
 ### Requirement: Canonical core-flow phrasing
 
-The architecture and customer-facing documentation set SHALL describe Zovark's core flow using a single canonical phrasing. The canonical core flow is:
+The architecture and customer-facing documentation set SHALL describe Zovark's core
+flow using a single canonical phrasing. The canonical core flow is:
 
 > **EDR alerts → investigation tape → replayable evidence → deterministic verdict → verified EDR handoff → rollback/reversal record.**
 
-The arrow sequence MUST appear verbatim wherever the core flow is described. Documents MAY elaborate on individual steps after the sequence, but MUST NOT introduce alternative bookings (e.g., flows that omit EDR as the entry, omit replayable evidence as the bridge, or omit rollback as the final state).
+The arrow sequence MUST appear verbatim in internal architecture documents wherever
+the core flow is described. External documents MAY describe the same flow in
+customer-facing language (see the `reposition-to-audit-grade-evidence-layer` change
+docs) but MUST NOT contradict the internal flow sequence.
 
-#### Scenario: Core flow appears alongside the wedge statement
+#### Scenario: Internal architecture documents use the canonical core-flow sequence
 
-- **WHEN** the canonical product-wedge statement appears in a document
-- **THEN** the canonical core-flow arrow sequence appears immediately after, in the same section, verbatim
-
-#### Scenario: No alternative core-flow framings are introduced
-
-- **WHEN** any document describes how Zovark processes alerts, evidence, or response actions end-to-end
-- **THEN** the canonical core-flow sequence is used
+- **WHEN** an internal architecture document describes how Zovark processes alerts
+  end-to-end
+- **THEN** the canonical core-flow arrow sequence appears verbatim
 - **AND** no alternative end-to-end pipeline is presented as the primary flow
 
-#### Scenario: Architecture overviews mention investigation tape and EDR handoff
+#### Scenario: Architecture overviews name the investigation tape and EDR handoff
 
-- **WHEN** a top-level architecture or customer-facing document includes a product-wedge or core-flow section
-- **THEN** the section names the **investigation tape** as the central recorded object
-- **AND** the section names the **EDR handoff** as replayable, evidence-linked, and reversible
-- **AND** the section does not redefine these objects (full schemas are out of scope; signposting is sufficient)
+- **WHEN** a top-level architecture document includes a product-wedge or core-flow
+  section
+- **THEN** the section names the **investigation tape** as the central proof substrate
+- **AND** the section names the **EDR handoff** as the approval-required action card
+  that is evidence-linked, replayable, and reversible
+
+### Requirement: Hero artifact in external materials
+
+External documents SHALL lead with the **approval-required EDR action card** and the
+**replayable proof package** as the product hero artifacts. The investigation tape is
+the internal proof substrate that produces these artifacts; it is not the external
+headline.
+
+#### Scenario: External demo and outreach materials lead with the action card
+
+- **WHEN** a demo script, outreach document, or investor deck describes what Zovark
+  produces
+- **THEN** the first artifact named is the EDR action card (recommended action,
+  evidence basis, approval status, reversibility class)
+- **AND** the second artifact named is the replayable proof package
+- **AND** the investigation tape is described as the substrate, not the headline
 
 ### Requirement: Wedge changes go through this spec
 
-The architecture review process SHALL treat any future change to Zovark's product wedge or core flow as a modification of this spec, not as ad-hoc edits to individual documents.
+The architecture review process SHALL treat any future change to Zovark's product
+wedge or core flow as a modification of this spec, not as ad-hoc edits to individual
+documents.
 
 #### Scenario: Future wedge revisions require a spec change
 
-- **WHEN** anyone proposes a change to the canonical product-wedge statement or canonical core flow
-- **THEN** the proposal is filed as an OpenSpec change with a `MODIFIED Requirements` block against `product-wedge`
-- **AND** the change updates every document that contains the previous canonical statement, in the same change
+- **WHEN** anyone proposes a change to either canonical wedge statement or the
+  canonical core flow
+- **THEN** the proposal is filed as an OpenSpec change with a `MODIFIED Requirements`
+  block against `product-wedge`
+- **AND** the change updates every document that contains the previous canonical
+  statement, in the same change
 
 #### Scenario: Wedge consistency is verifiable
 
 - **WHEN** a finalization-checklist verification pass runs
-- **THEN** every document listed in `architecture/source-of-truth.md` source hierarchy that mentions product positioning contains the canonical statement and core flow
-- **AND** any deviation is filed as a new `area:tape` / `severity:P0` issue against this spec
+- **THEN** internal architecture documents contain the internal canonical statement
+- **AND** external documents contain the external canonical statement
+- **AND** no document uses the internal statement as external positioning or vice versa
 

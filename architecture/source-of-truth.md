@@ -19,11 +19,21 @@ If two documents conflict, the higher source in this hierarchy governs unless a 
 
 ## Current product wedge
 
+### Internal (engineering and architecture documents)
+
 Zovark is the tape recorder for cybersecurity investigations.
 
 The core flow is:
 
 EDR alerts → investigation tape → replayable evidence → deterministic verdict → verified EDR handoff → rollback/reversal record.
+
+### External (customer-facing, investor-facing, partner-facing)
+
+Zovark is the audit-grade evidence layer for AI-assisted SOC response.
+
+Customer description: Before your SOC isolates a host or disables a user, Zovark shows the evidence, explains the verdict, records the approval path, and creates a replayable proof package.
+
+The product hero artifacts are the approval-required EDR action card and the replayable proof package. The investigation tape is the internal proof substrate that produces them.
 
 ## Finalization rule
 

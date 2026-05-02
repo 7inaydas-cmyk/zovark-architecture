@@ -6,9 +6,19 @@ Source specs: `openspec/specs/`. Source objects: `architecture/objects/`.
 
 ## 1. Product wedge
 
+### Internal architecture statement
+
 **Zovark is the tape recorder for cybersecurity investigations.**
 
 Core flow: **EDR alerts → investigation tape → replayable evidence → deterministic verdict → verified EDR handoff → rollback/reversal record.**
+
+### External product statement
+
+**Zovark is the audit-grade evidence layer for AI-assisted SOC response.**
+
+Customer description: *Before your SOC isolates a host or disables a user, Zovark shows the evidence, explains the verdict, records the approval path, and creates a replayable proof package.*
+
+The product hero artifacts are the **approval-required EDR action card** and the **replayable proof package**. The investigation tape is the internal proof substrate that produces them; it is not the external headline.
 
 ## 2. First MVP build slice
 
@@ -76,6 +86,10 @@ See `architecture/review/release-candidate-scorecard.md` for owner/milestone/acc
 The first implementation must prove the wedge:
 
 > Can a customer inspect and replay why Zovark recommended an EDR action?
+
+Stated in external product terms:
+
+> Does the proof package show the evidence, explain the verdict, record the approval path, and provide a replayable verification?
 
 If yes — the slice is useful, and the architecture is productized.
 If no — the architecture is unproductized; iterate before broadening scope.
