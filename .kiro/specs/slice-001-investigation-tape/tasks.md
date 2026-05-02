@@ -20,13 +20,13 @@
 
 ## Task 2 — Canonical JSON and SHA-256 utilities
 
-- [ ] 2.1 Implement `zovark/slice001/canonical.py` — `canonical_json(obj) -> bytes` (compact, keys sorted lexicographically, UTF-8, ISO-8601 with Z, no NaN/Inf).
-- [ ] 2.2 Implement `zovark/slice001/hashing.py` — `sha256_hex(data)`, `sha256_of_string(s)`, `sha256_of_obj(obj)`.
-- [ ] 2.3 Write `tests/test_canonical.py`:
+- [x] 2.1 Implement `zovark/slice001/canonical.py` — `canonical_json(obj) -> bytes` (compact, keys sorted lexicographically, UTF-8, ISO-8601 with Z, no NaN/Inf).
+- [x] 2.2 Implement `zovark/slice001/hashing.py` — `sha256_hex(data)`, `sha256_of_string(s)`, `sha256_of_obj(obj)`.
+- [x] 2.3 Write `tests/test_canonical.py`:
   - Two dicts with same content, different insertion order → byte-identical output.
   - Nested object with array → keys sorted at every level.
   - Timestamp string with `Z` passes through unchanged.
-- [ ] 2.4 Write `tests/test_hashing.py`:
+- [x] 2.4 Write `tests/test_hashing.py`:
   - `sha256_of_string("genesis")` → known golden hex value.
   - `sha256_of_obj({"b": 1, "a": 2})` equals `sha256_of_obj({"a": 2, "b": 1})`.
 
