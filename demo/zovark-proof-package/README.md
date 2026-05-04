@@ -52,19 +52,27 @@ out/
     findings.json               ← 4 rule-driven findings
     verdict.json                ← Deterministic verdict
 
-demo.html                       ← Static HTML walkthrough
+demo-recording.html             ← 7-scene founder walkthrough (record with Loom)
+demo.html                       ← Full static HTML reference
 demo-script.md                  ← 90-second screen recording script
 README.md                       ← This file
 ```
 
 ---
 
-## How to regenerate
+## Validation
+
+All JSON artifacts in this package were validated before commit. Evidence hashes
+and audit-chain links were computed deterministically for this static walkthrough.
+
+To regenerate or re-validate (requires Python 3.11+, no other dependencies):
 
 ```bash
 python scripts/generate_yc_demo.py
 python scripts/validate_yc_demo.py
 ```
+
+Both scripts live in `scripts/` at the repo root.
 
 ---
 

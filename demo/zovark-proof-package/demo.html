@@ -48,7 +48,7 @@
   .replay-status { font-size: 1.5rem; font-weight: 700; color: #68d391; }
   .check-row { display: flex; gap: 12px; align-items: center; margin: 6px 0; font-size: 0.9rem; }
   .check-pass { color: #68d391; }
-  .check-none { color: #fc8181; }
+  .check-none { color: #68d391; }
   .hash-chain { font-family: monospace; font-size: 0.75rem; color: #718096; }
   .footer { text-align: center; padding: 32px; color: #4a5568; font-size: 0.8rem;
              border-top: 1px solid #2d3748; margin-top: 32px; }
@@ -221,8 +221,8 @@
         <div class="check-row"><span class="check-pass">✅</span> Evidence hashes verified (5/5)</div>
         <div class="check-row"><span class="check-pass">✅</span> Verdict recomputed: CONFIRMED_MALICIOUS</div>
         <div class="check-row"><span class="check-pass">✅</span> Verdict matched stored verdict</div>
-        <div class="check-row"><span class="check-none">❌</span> No live LLM call during replay</div>
-        <div class="check-row"><span class="check-none">❌</span> No live EDR call during replay</div>
+        <div class="check-row"><span class="check-none">✅</span> No live LLM call during replay</div>
+        <div class="check-row"><span class="check-none">✅</span> No live EDR call during replay</div>
       </div>
       <div style="margin-top:16px;font-size:0.85rem;color:#718096">
         Replay ID: <code>replay-001</code> · Mode: <code>recorded_output</code>
