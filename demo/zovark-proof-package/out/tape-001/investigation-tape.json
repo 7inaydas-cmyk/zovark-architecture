@@ -1,0 +1,116 @@
+{
+  "tape_id": "tape-001",
+  "tenant_id": "tenant-demo",
+  "created_at": "2026-05-02T09:14:22Z",
+  "schema_version": "tape/1.0",
+  "source_alert_ref": "alert-20260502-001",
+  "state": "closed",
+
+  "raw_evidence": [
+    {
+      "evidence_id": "ev-d7b730986af5a14c5d2575759dc83b8932a1276f5ba05a12cc717b247410e3eb",
+      "hash": "794e31dac2f14f5df1c802dd9bbf57dd56bdbba75e301bb972b2c3609d72e45d",
+      "source_type": "edr_alert",
+      "ingested_at": "2026-05-02T09:14:22Z"
+    },
+    {
+      "evidence_id": "ev-7c755e0085c1365255d70796c78f1ba27138aa47df7d629ee324cdf3ac34bd01",
+      "hash": "c65c0ef3f6dad53569a930b7260d503f146f89656759d76472c8875d4bac4f0d",
+      "source_type": "process_event",
+      "ingested_at": "2026-05-02T09:14:22Z"
+    },
+    {
+      "evidence_id": "ev-8f2999eb2acbf1ac444420c1dd46d803e8b52eb40577ac8478a3ee163af4c2f9",
+      "hash": "d8d1a7ef1e4f9bf578c6b27ad842880852b1b5280957f9e55768bf218df73649",
+      "source_type": "network_event",
+      "ingested_at": "2026-05-02T09:14:22Z"
+    },
+    {
+      "evidence_id": "ev-b6d04ab6ccf177c7d8559bb3875950cb86daa7d701f4206d4c68d0a337e0053c",
+      "hash": "f4a832d60d5598ed46ac4b72cc8f69ed2a030373ddfbaafd4ebbde8d9043c224",
+      "source_type": "credential_access",
+      "ingested_at": "2026-05-02T09:14:22Z"
+    },
+    {
+      "evidence_id": "ev-a4791665e335c31708b308bd79f11d6f4e266d1eeff828f9ee9a84e69b3a8fb5",
+      "hash": "a825d1974ff6e43f372428db972c99a27d86c3fd1222708b1395e791999a127d",
+      "source_type": "lateral_movement_attempt",
+      "ingested_at": "2026-05-02T09:14:22Z"
+    }
+  ],
+
+  "timeline": [
+    {"event_type": "alert_received", "at": "2026-05-02T09:14:22Z", "actor": "system", "evidence_refs": ["ev-d7b730986af5a14c5d2575759dc83b8932a1276f5ba05a12cc717b247410e3eb"], "decision_contribution": false},
+    {"event_type": "evidence_added", "at": "2026-05-02T09:14:22Z", "actor": "system", "evidence_refs": ["ev-d7b730986af5a14c5d2575759dc83b8932a1276f5ba05a12cc717b247410e3eb"], "decision_contribution": false},
+    {"event_type": "evidence_added", "at": "2026-05-02T09:14:22Z", "actor": "system", "evidence_refs": ["ev-7c755e0085c1365255d70796c78f1ba27138aa47df7d629ee324cdf3ac34bd01"], "decision_contribution": false},
+    {"event_type": "evidence_added", "at": "2026-05-02T09:14:22Z", "actor": "system", "evidence_refs": ["ev-8f2999eb2acbf1ac444420c1dd46d803e8b52eb40577ac8478a3ee163af4c2f9"], "decision_contribution": false},
+    {"event_type": "evidence_added", "at": "2026-05-02T09:14:22Z", "actor": "system", "evidence_refs": ["ev-b6d04ab6ccf177c7d8559bb3875950cb86daa7d701f4206d4c68d0a337e0053c"], "decision_contribution": false},
+    {"event_type": "evidence_added", "at": "2026-05-02T09:14:22Z", "actor": "system", "evidence_refs": ["ev-a4791665e335c31708b308bd79f11d6f4e266d1eeff828f9ee9a84e69b3a8fb5"], "decision_contribution": false},
+    {"event_type": "finding_recorded", "at": "2026-05-02T09:14:23Z", "actor": "system", "evidence_refs": ["ev-d7b730986af5a14c5d2575759dc83b8932a1276f5ba05a12cc717b247410e3eb", "ev-7c755e0085c1365255d70796c78f1ba27138aa47df7d629ee324cdf3ac34bd01"], "decision_contribution": true},
+    {"event_type": "finding_recorded", "at": "2026-05-02T09:14:23Z", "actor": "system", "evidence_refs": ["ev-7c755e0085c1365255d70796c78f1ba27138aa47df7d629ee324cdf3ac34bd01", "ev-8f2999eb2acbf1ac444420c1dd46d803e8b52eb40577ac8478a3ee163af4c2f9"], "decision_contribution": true},
+    {"event_type": "finding_recorded", "at": "2026-05-02T09:14:23Z", "actor": "system", "evidence_refs": ["ev-b6d04ab6ccf177c7d8559bb3875950cb86daa7d701f4206d4c68d0a337e0053c"], "decision_contribution": true},
+    {"event_type": "finding_recorded", "at": "2026-05-02T09:14:23Z", "actor": "system", "evidence_refs": ["ev-a4791665e335c31708b308bd79f11d6f4e266d1eeff828f9ee9a84e69b3a8fb5"], "decision_contribution": true},
+    {"event_type": "verdict_set", "at": "2026-05-02T09:14:23Z", "actor": "system", "evidence_refs": ["ev-d7b730986af5a14c5d2575759dc83b8932a1276f5ba05a12cc717b247410e3eb", "ev-7c755e0085c1365255d70796c78f1ba27138aa47df7d629ee324cdf3ac34bd01", "ev-8f2999eb2acbf1ac444420c1dd46d803e8b52eb40577ac8478a3ee163af4c2f9", "ev-b6d04ab6ccf177c7d8559bb3875950cb86daa7d701f4206d4c68d0a337e0053c", "ev-a4791665e335c31708b308bd79f11d6f4e266d1eeff828f9ee9a84e69b3a8fb5"], "decision_contribution": true},
+    {"event_type": "handoff_dispatched", "at": "2026-05-02T09:14:24Z", "actor": "system", "evidence_refs": ["ev-d7b730986af5a14c5d2575759dc83b8932a1276f5ba05a12cc717b247410e3eb", "ev-7c755e0085c1365255d70796c78f1ba27138aa47df7d629ee324cdf3ac34bd01", "ev-8f2999eb2acbf1ac444420c1dd46d803e8b52eb40577ac8478a3ee163af4c2f9", "ev-b6d04ab6ccf177c7d8559bb3875950cb86daa7d701f4206d4c68d0a337e0053c", "ev-a4791665e335c31708b308bd79f11d6f4e266d1eeff828f9ee9a84e69b3a8fb5"], "decision_contribution": false},
+    {"event_type": "audit_signed", "at": "2026-05-02T09:14:25Z", "actor": "system", "evidence_refs": [], "decision_contribution": false}
+  ],
+
+  "findings": [
+    {
+      "title": "Office application spawned encoded PowerShell",
+      "severity": "high",
+      "evidence_refs": ["ev-d7b730986af5a14c5d2575759dc83b8932a1276f5ba05a12cc717b247410e3eb", "ev-7c755e0085c1365255d70796c78f1ba27138aa47df7d629ee324cdf3ac34bd01"],
+      "model_contribution": false,
+      "rule_id": "RULE-OFFICE-SPAWN-ENCODED-PS",
+      "mitre_technique": "T1059.001"
+    },
+    {
+      "title": "PowerShell contacted external IP over HTTPS",
+      "severity": "high",
+      "evidence_refs": ["ev-7c755e0085c1365255d70796c78f1ba27138aa47df7d629ee324cdf3ac34bd01", "ev-8f2999eb2acbf1ac444420c1dd46d803e8b52eb40577ac8478a3ee163af4c2f9"],
+      "model_contribution": false,
+      "rule_id": "RULE-PS-EXTERNAL-C2",
+      "mitre_technique": "T1071.001"
+    },
+    {
+      "title": "Credential access via LSASS memory read",
+      "severity": "critical",
+      "evidence_refs": ["ev-b6d04ab6ccf177c7d8559bb3875950cb86daa7d701f4206d4c68d0a337e0053c"],
+      "model_contribution": false,
+      "rule_id": "RULE-LSASS-DUMP",
+      "mitre_technique": "T1003.001"
+    },
+    {
+      "title": "Lateral movement attempt to HOST-13 (blocked by firewall)",
+      "severity": "high",
+      "evidence_refs": ["ev-a4791665e335c31708b308bd79f11d6f4e266d1eeff828f9ee9a84e69b3a8fb5"],
+      "model_contribution": false,
+      "rule_id": "RULE-SMB-LATERAL-MOVEMENT",
+      "mitre_technique": "T1021.002"
+    }
+  ],
+
+  "verdict": {
+    "value": "confirmed_malicious",
+    "evidence_refs": [
+      "ev-d7b730986af5a14c5d2575759dc83b8932a1276f5ba05a12cc717b247410e3eb",
+      "ev-7c755e0085c1365255d70796c78f1ba27138aa47df7d629ee324cdf3ac34bd01",
+      "ev-8f2999eb2acbf1ac444420c1dd46d803e8b52eb40577ac8478a3ee163af4c2f9",
+      "ev-b6d04ab6ccf177c7d8559bb3875950cb86daa7d701f4206d4c68d0a337e0053c",
+      "ev-a4791665e335c31708b308bd79f11d6f4e266d1eeff828f9ee9a84e69b3a8fb5"
+    ],
+    "model_contribution": false,
+    "signing_tag": "sig-9d97f0257f869f0cb5c84dfb81e968dc3c7f2f73961718d29454a124a238adc5",
+    "set_at": "2026-05-02T09:14:23Z"
+  },
+
+  "handoff_ref": "handoff-9f71c494eb9924ec",
+  "handoff_summary": {
+    "action_type": "isolate_host",
+    "target": {"kind": "host", "identifier": "HOST-12"},
+    "approval_mode": "approval_required",
+    "execution_status": "pending"
+  },
+
+  "audit_ref": "audit-entry-1"
+}

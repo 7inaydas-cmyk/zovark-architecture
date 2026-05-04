@@ -1,0 +1,48 @@
+[
+  {
+    "title": "Office application spawned encoded PowerShell",
+    "severity": "high",
+    "evidence_refs": [
+      "ev-d7b730986af5a14c5d2575759dc83b8932a1276f5ba05a12cc717b247410e3eb",
+      "ev-7c755e0085c1365255d70796c78f1ba27138aa47df7d629ee324cdf3ac34bd01"
+    ],
+    "model_contribution": false,
+    "rule_id": "RULE-OFFICE-SPAWN-ENCODED-PS",
+    "mitre_technique": "T1059.001",
+    "mitre_technique_name": "Command and Scripting Interpreter: PowerShell"
+  },
+  {
+    "title": "PowerShell contacted external IP over HTTPS",
+    "severity": "high",
+    "evidence_refs": [
+      "ev-7c755e0085c1365255d70796c78f1ba27138aa47df7d629ee324cdf3ac34bd01",
+      "ev-8f2999eb2acbf1ac444420c1dd46d803e8b52eb40577ac8478a3ee163af4c2f9"
+    ],
+    "model_contribution": false,
+    "rule_id": "RULE-PS-EXTERNAL-C2",
+    "mitre_technique": "T1071.001",
+    "mitre_technique_name": "Application Layer Protocol: Web Protocols"
+  },
+  {
+    "title": "Credential access via LSASS memory read",
+    "severity": "critical",
+    "evidence_refs": [
+      "ev-b6d04ab6ccf177c7d8559bb3875950cb86daa7d701f4206d4c68d0a337e0053c"
+    ],
+    "model_contribution": false,
+    "rule_id": "RULE-LSASS-DUMP",
+    "mitre_technique": "T1003.001",
+    "mitre_technique_name": "OS Credential Dumping: LSASS Memory"
+  },
+  {
+    "title": "Lateral movement attempt to HOST-13 (blocked by firewall)",
+    "severity": "high",
+    "evidence_refs": [
+      "ev-a4791665e335c31708b308bd79f11d6f4e266d1eeff828f9ee9a84e69b3a8fb5"
+    ],
+    "model_contribution": false,
+    "rule_id": "RULE-SMB-LATERAL-MOVEMENT",
+    "mitre_technique": "T1021.002",
+    "mitre_technique_name": "Remote Services: SMB/Windows Admin Shares"
+  }
+]

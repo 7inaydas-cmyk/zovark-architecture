@@ -1,0 +1,64 @@
+{
+  "handoff_id": "handoff-9f71c494eb9924ec",
+  "tenant_id": "tenant-demo",
+  "tape_ref": "tape-001",
+
+  "action_type": "isolate_host",
+  "target": {
+    "kind": "host",
+    "identifier": "HOST-12",
+    "fqdn": "HOST-12.corp.example",
+    "validated_at": "2026-05-02T09:14:00Z"
+  },
+
+  "blast_radius": {
+    "directly_affected": ["HOST-12"],
+    "services_at_risk": [
+      "Any user sessions active on HOST-12 will be terminated",
+      "Any processes running on HOST-12 will lose network access",
+      "Shared drives mounted from HOST-12 will become unavailable"
+    ],
+    "lateral_movement_blocked": ["HOST-13 (SMB attempt was already blocked by firewall)"],
+    "estimated_business_impact": "Single workstation isolation. No shared infrastructure dependency identified in evidence."
+  },
+
+  "evidence_refs": [
+    "ev-d7b730986af5a14c5d2575759dc83b8932a1276f5ba05a12cc717b247410e3eb",
+    "ev-7c755e0085c1365255d70796c78f1ba27138aa47df7d629ee324cdf3ac34bd01",
+    "ev-8f2999eb2acbf1ac444420c1dd46d803e8b52eb40577ac8478a3ee163af4c2f9",
+    "ev-b6d04ab6ccf177c7d8559bb3875950cb86daa7d701f4206d4c68d0a337e0053c",
+    "ev-a4791665e335c31708b308bd79f11d6f4e266d1eeff828f9ee9a84e69b3a8fb5"
+  ],
+
+  "policy_snapshot": "c78a332f21fbcd4493f9ac51e76255569623ac66793afb6e932c8ac73567e3cb",
+  "policy_snapshot_version": "0.0.1-bootstrap",
+
+  "approval_mode": "approval_required",
+  "authorization_record_ref": "vault://placeholder/bootstrap",
+
+  "execution_result": {
+    "status": "pending",
+    "reason": "recommendation_only_no_dispatcher_in_slice_001",
+    "started_at": null,
+    "completed_at": null,
+    "vendor_response_ref": null,
+    "error": null
+  },
+
+  "idempotency_key": "9f71c494eb9924ec832e347350f7643e71cdbcda7bcb7d568c2350ebf853271c",
+
+  "reversal_or_recovery_plan": {
+    "reversibility_class": "reversible_by_edr",
+    "vendor_reversal_action": "release_isolation",
+    "vendor_reversal_target": {
+      "kind": "host",
+      "identifier": "HOST-12"
+    },
+    "reversal_window": "PT4H",
+    "manual_steps": [],
+    "recovery_notes": "If isolation is approved and later found to be a false positive, the EDR vendor API can release isolation automatically. No manual OS-level steps required. Credential rotation for CORP\\jsmith is recommended regardless of isolation outcome given the LSASS access event."
+  },
+
+  "audit_ref": "audit-entry-1",
+  "replay_linkage": []
+}
