@@ -54,7 +54,7 @@ td{padding:8px 10px;border-bottom:1px solid #111827;vertical-align:top}
 <body>
 <div id="shell">
   <div id="topbar">
-    <div class="brand"><strong>Zovark</strong> — AI-native proof layer for high-stakes security response</div>
+    <div class="brand"><strong>Zovark</strong> — deterministic proof layer for high-stakes security response</div>
     <div class="notice">Static Slice 001 proof-package walkthrough — not a live EDR integration</div>
   </div>
   <div id="progress">
@@ -81,6 +81,7 @@ const SCENES = [
     render: () => `
       <div class="scene-inner" style="text-align:center">
         <div class="scene-tag">Scene 1 of 7</div>
+        <div style="font-size:1rem;color:#6b7280;margin-bottom:14px;font-style:italic">An AI system just recommended a disruptive action. A human needs to decide.</div>
         <div class="scene-title" style="font-size:3rem">Should we approve<br>host isolation?</div>
         <div class="scene-sub" style="margin:0 auto 40px;text-align:center">
           HOST-12 · tenant-demo · 2026-05-02T09:14Z
@@ -301,6 +302,9 @@ const SCENES = [
               <span style="color:#4b5563">Static Slice 001 walkthrough — not a live EDR integration.</span>
             </div>
           </div>
+        </div>
+        <div style="margin-top:24px;text-align:center;font-size:1.05rem;font-weight:700;color:#f9fafb">
+          Zovark is not another alert summary. It is proof before response.
         </div>
       </div>`
   }
