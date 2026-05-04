@@ -13,7 +13,7 @@
   {
     "evidence_refs": [
       "ev-7c755e0085c1365255d70796c78f1ba27138aa47df7d629ee324cdf3ac34bd01",
-      "ev-8f2999eb2acbf1ac444420c1dd46d803e8b52eb40577ac8478a3ee163af4c2f9"
+      "ev-ec12be18dc1bb56096f56e944d55fea59251f5c9f251d2344ca0b3da98858d5a"
     ],
     "mitre_technique": "T1071.001",
     "model_contribution": false,

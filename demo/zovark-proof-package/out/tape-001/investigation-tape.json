@@ -16,7 +16,7 @@
     {
       "evidence_refs": [
         "ev-7c755e0085c1365255d70796c78f1ba27138aa47df7d629ee324cdf3ac34bd01",
-        "ev-8f2999eb2acbf1ac444420c1dd46d803e8b52eb40577ac8478a3ee163af4c2f9"
+        "ev-ec12be18dc1bb56096f56e944d55fea59251f5c9f251d2344ca0b3da98858d5a"
       ],
       "mitre_technique": "T1071.001",
       "model_contribution": false,
@@ -69,8 +69,8 @@
       "source_type": "process_event"
     },
     {
-      "evidence_id": "ev-8f2999eb2acbf1ac444420c1dd46d803e8b52eb40577ac8478a3ee163af4c2f9",
-      "hash": "d8d1a7ef1e4f9bf578c6b27ad842880852b1b5280957f9e55768bf218df73649",
+      "evidence_id": "ev-ec12be18dc1bb56096f56e944d55fea59251f5c9f251d2344ca0b3da98858d5a",
+      "hash": "4e7cdb5bdc70c7b9da486f935a9f361c2d930a20a4721a068ff7ddf4a815ed63",
       "ingested_at": "2026-05-02T09:14:22Z",
       "source_type": "network_event"
     },
@@ -126,7 +126,7 @@
       "decision_contribution": false,
       "event_type": "evidence_added",
       "evidence_refs": [
-        "ev-8f2999eb2acbf1ac444420c1dd46d803e8b52eb40577ac8478a3ee163af4c2f9"
+        "ev-ec12be18dc1bb56096f56e944d55fea59251f5c9f251d2344ca0b3da98858d5a"
       ]
     },
     {
@@ -164,7 +164,7 @@
       "event_type": "finding_recorded",
       "evidence_refs": [
         "ev-7c755e0085c1365255d70796c78f1ba27138aa47df7d629ee324cdf3ac34bd01",
-        "ev-8f2999eb2acbf1ac444420c1dd46d803e8b52eb40577ac8478a3ee163af4c2f9"
+        "ev-ec12be18dc1bb56096f56e944d55fea59251f5c9f251d2344ca0b3da98858d5a"
       ]
     },
     {
@@ -193,7 +193,7 @@
       "evidence_refs": [
         "ev-d7b730986af5a14c5d2575759dc83b8932a1276f5ba05a12cc717b247410e3eb",
         "ev-7c755e0085c1365255d70796c78f1ba27138aa47df7d629ee324cdf3ac34bd01",
-        "ev-8f2999eb2acbf1ac444420c1dd46d803e8b52eb40577ac8478a3ee163af4c2f9",
+        "ev-ec12be18dc1bb56096f56e944d55fea59251f5c9f251d2344ca0b3da98858d5a",
         "ev-b6d04ab6ccf177c7d8559bb3875950cb86daa7d701f4206d4c68d0a337e0053c",
         "ev-a4791665e335c31708b308bd79f11d6f4e266d1eeff828f9ee9a84e69b3a8fb5"
       ]
@@ -206,7 +206,7 @@
       "evidence_refs": [
         "ev-d7b730986af5a14c5d2575759dc83b8932a1276f5ba05a12cc717b247410e3eb",
         "ev-7c755e0085c1365255d70796c78f1ba27138aa47df7d629ee324cdf3ac34bd01",
-        "ev-8f2999eb2acbf1ac444420c1dd46d803e8b52eb40577ac8478a3ee163af4c2f9",
+        "ev-ec12be18dc1bb56096f56e944d55fea59251f5c9f251d2344ca0b3da98858d5a",
         "ev-b6d04ab6ccf177c7d8559bb3875950cb86daa7d701f4206d4c68d0a337e0053c",
         "ev-a4791665e335c31708b308bd79f11d6f4e266d1eeff828f9ee9a84e69b3a8fb5"
       ]
@@ -224,14 +224,14 @@
     "evidence_refs": [
       "ev-d7b730986af5a14c5d2575759dc83b8932a1276f5ba05a12cc717b247410e3eb",
       "ev-7c755e0085c1365255d70796c78f1ba27138aa47df7d629ee324cdf3ac34bd01",
-      "ev-8f2999eb2acbf1ac444420c1dd46d803e8b52eb40577ac8478a3ee163af4c2f9",
+      "ev-ec12be18dc1bb56096f56e944d55fea59251f5c9f251d2344ca0b3da98858d5a",
       "ev-b6d04ab6ccf177c7d8559bb3875950cb86daa7d701f4206d4c68d0a337e0053c",
       "ev-a4791665e335c31708b308bd79f11d6f4e266d1eeff828f9ee9a84e69b3a8fb5"
     ],
     "highest_severity_finding": "critical (credential_access via LSASS)",
     "model_contribution": false,
     "set_at": "2026-05-02T09:14:23Z",
-    "signing_tag": "sig-772cf462adf840cfe311e2b5606e74fa49995b5b3d690c2cd4a78d3db1548df2",
+    "signing_tag": "sig-cd57e7269f949ad8dc7c230858a12d340f9e1a82f5a74f12409bc5e06ce3b2b8",
     "value": "confirmed_malicious"
   }
 }

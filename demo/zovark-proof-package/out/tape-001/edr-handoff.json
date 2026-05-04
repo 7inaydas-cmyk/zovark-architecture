@@ -20,7 +20,7 @@
   "evidence_refs": [
     "ev-d7b730986af5a14c5d2575759dc83b8932a1276f5ba05a12cc717b247410e3eb",
     "ev-7c755e0085c1365255d70796c78f1ba27138aa47df7d629ee324cdf3ac34bd01",
-    "ev-8f2999eb2acbf1ac444420c1dd46d803e8b52eb40577ac8478a3ee163af4c2f9",
+    "ev-ec12be18dc1bb56096f56e944d55fea59251f5c9f251d2344ca0b3da98858d5a",
     "ev-b6d04ab6ccf177c7d8559bb3875950cb86daa7d701f4206d4c68d0a337e0053c",
     "ev-a4791665e335c31708b308bd79f11d6f4e266d1eeff828f9ee9a84e69b3a8fb5"
   ],
@@ -39,7 +39,7 @@
   "replay_linkage": [],
   "reversal_or_recovery_plan": {
     "manual_steps": [],
-    "recovery_notes": "If isolation is approved and later found to be a false positive, the EDR vendor API can release isolation automatically. No manual OS-level steps required. Credential rotation for CORP\\jsmith is recommended regardless of isolation outcome given the LSASS access event.",
+    "recovery_notes": "In a live EDR integration, the expected reversal action would be release_isolation. In Slice 001, this is a recommendation only; no EDR action is dispatched. Credential rotation for CORP\\jsmith is recommended regardless of isolation outcome given the LSASS access event.",
     "reversibility_class": "reversible_by_edr",
     "reversal_window": "PT4H",
     "vendor_reversal_action": "release_isolation",

@@ -38,7 +38,7 @@
       "bytes_received": 98304,
       "bytes_sent": 1842,
       "classification": "external_c2_candidate",
-      "destination_ip": "192.168.1.100",
+      "destination_ip": "203.0.113.50",
       "destination_port": 443,
       "event_id": "ne-001",
       "event_type": "network_event",

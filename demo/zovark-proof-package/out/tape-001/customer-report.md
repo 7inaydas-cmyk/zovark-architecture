@@ -1,6 +1,6 @@
 # Zovark Proof Package
 
-**Zovark is the audit-grade evidence layer for AI-assisted SOC response.**
+**Zovark is the AI-native proof layer for high-stakes security response.**
 
 ---
 
@@ -24,7 +24,7 @@ At 09:14 UTC on 2026-05-02, a user on HOST-12 opened a document that caused
 Microsoft Word (`winword.exe`) to spawn a hidden PowerShell process with an
 encoded command. The PowerShell process then:
 
-1. Connected to an external IP (192.168.1.100) over HTTPS and downloaded 96 KB.
+1. Connected to an external IP (203.0.113.50) over HTTPS and downloaded 96 KB.
 2. Attempted to read LSASS memory — a credential dumping technique (T1003.001).
 3. Attempted to move laterally to HOST-13 via SMB (blocked by firewall).
 
@@ -40,7 +40,7 @@ lateral movement.
 |---|---|---|---|---|
 | 1 | ev-d7b730986af5a14c5...3eb | edr_alert | 09:14:00Z | winword.exe spawned powershell.exe |
 | 2 | ev-7c755e0085c136525...d01 | process_event | 09:14:03Z | powershell.exe -EncodedCommand (hidden window) |
-| 3 | ev-8f2999eb2acbf1ac4...f9 | network_event | 09:14:07Z | 192.168.1.100:443, 98 KB received |
+| 3 | ev-ec12be18dc1bb5609...f9 | network_event | 09:14:07Z | 203.0.113.50:443, 98 KB received |
 | 4 | ev-b6d04ab6ccf177c7d...3c | credential_access | 09:14:11Z | LSASS memory read (T1003.001) |
 | 5 | ev-a4791665e335c3170...b5 | lateral_movement_attempt | 09:14:19Z | SMB to HOST-13 (blocked) |
 
@@ -121,14 +121,14 @@ access event.
 
 If isolation is approved and later found to be a false positive:
 
-- The EDR vendor API can release isolation automatically (`release_isolation`).
-- No manual OS-level steps are required.
+- In a live EDR integration, the expected reversal action would be `release_isolation`.
+- In Slice 001, this is a recommendation only; no EDR action is dispatched.
 - Reversal window: 4 hours from dispatch.
 
 **Regardless of isolation outcome:**
 - Rotate credentials for CORP\jsmith (LSASS was accessed; assume credentials compromised).
 - Review the downloaded payload at `C:\Temp\svchost.exe` (decoded from the PowerShell command).
-- Investigate the C2 IP 192.168.1.100.
+- Investigate the C2 IP 203.0.113.50.
 
 ---
 
@@ -159,8 +159,8 @@ Replay mode: `recorded_output`
 
 | Entry | Event | Entry ID | Hash |
 |---|---|---|---|
-| 1 | tape_recording_closed | audit-entry-1 | 5cfefb79ab9b421b...35a5 |
-| 2 | tape_replayed | audit-entry-2 | 45070e44a4eee12d...4be3 |
+| 1 | tape_recording_closed | audit-entry-1 | 5306594144413186...7350 |
+| 2 | tape_replayed | audit-entry-2 | e9fc39279bddfb2b...be4a |
 
 Chain: hash-linked. Entry 2's `prev_entry_hash` equals entry 1's `this_entry_hash`.
 Root signing deferred to M1+ (production vault runtime).
@@ -174,7 +174,7 @@ Tenant: tenant-demo
 Source alert: alert-20260502-001
 Generated: 2026-05-02T09:14:22Z
 Schema: tape/1.0
-Signing tag: sig-772cf462adf840cfe311e2b5606e74fa49995b5b3d690c2cd4a78d3db1548df2
+Signing tag: sig-cd57e7269f949ad8dc7c230858a12d340f9e1a82f5a74f12409bc5e06ce3b2b8
 
 ---
 

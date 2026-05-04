@@ -100,7 +100,7 @@
     <div class="field"><span class="label">Source process</span><span class="value"><code>winword.exe</code></span></div>
     <div class="field"><span class="label">Child process</span><span class="value"><code>powershell.exe -WindowStyle Hidden -EncodedCommand …</code></span></div>
     <div class="field"><span class="label">User</span><span class="value">CORP\jsmith</span></div>
-    <div class="field"><span class="label">C2 contact</span><span class="value">192.168.1.100:443 (HTTPS) · 98 KB received</span></div>
+    <div class="field"><span class="label">C2 contact</span><span class="value">203.0.113.50:443 (HTTPS) · 98 KB received</span></div>
     <div class="field"><span class="label">Credential access</span><span class="value">LSASS memory read (T1003.001)</span></div>
     <div class="field"><span class="label">Lateral movement</span><span class="value">SMB to HOST-13 — blocked by firewall (T1021.002)</span></div>
   </div>
@@ -125,8 +125,8 @@
         </tr>
         <tr>
           <td>Network Event</td>
-          <td style="font-size:0.75em;font-family:monospace">ev-8f2999eb2acbf1ac44442…</td>
-          <td style="font-size:0.75em;font-family:monospace">d8d1a7ef1e4f9bf578c6b27a…</td>
+          <td style="font-size:0.75em;font-family:monospace">ev-ec12be18dc1bb56096f56…</td>
+          <td style="font-size:0.75em;font-family:monospace">4e7cdb5bdc70c7b9da486f93…</td>
           <td>2026-05-02T09:14:22Z</td>
         </tr>
         <tr>
@@ -160,7 +160,7 @@
           <td>PowerShell contacted external IP over HTTPS</td>
           <td style="color:#e67e22;font-weight:bold">HIGH</td>
           <td><code>T1071.001</code></td>
-          <td style="font-size:0.75em">ev-7c755e0085c13…, ev-8f2999eb2acbf…</td>
+          <td style="font-size:0.75em">ev-7c755e0085c13…, ev-ec12be18dc1bb…</td>
         </tr>
         <tr>
           <td>Credential access via LSASS memory read</td>
@@ -183,7 +183,7 @@
     <div class="verdict-box">
       <div class="verdict-value">CONFIRMED_MALICIOUS</div>
       <div class="verdict-rule">Derivation rule: any finding with severity critical or high → confirmed_malicious</div>
-      <div class="verdict-rule" style="margin-top:8px">model_contribution: false · signing_tag: <code>sig-772cf462adf840cfe311e2b5606e…</code></div>
+      <div class="verdict-rule" style="margin-top:8px">model_contribution: false · signing_tag: <code>sig-cd57e7269f949ad8dc7c230858a1…</code></div>
     </div>
   </div>
 
@@ -209,7 +209,7 @@
     <div class="field"><span class="label">Reversal window</span><span class="value">4 hours from dispatch</span></div>
     <div class="field"><span class="label">Manual steps</span><span class="value">None required</span></div>
     <div class="field"><span class="label">Recovery notes</span>
-      <span class="value">If isolation is approved and later found to be a false positive, the EDR vendor API can release isolation automatically. No manual OS-level steps required. Credential rotation for CORP\jsmith is recommended regardless of isolation outcome given the LSASS access event.</span></div>
+      <span class="value">In a live EDR integration, the expected reversal action would be release_isolation. In Slice 001, this is a recommendation only; no EDR action is dispatched. Credential rotation for CORP\jsmith is recommended regardless of isolation outcome given the LSASS access event.</span></div>
   </div>
 
   <!-- REPLAY PROOF -->
@@ -235,11 +235,11 @@
     <h2>🔗 Audit Chain</h2>
     <div class="field"><span class="label">Entry 1</span>
       <span class="value hash-chain">tape_recording_closed · audit-entry-1<br>
-        this_entry_hash: 5cfefb79ab9b421b1c41b8a710b5783e115110973a6db75a…</span></div>
+        this_entry_hash: 5306594144413186fc19cd8370e20ce2cac9f047806c7443…</span></div>
     <div class="field"><span class="label">Entry 2</span>
       <span class="value hash-chain">tape_replayed · audit-entry-2<br>
-        prev_entry_hash: 5cfefb79ab9b421b1c41b8a710b5783e115110973a6db75a…<br>
-        this_entry_hash: 45070e44a4eee12d01a3b96cc3ee9e360096ca8e42ccebbe…</span></div>
+        prev_entry_hash: 5306594144413186fc19cd8370e20ce2cac9f047806c7443…<br>
+        this_entry_hash: e9fc39279bddfb2bc49881914944eb15103dfa79f9e1d721…</span></div>
     <div class="field"><span class="label">Chain integrity</span>
       <span class="value"><span class="badge badge-green">hash-linked</span>
         · unsigned tail · root signing deferred to M1+</span></div>
@@ -248,7 +248,7 @@
 </div>
 
 <div class="footer">
-  Zovark is the audit-grade evidence layer for AI-assisted SOC response.<br>
+  Zovark is the AI-native proof layer for high-stakes security response.<br>
   Static Slice 001 proof-package walkthrough — not a live EDR integration.<br>
   Full pipeline implementation in progress.
 </div>

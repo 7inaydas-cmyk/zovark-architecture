@@ -125,7 +125,7 @@ NE_001 = {
     "bytes_received": 98304,
     "bytes_sent": 1842,
     "classification": "external_c2_candidate",
-    "destination_ip": "192.168.1.100",
+    "destination_ip": "203.0.113.50",
     "destination_port": 443,
     "event_id": "ne-001",
     "event_type": "network_event",
@@ -343,9 +343,9 @@ def build_handoff(ledger: list[dict]) -> dict:
         "reversal_or_recovery_plan": {
             "manual_steps": [],
             "recovery_notes": (
-                "If isolation is approved and later found to be a false positive, "
-                "the EDR vendor API can release isolation automatically. "
-                "No manual OS-level steps required. "
+                "In a live EDR integration, the expected reversal action would be "
+                "release_isolation. In Slice 001, this is a recommendation only; "
+                "no EDR action is dispatched. "
                 "Credential rotation for CORP\\jsmith is recommended regardless "
                 "of isolation outcome given the LSASS access event."
             ),
@@ -528,7 +528,7 @@ SAMPLE_JSON_CONTENT = {
             "bytes_received": 98304,
             "bytes_sent": 1842,
             "classification": "external_c2_candidate",
-            "destination_ip": "192.168.1.100",
+            "destination_ip": "203.0.113.50",
             "destination_port": 443,
             "event_id": "ne-001",
             "event_type": "network_event",
@@ -576,7 +576,7 @@ def build_customer_report(ledger, findings, verdict, handoff, replay_report) -> 
     lines = [
         "# Zovark Proof Package",
         "",
-        "**Zovark is the audit-grade evidence layer for AI-assisted SOC response.**",
+        "**Zovark is the AI-native proof layer for high-stakes security response.**",
         "",
         "---",
         "",
@@ -600,7 +600,7 @@ def build_customer_report(ledger, findings, verdict, handoff, replay_report) -> 
         "Microsoft Word (`winword.exe`) to spawn a hidden PowerShell process with an",
         "encoded command. The PowerShell process then:",
         "",
-        "1. Connected to an external IP (192.168.1.100) over HTTPS and downloaded 96 KB.",
+        "1. Connected to an external IP (203.0.113.50) over HTTPS and downloaded 96 KB.",
         "2. Attempted to read LSASS memory — a credential dumping technique (T1003.001).",
         "3. Attempted to move laterally to HOST-13 via SMB (blocked by firewall).",
         "",
@@ -616,7 +616,7 @@ def build_customer_report(ledger, findings, verdict, handoff, replay_report) -> 
         "|---|---|---|---|---|",
         f"| 1 | {ev_ids[0][:20]}...3eb | edr_alert | 09:14:00Z | winword.exe spawned powershell.exe |",
         f"| 2 | {ev_ids[1][:20]}...d01 | process_event | 09:14:03Z | powershell.exe -EncodedCommand (hidden window) |",
-        f"| 3 | {ev_ids[2][:20]}...f9 | network_event | 09:14:07Z | 192.168.1.100:443, 98 KB received |",
+        f"| 3 | {ev_ids[2][:20]}...f9 | network_event | 09:14:07Z | 203.0.113.50:443, 98 KB received |",
         f"| 4 | {ev_ids[3][:20]}...3c | credential_access | 09:14:11Z | LSASS memory read (T1003.001) |",
         f"| 5 | {ev_ids[4][:20]}...b5 | lateral_movement_attempt | 09:14:19Z | SMB to HOST-13 (blocked) |",
         "",
@@ -697,14 +697,14 @@ def build_customer_report(ledger, findings, verdict, handoff, replay_report) -> 
         "",
         "If isolation is approved and later found to be a false positive:",
         "",
-        "- The EDR vendor API can release isolation automatically (`release_isolation`).",
-        "- No manual OS-level steps are required.",
+        "- In a live EDR integration, the expected reversal action would be `release_isolation`.",
+        "- In Slice 001, this is a recommendation only; no EDR action is dispatched.",
         "- Reversal window: 4 hours from dispatch.",
         "",
         "**Regardless of isolation outcome:**",
         "- Rotate credentials for CORP\\jsmith (LSASS was accessed; assume credentials compromised).",
         "- Review the downloaded payload at `C:\\Temp\\svchost.exe` (decoded from the PowerShell command).",
-        "- Investigate the C2 IP 192.168.1.100.",
+        "- Investigate the C2 IP 203.0.113.50.",
         "",
         "---",
         "",
@@ -1113,7 +1113,7 @@ def build_demo_html(ledger, findings, verdict, handoff, replay_report) -> str:
     <div class="field"><span class="label">Source process</span><span class="value"><code>winword.exe</code></span></div>
     <div class="field"><span class="label">Child process</span><span class="value"><code>powershell.exe -WindowStyle Hidden -EncodedCommand …</code></span></div>
     <div class="field"><span class="label">User</span><span class="value">CORP\\jsmith</span></div>
-    <div class="field"><span class="label">C2 contact</span><span class="value">192.168.1.100:443 (HTTPS) · 98 KB received</span></div>
+    <div class="field"><span class="label">C2 contact</span><span class="value">203.0.113.50:443 (HTTPS) · 98 KB received</span></div>
     <div class="field"><span class="label">Credential access</span><span class="value">LSASS memory read (T1003.001)</span></div>
     <div class="field"><span class="label">Lateral movement</span><span class="value">SMB to HOST-13 — blocked by firewall (T1021.002)</span></div>
   </div>
@@ -1207,7 +1207,7 @@ def build_demo_html(ledger, findings, verdict, handoff, replay_report) -> str:
 </div>
 
 <div class="footer">
-  Zovark is the audit-grade evidence layer for AI-assisted SOC response.<br>
+  Zovark is the AI-native proof layer for high-stakes security response.<br>
   Static Slice 001 proof-package walkthrough — not a live EDR integration.<br>
   Full pipeline implementation in progress.
 </div>
