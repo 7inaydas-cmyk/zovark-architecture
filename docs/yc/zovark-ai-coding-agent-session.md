@@ -30,10 +30,9 @@ EDR-style alert
 This was not a live EDR integration. It was not autonomous response. No network
 calls were made. No AI model ran during the session or during replay.
 
-The value of the session is what it demonstrates about how I use AI coding tools:
-tight constraints, deterministic artifacts, validation before commit, and a clear
-stop condition. The agent was not given a blank canvas — it was given a spec and
-told exactly what it could and could not do.
+The value of the session is not the artifacts — it is the workflow. The agent was
+given a spec and told exactly what it could and could not do. Tight constraints,
+deterministic artifacts, validation before commit, and a clear stop condition.
 
 ---
 
@@ -289,20 +288,17 @@ All commits on branch `mvp/slice-001-claude-implementation`.
 
 ## 8. Why I am proud of this session
 
-I am proud of this session because it shows how I use AI coding tools under
-constraints. The agent was not allowed to invent product scope, call external
-services, or produce non-deterministic output. It had to compute real SHA-256
-hashes, link an audit chain, validate 30 assertions, and stop after the defined
-task.
+This is the workflow I want to use to build Zovark: spec → artifact → validation →
+commit. The demo package is not the product. It is evidence that the workflow is real.
+
+The agent was not allowed to invent product scope, call external services, or
+produce non-deterministic output. It had to compute real SHA-256 hashes, link an
+audit chain, validate 30 assertions, and stop after the defined task.
 
 Every constraint was stated explicitly before the agent started. When the agent
 produced something that implied a capability that does not exist yet — live EDR
 reversal — I caught it in review and gave a precise correction. The agent applied
 the fix, re-ran validation, and confirmed the output was clean.
-
-This is the same workflow I want to use to build Zovark: spec → artifact →
-validation → commit. The demo package is not the product. It is evidence that the
-workflow is real.
 
 ---
 
