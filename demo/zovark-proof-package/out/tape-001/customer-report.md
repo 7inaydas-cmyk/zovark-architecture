@@ -38,11 +38,11 @@ lateral movement.
 
 | # | Evidence ID | Type | Timestamp | Key detail |
 |---|---|---|---|---|
-| 1 | ev-d7b730...3eb | edr_alert | 09:14:00Z | winword.exe spawned powershell.exe |
-| 2 | ev-7c755e...d01 | process_event | 09:14:03Z | powershell.exe -EncodedCommand (hidden window) |
-| 3 | ev-8f2999...f9 | network_event | 09:14:07Z | 192.168.1.100:443, 98 KB received |
-| 4 | ev-b6d04a...3c | credential_access | 09:14:11Z | LSASS memory read (T1003.001) |
-| 5 | ev-a47916...b5 | lateral_movement_attempt | 09:14:19Z | SMB to HOST-13 (blocked) |
+| 1 | ev-d7b730986af5a14c5...3eb | edr_alert | 09:14:00Z | winword.exe spawned powershell.exe |
+| 2 | ev-7c755e0085c136525...d01 | process_event | 09:14:03Z | powershell.exe -EncodedCommand (hidden window) |
+| 3 | ev-8f2999eb2acbf1ac4...f9 | network_event | 09:14:07Z | 192.168.1.100:443, 98 KB received |
+| 4 | ev-b6d04ab6ccf177c7d...3c | credential_access | 09:14:11Z | LSASS memory read (T1003.001) |
+| 5 | ev-a4791665e335c3170...b5 | lateral_movement_attempt | 09:14:19Z | SMB to HOST-13 (blocked) |
 
 Each evidence entry carries a SHA-256 hash of its exact content. The hashes are
 verified during replay — any post-ingestion tampering would cause replay to fail
@@ -159,8 +159,8 @@ Replay mode: `recorded_output`
 
 | Entry | Event | Entry ID | Hash |
 |---|---|---|---|
-| 1 | tape_recording_closed | audit-entry-1 | af0c6d7a...3728 |
-| 2 | tape_replayed | audit-entry-2 | c14ff0b3...5c16 |
+| 1 | tape_recording_closed | audit-entry-1 | 5cfefb79ab9b421b...35a5 |
+| 2 | tape_replayed | audit-entry-2 | 45070e44a4eee12d...4be3 |
 
 Chain: hash-linked. Entry 2's `prev_entry_hash` equals entry 1's `this_entry_hash`.
 Root signing deferred to M1+ (production vault runtime).
@@ -174,7 +174,7 @@ Tenant: tenant-demo
 Source alert: alert-20260502-001
 Generated: 2026-05-02T09:14:22Z
 Schema: tape/1.0
-Signing tag: sig-9d97f0257f869f0cb5c84dfb81e968dc3c7f2f73961718d29454a124a238adc5
+Signing tag: sig-772cf462adf840cfe311e2b5606e74fa49995b5b3d690c2cd4a78d3db1548df2
 
 ---
 

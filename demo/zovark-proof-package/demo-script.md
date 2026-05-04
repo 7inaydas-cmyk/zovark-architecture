@@ -114,8 +114,5 @@ and `reversal_or_recovery_plan`.*
 - If asked "is this live?": "This is a static demo package showing the intended
   output shape. The pipeline that generates it automatically is being built now.
   The architecture is frozen and evidence-backed."
-- If asked about the encoded PowerShell command: the base64 decodes to a
-  `WebClient.DownloadFile` call fetching a payload from 192.168.1.100. You can
-  decode it live if the audience wants to see it.
 - Keep the replay section brief. The key claim is: same evidence, same rules,
   same verdict, verifiable offline. That is the moat.

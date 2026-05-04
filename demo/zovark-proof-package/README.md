@@ -52,60 +52,19 @@ out/
     findings.json               ← 4 rule-driven findings
     verdict.json                ← Deterministic verdict
 
+demo.html                       ← Static HTML walkthrough
 demo-script.md                  ← 90-second screen recording script
 README.md                       ← This file
 ```
 
 ---
 
-## How to read this package
+## How to regenerate
 
-**Start with `out/tape-001/customer-report.md`.**
-
-It answers eight questions in order:
-1. What happened?
-2. What evidence supports it?
-3. Why was this verdict reached?
-4. What response action is recommended?
-5. What is the approval mode?
-6. What is the blast radius?
-7. How can the action be reversed or recovered?
-8. Can the decision be replayed?
-
-Then open `edr-handoff.json` to see the structured action card, and
-`replay-report.json` to see the verification result.
-
----
-
-## What makes this different from a SIEM alert
-
-A SIEM alert tells you something happened. This proof package tells you:
-
-- **What evidence** justified the recommendation (with content hashes).
-- **Why the verdict** was reached (deterministic rule, no AI black box).
-- **Who must approve** before anything is dispatched (approval_required gate).
-- **What the blast radius is** before you click approve.
-- **How to reverse it** if it turns out to be a false positive.
-- **That the reasoning can be replayed** by any auditor, offline, months later.
-
----
-
-## Implementation status
-
-| Component | Status |
-|---|---|
-| Architecture spec (rc3) | ✅ frozen |
-| Slice 001 Kiro spec | ✅ complete |
-| canonical.py + hashing.py | ✅ implemented, 51/51 tests passing |
-| ingest.py (Task 3) | 🔄 in progress (Claude Code) |
-| tape.py, findings.py, verdict.py | ⏳ pending |
-| handoff.py, audit.py, replay.py | ⏳ pending |
-| writer.py + CLI | ⏳ pending |
-| Live EDR integration | ⏳ post-Slice 001 |
-| Production vault runtime | ⏳ M3 |
-
-The demo artifacts in this package were hand-crafted to show the intended output
-shape. The pipeline that generates them automatically is being built task by task.
+```bash
+python scripts/generate_yc_demo.py
+python scripts/validate_yc_demo.py
+```
 
 ---
 

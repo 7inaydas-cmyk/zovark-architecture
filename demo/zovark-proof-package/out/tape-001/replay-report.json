@@ -1,48 +1,48 @@
 {
-  "replay_state": {
-    "replay_id": "replay-001",
-    "tape_ref": "tape-001",
-    "tenant_id": "tenant-demo",
-    "mode": "recorded_output",
-    "schema_pin": "tape/1.0",
-    "tool_catalog_pin": "none-slice-001",
-    "model_versions_pin": [],
-    "state": "succeeded",
-    "replay_status": "succeeded",
-    "mismatch_details": null,
-    "unsigned_tail_replay": true,
-    "started_at": "2026-05-02T09:14:26Z",
-    "completed_at": "2026-05-02T09:14:26Z",
-    "evidence_hashes_verified": true,
-    "verdict_recomputed": true,
-    "verdict_match": true,
-    "no_live_llm_call": true,
-    "no_live_edr_call": true,
-    "verification_detail": {
-      "evidence_entries_checked": 5,
-      "evidence_entries_passed": 5,
-      "evidence_entries_failed": 0,
-      "verdict_stored": "confirmed_malicious",
-      "verdict_recomputed_value": "confirmed_malicious",
-      "verdict_matched": true
-    }
-  },
   "audit_chain_entry": {
+    "created_at": "2026-05-02T09:14:26Z",
     "entry_id": "audit-entry-2",
-    "tenant_id": "tenant-demo",
-    "sequence": 2,
     "event_type": "tape_replayed",
     "payload": {
-      "tape_id": "tape-001",
+      "evidence_hashes_verified": true,
       "replay_id": "replay-001",
       "replay_state": "succeeded",
-      "evidence_hashes_verified": true,
-      "verdict_recomputed": "confirmed_malicious",
-      "verdict_matched": true
+      "tape_id": "tape-001",
+      "verdict_matched": true,
+      "verdict_recomputed": "confirmed_malicious"
     },
-    "created_at": "2026-05-02T09:14:26Z",
-    "prev_entry_hash": "af0c6d7a6edd3b5c7db612e42be72fffaac2918086fcbcf76aa3a002c6193728",
-    "this_entry_hash": "c14ff0b3c3e4be6feb077813088f6e493ee9523b2c9df8823a031e21b0145c16",
-    "signed_root": null
+    "prev_entry_hash": "5cfefb79ab9b421b1c41b8a710b5783e115110973a6db75af74cb0788f8b35a5",
+    "sequence": 2,
+    "signed_root": null,
+    "tenant_id": "tenant-demo",
+    "this_entry_hash": "45070e44a4eee12d01a3b96cc3ee9e360096ca8e42ccebbee91f66cc46bd4be3"
+  },
+  "replay_state": {
+    "completed_at": "2026-05-02T09:14:26Z",
+    "evidence_hashes_verified": true,
+    "mismatch_details": null,
+    "mode": "recorded_output",
+    "model_versions_pin": [],
+    "no_live_edr_call": true,
+    "no_live_llm_call": true,
+    "replay_id": "replay-001",
+    "replay_status": "succeeded",
+    "schema_pin": "tape/1.0",
+    "started_at": "2026-05-02T09:14:26Z",
+    "state": "succeeded",
+    "tape_ref": "tape-001",
+    "tenant_id": "tenant-demo",
+    "tool_catalog_pin": "none-slice-001",
+    "unsigned_tail_replay": true,
+    "verdict_match": true,
+    "verdict_recomputed": true,
+    "verification_detail": {
+      "evidence_entries_checked": 5,
+      "evidence_entries_failed": 0,
+      "evidence_entries_passed": 5,
+      "verdict_matched": true,
+      "verdict_recomputed_value": "confirmed_malicious",
+      "verdict_stored": "confirmed_malicious"
+    }
   }
 }

