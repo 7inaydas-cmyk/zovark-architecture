@@ -11,7 +11,7 @@
 **Approval required:** YES — no action has been dispatched
 **Evidence basis:** 5 evidence items (see below)
 **Verdict:** CONFIRMED_MALICIOUS
-**Reversibility:** reversible_by_edr — automatic `release_isolation` available
+**Reversibility:** automatic — `release_isolation` available
 **Authorization:** vault://placeholder/bootstrap (bootstrap mode)
 
 > No action has been dispatched. Human approval is required before any EDR action is taken.
@@ -117,7 +117,7 @@ access event.
 
 ## 7. How can the action be reversed or recovered?
 
-**Reversibility class:** `reversible_by_edr`
+**Reversibility class:** `automatic`
 
 If isolation is approved and later found to be a false positive:
 
@@ -159,8 +159,8 @@ Replay mode: `recorded_output`
 
 | Entry | Event | Entry ID | Hash |
 |---|---|---|---|
-| 1 | tape_recording_closed | audit-entry-1 | 5306594144413186...7350 |
-| 2 | tape_replayed | audit-entry-2 | e9fc39279bddfb2b...be4a |
+| 1 | tape_recording_closed | audit-entry-1 | 134fe99d3e80539e...8288 |
+| 2 | tape_replayed | audit-entry-2 | d5a093470a152e14...e328 |
 
 Chain: hash-linked. Entry 2's `prev_entry_hash` equals entry 1's `this_entry_hash`.
 Root signing deferred to M1+ (production vault runtime).
@@ -174,7 +174,7 @@ Tenant: tenant-demo
 Source alert: alert-20260502-001
 Generated: 2026-05-02T09:14:22Z
 Schema: tape/1.0
-Signing tag: sig-cd57e7269f949ad8dc7c230858a12d340f9e1a82f5a74f12409bc5e06ce3b2b8
+Signing tag: sig-04bf0a470d1c7d0641892dc20b88c57ab32371fd0bba39426c3366dbcc41b1b9
 
 ---
 
@@ -188,3 +188,4 @@ Signing tag: sig-cd57e7269f949ad8dc7c230858a12d340f9e1a82f5a74f12409bc5e06ce3b2b
 - `timeline.json`
 - `findings.json`
 - `verdict.json`
+- `audit-chain-entry.json`

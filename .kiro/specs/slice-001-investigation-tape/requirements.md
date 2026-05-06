@@ -251,13 +251,13 @@ For Slice 001, the default action is `notify_only` with `target.kind: custom` an
 
 | `reversibility_class` | Meaning | Slice 001 mapping |
 |---|---|---|
-| `reversible_by_edr` | EDR vendor exposes a reversal API; reversal is automatic | `isolate_host` → `release_isolation` |
-| `manual_recovery_required` | No vendor reversal API; operator must follow documented steps | (not triggered in Slice 001 sample) |
-| `irreversible_requires_compensation` | Action cannot be undone; compensating action required | (not triggered in Slice 001 sample) |
+| `automatic` | EDR vendor exposes a reversal API; reversal is automatic | `isolate_host` → `release_isolation` |
+| `manual_documented` | No vendor reversal API; operator must follow documented steps | (not triggered in Slice 001 sample) |
+| `irreversible` | Action cannot be undone; compensating action required | (not triggered in Slice 001 sample) |
 
 For Slice 001:
-- `notify_only` → `reversibility_class: reversible_by_edr`, `vendor_reversal_action: none`.
-- `isolate_host` → `reversibility_class: reversible_by_edr`, `vendor_reversal_action: release_isolation`.
+- `notify_only` → `reversibility_class: automatic`, `vendor_reversal_action: none`.
+- `isolate_host` → `reversibility_class: automatic`, `vendor_reversal_action: release_isolation`.
 
 **Linkage (2):** `audit_ref` (set after the audit chain entry is written),
 `replay_linkage: []` (no recorded I/O in Slice 001).
@@ -277,9 +277,9 @@ The tape SHALL carry `handoff_ref` (the `handoff_id`) and `handoff_summary`
 - AC-007-8: `tape_ref` matches the tape's `tape_id`.
 - AC-007-9: `tenant_id` matches the tape's `tenant_id`.
 - AC-007-10: `idempotency_key` is deterministic — same input produces same key.
-- AC-007-11: `rollback_plan.reversibility_class` is one of `reversible_by_edr`,
-  `manual_recovery_required`, or `irreversible_requires_compensation`.
-- AC-007-12: `isolate_host` action produces `reversibility_class: reversible_by_edr`
+- AC-007-11: `rollback_plan.reversibility_class` is one of `automatic`,
+  `manual_documented`, or `irreversible`.
+- AC-007-12: `isolate_host` action produces `reversibility_class: automatic`
   and `vendor_reversal_action: release_isolation`.
 - AC-007-13: `handoff_summary.execution_status` matches `execution_result.status`.
 

@@ -51,6 +51,7 @@ out/
     timeline.json               ← 13 timeline events
     findings.json               ← 4 rule-driven findings
     verdict.json                ← Deterministic verdict
+    audit-chain-entry.json      ← Close/seal audit chain entry
 
 demo-recording.html             ← 7-scene founder walkthrough (record with Loom)
 demo.html                       ← Full static HTML reference

@@ -10,6 +10,6 @@
   "highest_severity_finding": "critical (credential_access via LSASS)",
   "model_contribution": false,
   "set_at": "2026-05-02T09:14:23Z",
-  "signing_tag": "sig-cd57e7269f949ad8dc7c230858a12d340f9e1a82f5a74f12409bc5e06ce3b2b8",
+  "signing_tag": "sig-04bf0a470d1c7d0641892dc20b88c57ab32371fd0bba39426c3366dbcc41b1b9",
   "value": "confirmed_malicious"
 }

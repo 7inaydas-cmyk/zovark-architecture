@@ -48,7 +48,7 @@
   .replay-status { font-size: 1.5rem; font-weight: 700; color: #68d391; }
   .check-row { display: flex; gap: 12px; align-items: center; margin: 6px 0; font-size: 0.9rem; }
   .check-pass { color: #68d391; }
-  .check-none { color: #68d391; }
+  .check-none { color: #fc8181; }
   .hash-chain { font-family: monospace; font-size: 0.75rem; color: #718096; }
   .footer { text-align: center; padding: 32px; color: #4a5568; font-size: 0.8rem;
              border-top: 1px solid #2d3748; margin-top: 32px; }
@@ -82,7 +82,7 @@
     <div class="field"><span class="label">Dispatch status</span>
       <span class="value"><span class="badge badge-orange">pending — not dispatched</span></span></div>
     <div class="field"><span class="label">Reversibility</span>
-      <span class="value"><span class="badge badge-green">reversible_by_edr</span>
+      <span class="value"><span class="badge badge-green">automatic</span>
         — <code>release_isolation</code> available · 4h window</span></div>
     <div class="field"><span class="label">Authorization</span>
       <span class="value"><code>vault://placeholder/bootstrap</code></span></div>
@@ -183,7 +183,7 @@
     <div class="verdict-box">
       <div class="verdict-value">CONFIRMED_MALICIOUS</div>
       <div class="verdict-rule">Derivation rule: any finding with severity critical or high → confirmed_malicious</div>
-      <div class="verdict-rule" style="margin-top:8px">model_contribution: false · signing_tag: <code>sig-cd57e7269f949ad8dc7c230858a1…</code></div>
+      <div class="verdict-rule" style="margin-top:8px">model_contribution: false · signing_tag: <code>sig-04bf0a470d1c7d0641892dc20b88…</code></div>
     </div>
   </div>
 
@@ -203,7 +203,7 @@
   <div class="card">
     <h2>↩ Reversal / Recovery Plan</h2>
     <div class="field"><span class="label">Reversibility class</span>
-      <span class="value"><span class="badge badge-green">reversible_by_edr</span></span></div>
+      <span class="value"><span class="badge badge-green">automatic</span></span></div>
     <div class="field"><span class="label">Vendor reversal action</span>
       <span class="value"><code>release_isolation</code></span></div>
     <div class="field"><span class="label">Reversal window</span><span class="value">4 hours from dispatch</span></div>
@@ -221,8 +221,8 @@
         <div class="check-row"><span class="check-pass">✅</span> Evidence hashes verified (5/5)</div>
         <div class="check-row"><span class="check-pass">✅</span> Verdict recomputed: CONFIRMED_MALICIOUS</div>
         <div class="check-row"><span class="check-pass">✅</span> Verdict matched stored verdict</div>
-        <div class="check-row"><span class="check-none">✅</span> No live LLM call during replay</div>
-        <div class="check-row"><span class="check-none">✅</span> No live EDR call during replay</div>
+        <div class="check-row"><span class="check-none">❌</span> No live LLM call during replay</div>
+        <div class="check-row"><span class="check-none">❌</span> No live EDR call during replay</div>
       </div>
       <div style="margin-top:16px;font-size:0.85rem;color:#718096">
         Replay ID: <code>replay-001</code> · Mode: <code>recorded_output</code>
@@ -235,11 +235,11 @@
     <h2>🔗 Audit Chain</h2>
     <div class="field"><span class="label">Entry 1</span>
       <span class="value hash-chain">tape_recording_closed · audit-entry-1<br>
-        this_entry_hash: 5306594144413186fc19cd8370e20ce2cac9f047806c7443…</span></div>
+        this_entry_hash: 134fe99d3e80539ec983478b7330f6512c5b247d7998bffa…</span></div>
     <div class="field"><span class="label">Entry 2</span>
       <span class="value hash-chain">tape_replayed · audit-entry-2<br>
-        prev_entry_hash: 5306594144413186fc19cd8370e20ce2cac9f047806c7443…<br>
-        this_entry_hash: e9fc39279bddfb2bc49881914944eb15103dfa79f9e1d721…</span></div>
+        prev_entry_hash: 134fe99d3e80539ec983478b7330f6512c5b247d7998bffa…<br>
+        this_entry_hash: d5a093470a152e147baa86b7273e448f51b4a13a40a3cac1…</span></div>
     <div class="field"><span class="label">Chain integrity</span>
       <span class="value"><span class="badge badge-green">hash-linked</span>
         · unsigned tail · root signing deferred to M1+</span></div>

@@ -221,8 +221,8 @@ package that the validator checks independently.
   OK: execution_result: reason = 'recommendation_only_no_dispatcher_in_slice_001'
   OK: evidence_refs has 5 entries
   OK: blast_radius field present
-  OK: reversal_or_recovery_plan field present
-  OK: reversibility_class = 'reversible_by_edr'
+  OK: rollback_plan field present
+  OK: reversibility_class = 'automatic'
 
 VALIDATION PASSED — all checks OK.
 ```

@@ -146,7 +146,7 @@ requirements. No orphaned tasks.
 - Authorization: `approval_mode: "approval_required"`, `authorization_record_ref: "vault://placeholder/bootstrap"`
 - Execution: `execution_result` (`status: "pending"`, `reason: "recommendation_only_no_dispatcher_in_slice_001"`, `started_at: null`, `completed_at: null`, `vendor_response_ref: null`, `error: null`)
 - Idempotency: `idempotency_key`
-- Rollback/reversibility: `rollback_plan` with `reversibility_class` ∈ {`reversible_by_edr`, `manual_recovery_required`, `irreversible_requires_compensation`}; `vendor_reversal_action`; `vendor_reversal_target`; `manual_steps`; `reversal_window`; `idempotency_key`
+- Rollback/reversibility: `rollback_plan` with `reversibility_class` ∈ {`automatic`, `manual_documented`, `irreversible`}; `vendor_reversal_action`; `vendor_reversal_target`; `manual_steps`; `reversal_window`; `idempotency_key`
 - Linkage: `audit_ref`, `replay_linkage: []`
 
 **Validation rule:** `action_type`/`target.kind` consistency enforced. `evidence_refs` non-empty and all IDs present on tape. `approval_mode` must be `approval_required`. `authorization_record_ref` must be the bootstrap placeholder. `reversibility_class` must be one of the three allowed values.
@@ -352,7 +352,7 @@ The customer report is the human-readable artifact that directly answers the bui
 
 **Section order (required):**
 
-1. **Recommended Action (EDR Action Card)** — action type, target, approval required flag, evidence summary (evidence IDs + count), verdict value, reversibility/recovery classification (`reversible_by_edr` / `manual_recovery_required` / `irreversible_requires_compensation`), authorization ref.
+1. **Recommended Action (EDR Action Card)** — action type, target, approval required flag, evidence summary (evidence IDs + count), verdict value, reversibility/recovery classification (`automatic` / `manual_documented` / `irreversible`), authorization ref.
 2. **Replay Proof** — replay result, evidence hashes verified, verdict recomputed, replay ID, replay mode.
 3. **Evidence and Findings** — findings table (index, title, severity, evidence ID).
 4. **Approval Path** — approval mode, status, authorization record.

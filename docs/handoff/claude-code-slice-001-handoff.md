@@ -100,12 +100,11 @@ Verified with: `python3 -c "import hashlib; print(hashlib.sha256(b'genesis').hex
 
 The readiness review previously had an incorrect value. It has been patched.
 
-### Not yet started
+### Remaining
 
-Tasks 1, 3–14. Task 1 (scaffold) was partially done as a prerequisite for Task 2
-(package `__init__` files, `pyproject.toml`, `tests/__init__.py`). The remaining
-Task 1 items (`ZovarkValidationError`, `samples/edr-sample-001.json`) are still
-needed and should be completed as part of Task 3 or as a separate pass before it.
+Tasks 3–14. Task 1 scaffold prerequisites are complete: package `__init__` files,
+`ZovarkValidationError`, `pyproject.toml`, `samples/edr-sample-001.json`, and
+`tests/__init__.py` are present.
 
 ---
 
@@ -126,7 +125,7 @@ From `tasks.md`:
       stores raw_content (the original source object dict) inline on each entry
 
 3.2 Write tests/test_ingest.py:
-  - Valid sample → correct number of evidence entries (2: one edr_alert, one process_event)
+  - Valid sample → correct number of evidence entries (3: one edr_alert, one process_event, one network_event)
   - Each entry has evidence_id, hash, source_type, ingested_at, raw_content
   - sha256_of_obj(entry["raw_content"]) equals entry["hash"] for every entry
   - Same input twice → identical evidence_id and hash
@@ -135,9 +134,7 @@ From `tasks.md`:
   - Invalid JSON → ZovarkValidationError
 ```
 
-Before implementing Task 3, also complete the remaining Task 1 items:
-- `zovark/slice001/__init__.py` needs `ZovarkValidationError` added (currently just a comment).
-- `samples/edr-sample-001.json` needs to be created with the sample from Design §1.1.
+Task 1 prerequisites are complete. Task 3 can start directly.
 
 ---
 
@@ -206,11 +203,7 @@ Read these files first:
 
 Then implement only Task 3 from tasks.md.
 
-Before Task 3, complete the two remaining Task 1 items that Task 3 depends on:
-1. Add ZovarkValidationError to zovark/slice001/__init__.py
-2. Create samples/edr-sample-001.json with the sample from Design §1.1
-
-Then implement:
+Implement:
 - zovark/slice001/ingest.py (load_sample and normalize_evidence)
 - tests/test_ingest.py (all test cases from Task 3.2)
 

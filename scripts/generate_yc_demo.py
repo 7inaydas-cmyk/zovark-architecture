@@ -181,8 +181,9 @@ def build_evidence_ledger() -> list[dict]:
         entries.append({
             "evidence_id": evidence_id(source_type, obj),
             "hash": sha256_of_obj(obj),
-            "source_type": source_type,
             "ingested_at": INGESTED_AT,
+            "raw_content": obj,
+            "source_type": source_type,
         })
     return entries
 
@@ -238,11 +239,7 @@ def build_verdict(findings: list[dict], ledger: list[dict]) -> dict:
     # Snapshot for signing_tag: stable fields only, no timestamps
     snapshot = {
         "findings": findings,
-        "raw_evidence": [
-            {"evidence_id": e["evidence_id"], "hash": e["hash"],
-             "ingested_at": e["ingested_at"], "source_type": e["source_type"]}
-            for e in ledger
-        ],
+        "raw_evidence": ledger,
         "schema_version": "tape/1.0",
         "source_alert_ref": "alert-20260502-001",
         "tape_id": TAPE_ID,
@@ -340,7 +337,8 @@ def build_handoff(ledger: list[dict]) -> dict:
         "policy_snapshot": policy_snap,
         "policy_snapshot_version": "0.0.1-bootstrap",
         "replay_linkage": [],
-        "reversal_or_recovery_plan": {
+        "rollback_plan": {
+            "idempotency_key": sha256_of_string(f"{idem_key}:rollback:release_isolation"),
             "manual_steps": [],
             "recovery_notes": (
                 "In a live EDR integration, the expected reversal action would be "
@@ -349,7 +347,7 @@ def build_handoff(ledger: list[dict]) -> dict:
                 "Credential rotation for CORP\\jsmith is recommended regardless "
                 "of isolation outcome given the LSASS access event."
             ),
-            "reversibility_class": "reversible_by_edr",
+            "reversibility_class": "automatic",
             "reversal_window": "PT4H",
             "vendor_reversal_action": "release_isolation",
             "vendor_reversal_target": {"identifier": "HOST-12", "kind": "host"},
@@ -469,11 +467,7 @@ def build_tape(ledger, timeline, findings, verdict, handoff, audit_ref) -> dict:
             "execution_status": "pending",
             "target": {"identifier": "HOST-12", "kind": "host"},
         },
-        "raw_evidence": [
-            {"evidence_id": e["evidence_id"], "hash": e["hash"],
-             "ingested_at": e["ingested_at"], "source_type": e["source_type"]}
-            for e in ledger
-        ],
+        "raw_evidence": ledger,
         "schema_version": "tape/1.0",
         "source_alert_ref": "alert-20260502-001",
         "state": "closed",
@@ -587,7 +581,7 @@ def build_customer_report(ledger, findings, verdict, handoff, replay_report) -> 
         "**Approval required:** YES — no action has been dispatched",
         "**Evidence basis:** 5 evidence items (see below)",
         "**Verdict:** CONFIRMED_MALICIOUS",
-        "**Reversibility:** reversible_by_edr — automatic `release_isolation` available",
+        "**Reversibility:** automatic — `release_isolation` available",
         "**Authorization:** vault://placeholder/bootstrap (bootstrap mode)",
         "",
         "> No action has been dispatched. Human approval is required before any EDR action is taken.",
@@ -693,7 +687,7 @@ def build_customer_report(ledger, findings, verdict, handoff, replay_report) -> 
         "",
         "## 7. How can the action be reversed or recovered?",
         "",
-        "**Reversibility class:** `reversible_by_edr`",
+        "**Reversibility class:** `automatic`",
         "",
         "If isolation is approved and later found to be a false positive:",
         "",
@@ -764,6 +758,7 @@ def build_customer_report(ledger, findings, verdict, handoff, replay_report) -> 
         "- `timeline.json`",
         "- `findings.json`",
         "- `verdict.json`",
+        "- `audit-chain-entry.json`",
     ]
     return "\n".join(lines) + "\n"
 
@@ -822,20 +817,29 @@ out/
     timeline.json               ← 13 timeline events
     findings.json               ← 4 rule-driven findings
     verdict.json                ← Deterministic verdict
+    audit-chain-entry.json      ← Close/seal audit chain entry
 
-demo.html                       ← Static HTML walkthrough
+demo-recording.html             ← 7-scene founder walkthrough (record with Loom)
+demo.html                       ← Full static HTML reference
 demo-script.md                  ← 90-second screen recording script
 README.md                       ← This file
 ```
 
 ---
 
-## How to regenerate
+## Validation
+
+All JSON artifacts in this package were validated before commit. Evidence hashes
+and audit-chain links were computed deterministically for this static walkthrough.
+
+To regenerate or re-validate (requires Python 3.11+, no other dependencies):
 
 ```bash
 python scripts/generate_yc_demo.py
 python scripts/validate_yc_demo.py
 ```
+
+Both scripts live in `scripts/` at the repo root.
 
 ---
 
@@ -902,8 +906,8 @@ cat samples/edr/phishing-powershell.json
 
 *Read aloud:*
 > "Action: ISOLATE_HOST. Target: HOST-12. Approval required: YES — nothing has
-> been dispatched. Verdict: CONFIRMED_MALICIOUS. Reversibility: reversible by EDR —
-> automatic release available."
+> been dispatched. Verdict: CONFIRMED_MALICIOUS. Reversibility: automatic —
+> release_isolation available."
 
 *Pause one beat.*
 
@@ -932,11 +936,11 @@ cat samples/edr/phishing-powershell.json
 **[0:50 — 1:10] The action card and reversal plan**
 
 *Open `out/tape-001/edr-handoff.json`. Show `approval_mode`, `blast_radius`,
-and `reversal_or_recovery_plan`.*
+and `rollback_plan`.*
 
 *Say:*
 > "The action card. Approval mode: approval_required. Nothing dispatches without
-> a human. And the reversal plan is right here — reversible by EDR, automatic
+> a human. And the rollback plan is right here — automatic reversal,
 > release_isolation, four-hour window. Your analyst knows the exit before they
 > approve the entry."
 
@@ -1009,7 +1013,7 @@ def build_demo_html(ledger, findings, verdict, handoff, replay_report) -> str:
 
     blast = handoff["blast_radius"]
     blast_items = "".join(f"<li>{s}</li>" for s in blast["services_at_risk"])
-    rev = handoff["reversal_or_recovery_plan"]
+    rev = handoff["rollback_plan"]
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -1095,7 +1099,7 @@ def build_demo_html(ledger, findings, verdict, handoff, replay_report) -> str:
     <div class="field"><span class="label">Dispatch status</span>
       <span class="value"><span class="badge badge-orange">pending — not dispatched</span></span></div>
     <div class="field"><span class="label">Reversibility</span>
-      <span class="value"><span class="badge badge-green">reversible_by_edr</span>
+      <span class="value"><span class="badge badge-green">automatic</span>
         — <code>release_isolation</code> available · 4h window</span></div>
     <div class="field"><span class="label">Authorization</span>
       <span class="value"><code>vault://placeholder/bootstrap</code></span></div>
@@ -1162,7 +1166,7 @@ def build_demo_html(ledger, findings, verdict, handoff, replay_report) -> str:
   <div class="card">
     <h2>↩ Reversal / Recovery Plan</h2>
     <div class="field"><span class="label">Reversibility class</span>
-      <span class="value"><span class="badge badge-green">reversible_by_edr</span></span></div>
+      <span class="value"><span class="badge badge-green">automatic</span></span></div>
     <div class="field"><span class="label">Vendor reversal action</span>
       <span class="value"><code>release_isolation</code></span></div>
     <div class="field"><span class="label">Reversal window</span><span class="value">4 hours from dispatch</span></div>
@@ -1258,11 +1262,7 @@ def main() -> None:
     # 6. Audit close entry (needs tape snapshot for fields_hash)
     tape_snapshot_for_audit = {
         "findings": findings,
-        "raw_evidence": [
-            {"evidence_id": e["evidence_id"], "hash": e["hash"],
-             "ingested_at": e["ingested_at"], "source_type": e["source_type"]}
-            for e in ledger
-        ],
+        "raw_evidence": ledger,
         "schema_version": "tape/1.0",
         "source_alert_ref": "alert-20260502-001",
         "tape_id": TAPE_ID,
@@ -1294,6 +1294,7 @@ def main() -> None:
     write_json(OUT_DIR / "verdict.json", verdict)
     write_json(OUT_DIR / "timeline.json", timeline)
     write_json(OUT_DIR / "edr-handoff.json", handoff)
+    write_json(OUT_DIR / "audit-chain-entry.json", close_entry)
     write_json(OUT_DIR / "replay-report.json", replay_report)
     write_json(OUT_DIR / "investigation-tape.json", tape)
     write_text(OUT_DIR / "customer-report.md", customer_report)

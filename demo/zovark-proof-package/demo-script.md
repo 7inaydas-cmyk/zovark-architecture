@@ -46,9 +46,8 @@ cat samples/edr/phishing-powershell.json
 
 *Read aloud:*
 > "Action: ISOLATE_HOST. Target: HOST-12. Approval required: YES — nothing has
-> been dispatched. Verdict: CONFIRMED_MALICIOUS. Reversibility: expected EDR
-> reversal action is release_isolation. In this Slice 001 demo, no EDR action
-> is dispatched."
+> been dispatched. Verdict: CONFIRMED_MALICIOUS. Reversibility: automatic —
+> release_isolation available."
 
 *Pause one beat.*
 
@@ -77,14 +76,13 @@ cat samples/edr/phishing-powershell.json
 **[0:50 — 1:10] The action card and reversal plan**
 
 *Open `out/tape-001/edr-handoff.json`. Show `approval_mode`, `blast_radius`,
-and `reversal_or_recovery_plan`.*
+and `rollback_plan`.*
 
 *Say:*
 > "The action card. Approval mode: approval_required. Nothing dispatches without
-> a human. The reversal plan shows the expected EDR reversal action is
-> release_isolation with a four-hour window. In this Slice 001 demo, no EDR
-> action is dispatched — this is a recommendation only. Your analyst knows the
-> exit before they approve the entry."
+> a human. And the rollback plan is right here — automatic reversal,
+> release_isolation, four-hour window. Your analyst knows the exit before they
+> approve the entry."
 
 ---
 

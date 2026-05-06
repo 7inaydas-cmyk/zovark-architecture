@@ -3,11 +3,12 @@
 validate_yc_demo.py — Validate the Zovark YC demo proof package.
 
 Checks:
-  1. All JSON files parse.
-  2. Evidence hashes recomputed and match evidence-ledger.json.
-  3. Audit chain linkage (entry2.prev == entry1.this).
-  4. replay-report.json assertions.
-  5. edr-handoff.json assertions.
+  1. Proof-package output has exactly 9 files: 8 JSON + 1 Markdown.
+  2. All output JSON files parse.
+  3. Evidence hashes recompute from raw_content and match evidence-ledger.json.
+  4. Audit chain linkage (entry2.prev == entry1.this).
+  5. replay-report.json assertions.
+  6. edr-handoff.json assertions.
 
 Usage:
     python scripts/validate_yc_demo.py
@@ -25,7 +26,6 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).parent.parent
 OUT_DIR = REPO_ROOT / "demo" / "zovark-proof-package" / "out" / "tape-001"
-SAMPLES_DIR = REPO_ROOT / "demo" / "zovark-proof-package" / "samples" / "edr"
 
 FAILURES: list[str] = []
 
@@ -163,23 +163,57 @@ SOURCE_OBJECTS = [
 
 
 # ---------------------------------------------------------------------------
-# Check 1 — All JSON files parse
+# Check 1 — Output artifact set
 # ---------------------------------------------------------------------------
 
 JSON_FILES = [
+    OUT_DIR / "investigation-tape.json",
     OUT_DIR / "evidence-ledger.json",
+    OUT_DIR / "timeline.json",
     OUT_DIR / "findings.json",
     OUT_DIR / "verdict.json",
-    OUT_DIR / "timeline.json",
     OUT_DIR / "edr-handoff.json",
+    OUT_DIR / "audit-chain-entry.json",
     OUT_DIR / "replay-report.json",
-    OUT_DIR / "investigation-tape.json",
-    SAMPLES_DIR / "phishing-powershell.json",
 ]
+
+MARKDOWN_FILES = [
+    OUT_DIR / "customer-report.md",
+]
+
+EXPECTED_OUTPUT_FILES = JSON_FILES + MARKDOWN_FILES
+
+
+def check_output_artifacts() -> None:
+    print("\n[1] Output artifact set")
+    expected_names = {path.name for path in EXPECTED_OUTPUT_FILES}
+    actual_names = {path.name for path in OUT_DIR.iterdir() if path.is_file()} if OUT_DIR.exists() else set()
+
+    if actual_names == expected_names:
+        ok("output directory contains exactly 9 files (8 JSON + 1 Markdown)")
+    else:
+        missing = sorted(expected_names - actual_names)
+        extra = sorted(actual_names - expected_names)
+        if missing:
+            fail(f"missing output artifact(s): {', '.join(missing)}")
+        if extra:
+            fail(f"unexpected output artifact(s): {', '.join(extra)}")
+
+    json_count = sum(1 for path in EXPECTED_OUTPUT_FILES if path.suffix == ".json")
+    markdown_count = sum(1 for path in EXPECTED_OUTPUT_FILES if path.suffix == ".md")
+    if json_count == 8 and markdown_count == 1:
+        ok("expected artifact contract is 8 JSON + 1 Markdown")
+    else:
+        fail(f"validator artifact contract is wrong: {json_count} JSON + {markdown_count} Markdown")
+
+
+# ---------------------------------------------------------------------------
+# Check 2 — All output JSON files parse
+# ---------------------------------------------------------------------------
 
 
 def check_json_parse() -> dict[str, Any]:
-    print("\n[1] JSON parse check")
+    print("\n[2] JSON parse check")
     loaded: dict[str, Any] = {}
     for path in JSON_FILES:
         if not path.exists():
@@ -195,11 +229,11 @@ def check_json_parse() -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# Check 2 — Evidence hashes
+# Check 3 — Evidence hashes
 # ---------------------------------------------------------------------------
 
 def check_evidence_hashes(loaded: dict[str, Any]) -> None:
-    print("\n[2] Evidence hash recomputation")
+    print("\n[3] Evidence hash recomputation")
     ledger = loaded.get("evidence-ledger.json")
     if not ledger:
         fail("evidence-ledger.json not loaded; skipping hash check")
@@ -209,11 +243,20 @@ def check_evidence_hashes(loaded: dict[str, Any]) -> None:
         fail(f"Expected {len(SOURCE_OBJECTS)} evidence entries, got {len(ledger)}")
         return
 
-    for i, (entry, (source_type, obj)) in enumerate(zip(ledger, SOURCE_OBJECTS)):
-        expected_hash = sha256_of_obj(obj)
+    for i, (entry, (source_type, _obj)) in enumerate(zip(ledger, SOURCE_OBJECTS)):
+        if entry.get("source_type") != source_type:
+            fail(f"entry[{i}] source_type expected {source_type!r}, got {entry.get('source_type')!r}")
+            continue
+
+        raw_content = entry.get("raw_content")
+        if not isinstance(raw_content, dict):
+            fail(f"entry[{i}] ({source_type}) raw_content missing or not an object")
+            continue
+
+        expected_hash = sha256_of_obj(raw_content)
         stored_hash = entry.get("hash", "")
         if stored_hash == expected_hash:
-            ok(f"entry[{i}] ({source_type}) hash matches")
+            ok(f"entry[{i}] ({source_type}) hash matches raw_content")
         else:
             fail(
                 f"entry[{i}] ({source_type}) hash mismatch\n"
@@ -222,7 +265,7 @@ def check_evidence_hashes(loaded: dict[str, Any]) -> None:
             )
 
         # Also verify evidence_id derivation
-        inner = sha256_of_obj(obj)
+        inner = sha256_of_obj(raw_content)
         expected_ev_id = "ev-" + sha256_hex((source_type + ":" + inner).encode("utf-8"))
         stored_ev_id = entry.get("evidence_id", "")
         if stored_ev_id == expected_ev_id:
@@ -236,11 +279,16 @@ def check_evidence_hashes(loaded: dict[str, Any]) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Check 3 — Audit chain linkage
+# Check 4 — Audit chain linkage
 # ---------------------------------------------------------------------------
 
 def check_audit_chain(loaded: dict[str, Any]) -> None:
-    print("\n[3] Audit chain linkage")
+    print("\n[4] Audit chain linkage")
+    close_entry = loaded.get("audit-chain-entry.json")
+    if not close_entry:
+        fail("audit-chain-entry.json not loaded; skipping audit chain check")
+        return
+
     replay = loaded.get("replay-report.json")
     if not replay:
         fail("replay-report.json not loaded; skipping audit chain check")
@@ -256,15 +304,9 @@ def check_audit_chain(loaded: dict[str, Any]) -> None:
         fail("investigation-tape.json not loaded; skipping audit chain check")
         return
 
-    # Reconstruct the tape snapshot used for fields_hash
-    ledger_for_snapshot = [
-        {"evidence_id": e["evidence_id"], "hash": e["hash"],
-         "ingested_at": e["ingested_at"], "source_type": e["source_type"]}
-        for e in tape.get("raw_evidence", [])
-    ]
     tape_snapshot = {
         "findings": tape.get("findings", []),
-        "raw_evidence": ledger_for_snapshot,
+        "raw_evidence": tape.get("raw_evidence", []),
         "schema_version": tape.get("schema_version", ""),
         "source_alert_ref": tape.get("source_alert_ref", ""),
         "tape_id": tape.get("tape_id", ""),
@@ -274,30 +316,49 @@ def check_audit_chain(loaded: dict[str, Any]) -> None:
     fields_hash = sha256_of_obj(tape_snapshot)
     genesis_hash = sha256_hex(b"genesis")
 
-    entry1 = {
-        "created_at": "2026-05-02T09:14:25Z",
-        "entry_id": "audit-entry-1",
-        "event_type": "tape_recording_closed",
-        "payload": {
-            "fields_hash": fields_hash,
-            "tape_id": tape.get("tape_id", ""),
-            "verdict_value": tape.get("verdict", {}).get("value", ""),
-        },
-        "prev_entry_hash": genesis_hash,
-        "sequence": 1,
-        "signed_root": None,
-        "tenant_id": tape.get("tenant_id", ""),
-        "this_entry_hash": "",
-    }
-    expected_entry1_this = sha256_of_obj(entry1)
+    if close_entry.get("event_type") == "tape_recording_closed":
+        ok("audit-chain-entry event_type = 'tape_recording_closed'")
+    else:
+        fail(f"audit-chain-entry event_type expected 'tape_recording_closed', got {close_entry.get('event_type')!r}")
 
-    if entry2_prev == expected_entry1_this:
-        ok(f"audit chain linkage: entry2.prev_entry_hash == entry1.this_entry_hash")
+    if close_entry.get("prev_entry_hash") == genesis_hash:
+        ok("audit-chain-entry prev_entry_hash anchors to sha256('genesis')")
+    else:
+        fail(
+            "audit-chain-entry genesis anchor mismatch\n"
+            f"    stored:   {close_entry.get('prev_entry_hash')}\n"
+            f"    expected: {genesis_hash}"
+        )
+
+    close_payload = close_entry.get("payload", {})
+    if close_payload.get("fields_hash") == fields_hash:
+        ok("audit-chain-entry payload.fields_hash matches tape close snapshot")
+    else:
+        fail(
+            "audit-chain-entry payload.fields_hash mismatch\n"
+            f"    stored:   {close_payload.get('fields_hash')}\n"
+            f"    expected: {fields_hash}"
+        )
+
+    entry1_for_hash = dict(close_entry)
+    entry1_for_hash["this_entry_hash"] = ""
+    expected_entry1_this = sha256_of_obj(entry1_for_hash)
+    if close_entry.get("this_entry_hash") == expected_entry1_this:
+        ok("audit-chain-entry this_entry_hash is correct")
+    else:
+        fail(
+            "audit-chain-entry this_entry_hash mismatch\n"
+            f"    stored:   {close_entry.get('this_entry_hash')}\n"
+            f"    expected: {expected_entry1_this}"
+        )
+
+    if entry2_prev == close_entry.get("this_entry_hash"):
+        ok("audit chain linkage: replay prev_entry_hash == audit-chain-entry this_entry_hash")
     else:
         fail(
             f"audit chain linkage broken\n"
             f"    entry2.prev_entry_hash: {entry2_prev}\n"
-            f"    expected entry1.this:   {expected_entry1_this}"
+            f"    expected entry1.this:   {close_entry.get('this_entry_hash')}"
         )
 
     # Verify entry2 this_entry_hash
@@ -324,11 +385,11 @@ def check_audit_chain(loaded: dict[str, Any]) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Check 4 — replay-report.json assertions
+# Check 5 — replay-report.json assertions
 # ---------------------------------------------------------------------------
 
 def check_replay_report(loaded: dict[str, Any]) -> None:
-    print("\n[4] replay-report.json assertions")
+    print("\n[5] replay-report.json assertions")
     replay = loaded.get("replay-report.json")
     if not replay:
         fail("replay-report.json not loaded")
@@ -354,11 +415,11 @@ def check_replay_report(loaded: dict[str, Any]) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Check 5 — edr-handoff.json assertions
+# Check 6 — edr-handoff.json assertions
 # ---------------------------------------------------------------------------
 
 def check_handoff(loaded: dict[str, Any]) -> None:
-    print("\n[5] edr-handoff.json assertions")
+    print("\n[6] edr-handoff.json assertions")
     handoff = loaded.get("edr-handoff.json")
     if not handoff:
         fail("edr-handoff.json not loaded")
@@ -397,15 +458,15 @@ def check_handoff(loaded: dict[str, Any]) -> None:
     else:
         fail("blast_radius field missing")
 
-    rev = handoff.get("reversal_or_recovery_plan")
+    rev = handoff.get("rollback_plan")
     if rev:
-        ok("reversal_or_recovery_plan field present")
-        if rev.get("reversibility_class") == "reversible_by_edr":
-            ok("reversibility_class = 'reversible_by_edr'")
+        ok("rollback_plan field present")
+        if rev.get("reversibility_class") == "automatic":
+            ok("reversibility_class = 'automatic'")
         else:
-            fail(f"reversibility_class expected 'reversible_by_edr', got {rev.get('reversibility_class')!r}")
+            fail(f"reversibility_class expected 'automatic', got {rev.get('reversibility_class')!r}")
     else:
-        fail("reversal_or_recovery_plan field missing")
+        fail("rollback_plan field missing")
 
 
 # ---------------------------------------------------------------------------
@@ -415,6 +476,7 @@ def check_handoff(loaded: dict[str, Any]) -> None:
 def main() -> None:
     print("Validating Zovark YC demo proof package...")
 
+    check_output_artifacts()
     loaded = check_json_parse()
     check_evidence_hashes(loaded)
     check_audit_chain(loaded)
