@@ -80,6 +80,12 @@ def derive_handoff(tape: dict[str, Any]) -> dict[str, Any]:
     action_type = _action_type(tape["findings"])
     target = _target(tape, action_type=action_type)
     evidence_refs = _evidence_refs(tape)
+    _validate_target_evidence_trace(
+        tape,
+        action_type=action_type,
+        target=target,
+        evidence_refs=evidence_refs,
+    )
     idempotency_key = sha256_of_string(
         f"{tape['tape_id']}:{action_type}:{target['identifier']}"
     )
@@ -435,6 +441,12 @@ def _validate_handoff(handoff: dict[str, Any], *, tape: dict[str, Any]) -> None:
     if handoff["idempotency_key"] != expected_idempotency_key:
         raise ZovarkValidationError("handoff.idempotency_key is invalid")
     _validate_evidence_refs(handoff["evidence_refs"], tape=tape)
+    _validate_target_evidence_trace(
+        tape,
+        action_type=handoff["action_type"],
+        target=handoff["target"],
+        evidence_refs=handoff["evidence_refs"],
+    )
     _validate_execution_result(handoff["execution_result"])
     _validate_rollback_plan(
         handoff["rollback_plan"],
@@ -473,6 +485,42 @@ def _validate_evidence_refs(evidence_refs: list[str], *, tape: dict[str, Any]) -
             raise ZovarkValidationError(
                 f"handoff.evidence_refs[{index}] is not present in raw_evidence"
             )
+
+
+def _validate_target_evidence_trace(
+    tape: dict[str, Any],
+    *,
+    action_type: str,
+    target: dict[str, Any],
+    evidence_refs: list[str],
+) -> None:
+    if action_type != "isolate_host":
+        return
+
+    referenced_entries = [
+        entry for entry in tape["raw_evidence"] if entry["evidence_id"] in evidence_refs
+    ]
+    target_identifiers = [
+        value
+        for value in (target.get("identifier"), target.get("fqdn"))
+        if isinstance(value, str) and value
+    ]
+    if not target_identifiers:
+        raise ZovarkValidationError("isolate_host target is missing an identifier")
+    for entry in referenced_entries:
+        if _raw_content_mentions_any(entry["raw_content"], target_identifiers):
+            return
+    raise ZovarkValidationError("isolate_host target is not backed by evidence_refs")
+
+
+def _raw_content_mentions_any(value: Any, needles: list[str]) -> bool:
+    if isinstance(value, str):
+        return any(needle in value for needle in needles)
+    if isinstance(value, dict):
+        return any(_raw_content_mentions_any(item, needles) for item in value.values())
+    if isinstance(value, list):
+        return any(_raw_content_mentions_any(item, needles) for item in value)
+    return False
 
 
 def _validate_execution_result(execution_result: dict[str, Any]) -> None:

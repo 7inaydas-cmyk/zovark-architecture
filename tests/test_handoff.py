@@ -97,6 +97,20 @@ def _evidence_entry(evidence_id: str, source_type: str = "edr_alert") -> dict:
     }
 
 
+def _process_entry_without_host(evidence_id: str) -> dict:
+    return {
+        "evidence_id": evidence_id,
+        "hash": "1" * 64,
+        "ingested_at": "2026-05-01T10:00:00Z",
+        "raw_content": {
+            "event_id": evidence_id,
+            "process_name": "powershell.exe",
+            "timestamp": "2026-05-01T10:00:00Z",
+        },
+        "source_type": "process_event",
+    }
+
+
 def _finding(severity: str, evidence_refs: list[str] | None = None) -> dict:
     return {
         "evidence_refs": evidence_refs if evidence_refs is not None else ["ev-1"],
@@ -162,6 +176,18 @@ def test_handoff_is_deterministic_across_repeated_runs():
     second = derive_handoff(tape)
 
     assert first == second
+    assert first["idempotency_key"] == second["idempotency_key"]
+
+
+def test_idempotency_key_is_deterministic_and_recomputable():
+    tape = _sample_tape_with_verdict()
+
+    handoff = derive_handoff(tape)
+
+    assert handoff["idempotency_key"] == sha256_of_string(
+        f"{tape['tape_id']}:{handoff['action_type']}:{handoff['target']['identifier']}"
+    )
+    assert handoff["handoff_id"] == "handoff-" + handoff["idempotency_key"][:16]
 
 
 def test_approval_gate_invariants_prevent_execution():
@@ -220,6 +246,68 @@ def test_notify_only_handoff_for_medium_only_verdict():
     assert handoff["rollback_plan"]["vendor_reversal_action"] == "none"
     assert handoff["rollback_plan"]["reversibility_class"] == "automatic"
     assert handoff["evidence_refs"] == ["ev-1"]
+
+
+def test_benign_handoff_is_notify_only_when_evidence_backed():
+    tape = _tape_with_findings([_finding("low")])
+
+    handoff = derive_handoff(tape)
+
+    assert tape["verdict"]["value"] == "benign"
+    assert handoff["action_type"] == "notify_only"
+    assert handoff["target"]["kind"] == "custom"
+    assert handoff["evidence_refs"] == ["ev-1"]
+
+
+def test_no_findings_flag_handoff_is_rejected_without_evidence_refs():
+    tape = {
+        "audit_ref": None,
+        "created_at": "2026-05-01T10:00:00Z",
+        "findings": [
+            {
+                "evidence_refs": [],
+                "model_contribution": False,
+                "severity": "info",
+                "title": "No evidence - inconclusive",
+            }
+        ],
+        "no_findings_flag": True,
+        "raw_evidence": [_evidence_entry("ev-1")],
+        "schema_version": "tape/1.0",
+        "source_alert_ref": "alert-test",
+        "state": "recording",
+        "tape_id": "tape-test",
+        "tenant_id": "tenant-001",
+        "timeline": [],
+        "verdict": None,
+    }
+    tape["verdict"] = derive_verdict(tape)
+
+    with pytest.raises(ZovarkValidationError):
+        derive_handoff(tape)
+
+
+def test_isolate_host_target_must_be_traced_to_verdict_evidence_refs():
+    tape = {
+        "audit_ref": None,
+        "created_at": "2026-05-01T10:00:00Z",
+        "findings": [_finding("high", ["ev-process"])],
+        "raw_evidence": [
+            _evidence_entry("ev-alert"),
+            _process_entry_without_host("ev-process"),
+        ],
+        "schema_version": "tape/1.0",
+        "source_alert_ref": "alert-test",
+        "state": "recording",
+        "tape_id": "tape-test",
+        "tenant_id": "tenant-001",
+        "timeline": [],
+        "verdict": None,
+    }
+    tape["verdict"] = derive_verdict(tape)
+
+    with pytest.raises(ZovarkValidationError):
+        derive_handoff(tape)
 
 
 @pytest.mark.parametrize("missing_key", ["raw_evidence", "findings", "verdict"])
