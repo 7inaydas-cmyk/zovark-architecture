@@ -9,10 +9,10 @@
 
 ## Task 1 — Project scaffold
 
-- [ ] 1.1 Create `zovark/__init__.py` and `zovark/slice001/__init__.py` with `ZovarkValidationError` exception class.
-- [ ] 1.2 Create `pyproject.toml` (or `setup.py`) declaring the package, Python ≥ 3.11, no third-party runtime dependencies.
-- [ ] 1.3 Create `samples/edr-sample-001.json` with the static sample defined in Design §1.1.
-- [ ] 1.4 Create `tests/__init__.py` and confirm `pytest` discovers the tests directory.
+- [x] 1.1 Create `zovark/__init__.py` and `zovark/slice001/__init__.py` with `ZovarkValidationError` exception class.
+- [x] 1.2 Create `pyproject.toml` (or `setup.py`) declaring the package, Python ≥ 3.11, no third-party runtime dependencies.
+- [x] 1.3 Create `samples/edr-sample-001.json` with the static sample defined in Design §1.1.
+- [x] 1.4 Create `tests/__init__.py` and confirm `pytest` discovers the tests directory.
 
 **Done when:** `python -m pytest tests/` runs (with zero tests) and exits 0.
 
@@ -40,7 +40,7 @@
   - `load_sample(path: str) -> dict` — reads and parses JSON; raises `ZovarkValidationError` on missing file or invalid JSON.
   - `normalize_evidence(raw_input: dict) -> list[dict]` — produces evidence entries per Design §1.2; derives `evidence_id` and `hash` deterministically; stores `raw_content` (the original source object dict) inline on each entry.
 - [ ] 3.2 Write `tests/test_ingest.py`:
-  - Valid sample → correct number of evidence entries (2: one `edr_alert`, one `process_event`).
+  - Valid sample → correct number of evidence entries (3: one `edr_alert`, one `process_event`, one `network_event`).
   - Each entry has `evidence_id`, `hash`, `source_type`, `ingested_at`, `raw_content`.
   - `sha256_of_obj(entry["raw_content"])` equals `entry["hash"]` for every entry.
   - Same input twice → identical `evidence_id` and `hash`.
@@ -135,8 +135,8 @@
   - `policy_snapshot` derived from `sha256_of_string("slice-001-bootstrap-policy")`.
   - `idempotency_key` derived per Design §4.3.
   - `rollback_plan.reversibility_class` uses the three-value enum:
-    - `isolate_host` → `reversible_by_edr`, `vendor_reversal_action: release_isolation`
-    - `notify_only` → `reversible_by_edr`, `vendor_reversal_action: none`
+    - `isolate_host` → `automatic`, `vendor_reversal_action: release_isolation`
+    - `notify_only` → `automatic`, `vendor_reversal_action: none`
   - `authorization_record_ref: "vault://placeholder/bootstrap"`.
   - `execution_result.status: "pending"`, `reason: "recommendation_only_no_dispatcher_in_slice_001"`.
 - [ ] 8.2 Write `tests/test_handoff.py`:
@@ -151,9 +151,9 @@
   - `tape_ref` matches tape's `tape_id`.
   - `tenant_id` matches tape's `tenant_id`.
   - `idempotency_key` is identical across two runs with same input.
-  - `isolate_host` → `rollback_plan.reversibility_class: reversible_by_edr`, `vendor_reversal_action: release_isolation`.
-  - `notify_only` → `rollback_plan.reversibility_class: reversible_by_edr`, `vendor_reversal_action: none`.
-  - `reversibility_class` is one of `reversible_by_edr`, `manual_recovery_required`, `irreversible_requires_compensation` (enum guard).
+  - `isolate_host` → `rollback_plan.reversibility_class: automatic`, `vendor_reversal_action: release_isolation`.
+  - `notify_only` → `rollback_plan.reversibility_class: automatic`, `vendor_reversal_action: none`.
+  - `reversibility_class` is one of `automatic`, `manual_documented`, `irreversible` (enum guard).
 
 **Done when:** `pytest tests/test_handoff.py` passes.
 
@@ -208,7 +208,7 @@
 ## Task 11 — Output writer
 
 - [ ] 11.1 Implement `zovark/slice001/writer.py`:
-  - `write_artifacts(output_dir, tape, handoff, close_audit_entry, replay_report) -> dict[str, str]` — writes all 8 files; returns `{filename: path}` map.
+  - `write_artifacts(output_dir, tape, handoff, close_audit_entry, replay_report) -> dict[str, str]` — writes all 9 files; returns `{filename: path}` map.
   - Creates `output_dir` if it does not exist.
   - All files written with `json.dumps(obj, indent=2, ensure_ascii=False)`.
   - Extracts `evidence-ledger.json`, `timeline.json`, `findings.json`, `verdict.json` from the tape object.

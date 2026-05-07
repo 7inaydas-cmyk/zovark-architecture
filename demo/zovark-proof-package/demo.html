@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zovark — Proof Package Demo</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+         background: #0f1117; color: #e2e8f0; line-height: 1.6; }
+  .banner { background: #1a1d27; border-bottom: 2px solid #e53e3e; padding: 12px 32px;
+             display: flex; align-items: center; justify-content: space-between; }
+  .banner h1 { font-size: 1.1rem; color: #fff; letter-spacing: 0.05em; }
+  .banner .notice { font-size: 0.75rem; color: #fc8181; background: #2d1515;
+                     border: 1px solid #e53e3e; padding: 4px 12px; border-radius: 4px; }
+  .hero { background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+           padding: 48px 32px 32px; text-align: center; border-bottom: 1px solid #2d3748; }
+  .hero .question { font-size: 2rem; font-weight: 700; color: #fff; margin-bottom: 8px; }
+  .hero .sub { color: #a0aec0; font-size: 1rem; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px; }
+  .card { background: #1a1d27; border: 1px solid #2d3748; border-radius: 8px;
+           padding: 24px; margin-bottom: 24px; }
+  .card h2 { font-size: 1rem; font-weight: 600; color: #90cdf4; text-transform: uppercase;
+              letter-spacing: 0.08em; margin-bottom: 16px; border-bottom: 1px solid #2d3748;
+              padding-bottom: 8px; }
+  .action-card { border: 2px solid #e53e3e; }
+  .action-card h2 { color: #fc8181; }
+  .field { display: flex; gap: 16px; margin-bottom: 8px; align-items: flex-start; }
+  .field .label { color: #718096; font-size: 0.85rem; min-width: 180px; flex-shrink: 0; }
+  .field .value { color: #e2e8f0; font-size: 0.9rem; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 12px;
+            font-size: 0.8rem; font-weight: 600; }
+  .badge-red { background: #2d1515; color: #fc8181; border: 1px solid #e53e3e; }
+  .badge-green { background: #1a2d1a; color: #68d391; border: 1px solid #38a169; }
+  .badge-orange { background: #2d1f0a; color: #f6ad55; border: 1px solid #dd6b20; }
+  .badge-blue { background: #0a1a2d; color: #90cdf4; border: 1px solid #3182ce; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th { text-align: left; color: #718096; font-weight: 500; padding: 8px;
+        border-bottom: 1px solid #2d3748; }
+  td { padding: 8px; border-bottom: 1px solid #1e2535; vertical-align: top; }
+  code { font-family: "SF Mono", "Fira Code", monospace; font-size: 0.8rem;
+          background: #0f1117; padding: 2px 6px; border-radius: 3px; color: #90cdf4; }
+  .verdict-box { background: #1a0a0a; border: 2px solid #e53e3e; border-radius: 8px;
+                  padding: 20px; text-align: center; }
+  .verdict-value { font-size: 2rem; font-weight: 800; color: #fc8181; letter-spacing: 0.1em; }
+  .verdict-rule { color: #718096; font-size: 0.85rem; margin-top: 8px; }
+  .replay-box { background: #0a1a0a; border: 2px solid #38a169; border-radius: 8px; padding: 20px; }
+  .replay-status { font-size: 1.5rem; font-weight: 700; color: #68d391; }
+  .check-row { display: flex; gap: 12px; align-items: center; margin: 6px 0; font-size: 0.9rem; }
+  .check-pass { color: #68d391; }
+  .check-none { color: #fc8181; }
+  .hash-chain { font-family: monospace; font-size: 0.75rem; color: #718096; }
+  .footer { text-align: center; padding: 32px; color: #4a5568; font-size: 0.8rem;
+             border-top: 1px solid #2d3748; margin-top: 32px; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 4px; color: #a0aec0; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  <h1>⚡ Zovark — Proof Package</h1>
+  <span class="notice">Static Slice 001 proof-package walkthrough — not a live EDR integration.</span>
+</div>
+
+<div class="hero">
+  <div class="question">Should we approve host isolation?</div>
+  <div class="sub">HOST-12 · tenant-demo · 2026-05-02T09:14Z</div>
+</div>
+
+<div class="container">
+
+  <!-- ACTION CARD -->
+  <div class="card action-card">
+    <h2>⚠ Recommended Action — EDR Action Card</h2>
+    <div class="field"><span class="label">Action</span>
+      <span class="value"><strong>ISOLATE_HOST</strong></span></div>
+    <div class="field"><span class="label">Target</span>
+      <span class="value">HOST-12 (HOST-12.corp.example)</span></div>
+    <div class="field"><span class="label">Approval mode</span>
+      <span class="value"><span class="badge badge-red">approval_required</span></span></div>
+    <div class="field"><span class="label">Dispatch status</span>
+      <span class="value"><span class="badge badge-orange">pending — not dispatched</span></span></div>
+    <div class="field"><span class="label">Reversibility</span>
+      <span class="value"><span class="badge badge-green">automatic</span>
+        — <code>release_isolation</code> available · 4h window</span></div>
+    <div class="field"><span class="label">Authorization</span>
+      <span class="value"><code>vault://placeholder/bootstrap</code></span></div>
+    <div class="field"><span class="label">Idempotency key</span>
+      <span class="value" style="font-family:monospace;font-size:0.8rem">9f71c494eb9924ec832e347350f7643e…</span></div>
+  </div>
+
+  <!-- ORIGINAL ALERT -->
+  <div class="card">
+    <h2>📋 Original Alert Summary</h2>
+    <div class="field"><span class="label">Alert ID</span><span class="value">alert-20260502-001</span></div>
+    <div class="field"><span class="label">Host</span><span class="value">HOST-12.corp.example</span></div>
+    <div class="field"><span class="label">Severity</span><span class="value"><span class="badge badge-orange">HIGH</span></span></div>
+    <div class="field"><span class="label">Description</span><span class="value">Suspicious child process spawned by Office application</span></div>
+    <div class="field"><span class="label">Source process</span><span class="value"><code>winword.exe</code></span></div>
+    <div class="field"><span class="label">Child process</span><span class="value"><code>powershell.exe -WindowStyle Hidden -EncodedCommand …</code></span></div>
+    <div class="field"><span class="label">User</span><span class="value">CORP\jsmith</span></div>
+    <div class="field"><span class="label">C2 contact</span><span class="value">203.0.113.50:443 (HTTPS) · 98 KB received</span></div>
+    <div class="field"><span class="label">Credential access</span><span class="value">LSASS memory read (T1003.001)</span></div>
+    <div class="field"><span class="label">Lateral movement</span><span class="value">SMB to HOST-13 — blocked by firewall (T1021.002)</span></div>
+  </div>
+
+  <!-- EVIDENCE -->
+  <div class="card">
+    <h2>🔒 Evidence Ledger (5 entries · SHA-256 verified)</h2>
+    <table>
+      <tr><th>Type</th><th>Evidence ID</th><th>Hash (SHA-256)</th><th>Ingested</th></tr>
+      
+        <tr>
+          <td>EDR Alert</td>
+          <td style="font-size:0.75em;font-family:monospace">ev-8b68a8878b13f63d979e5…</td>
+          <td style="font-size:0.75em;font-family:monospace">6672b400084bb2961803f1be…</td>
+          <td>2026-05-02T09:14:22Z</td>
+        </tr>
+        <tr>
+          <td>Process Event</td>
+          <td style="font-size:0.75em;font-family:monospace">ev-3908f2ebbbe82687e8448…</td>
+          <td style="font-size:0.75em;font-family:monospace">29ff5eb1131b29a8f45bf7ad…</td>
+          <td>2026-05-02T09:14:22Z</td>
+        </tr>
+        <tr>
+          <td>Network Event</td>
+          <td style="font-size:0.75em;font-family:monospace">ev-07b610876d393b2cebdf6…</td>
+          <td style="font-size:0.75em;font-family:monospace">1ed6f12444f55a312c3192ec…</td>
+          <td>2026-05-02T09:14:22Z</td>
+        </tr>
+        <tr>
+          <td>Credential Access</td>
+          <td style="font-size:0.75em;font-family:monospace">ev-dd7a977483dead2ce516c…</td>
+          <td style="font-size:0.75em;font-family:monospace">85ac2b0b3e1431ad50168a50…</td>
+          <td>2026-05-02T09:14:22Z</td>
+        </tr>
+        <tr>
+          <td>Lateral Movement</td>
+          <td style="font-size:0.75em;font-family:monospace">ev-81ff493a029944ceb5bb6…</td>
+          <td style="font-size:0.75em;font-family:monospace">a9e3b8d67385f803efaaf48c…</td>
+          <td>2026-05-02T09:14:22Z</td>
+        </tr>
+    </table>
+  </div>
+
+  <!-- FINDINGS -->
+  <div class="card">
+    <h2>🔍 Findings (rule-driven · model_contribution: false)</h2>
+    <table>
+      <tr><th>Finding</th><th>Severity</th><th>MITRE</th><th>Evidence refs</th></tr>
+      
+        <tr>
+          <td>Office application spawned encoded PowerShell</td>
+          <td style="color:#e67e22;font-weight:bold">HIGH</td>
+          <td><code>T1059.001</code></td>
+          <td style="font-size:0.75em">ev-8b68a8878b13f…, ev-3908f2ebbbe82…</td>
+        </tr>
+        <tr>
+          <td>PowerShell contacted external IP over HTTPS</td>
+          <td style="color:#e67e22;font-weight:bold">HIGH</td>
+          <td><code>T1071.001</code></td>
+          <td style="font-size:0.75em">ev-3908f2ebbbe82…, ev-07b610876d393…</td>
+        </tr>
+        <tr>
+          <td>Credential access via LSASS memory read</td>
+          <td style="color:#c0392b;font-weight:bold">CRITICAL</td>
+          <td><code>T1003.001</code></td>
+          <td style="font-size:0.75em">ev-dd7a977483dea…</td>
+        </tr>
+        <tr>
+          <td>Lateral movement attempt to HOST-13 (blocked by firewall)</td>
+          <td style="color:#e67e22;font-weight:bold">HIGH</td>
+          <td><code>T1021.002</code></td>
+          <td style="font-size:0.75em">ev-81ff493a02994…</td>
+        </tr>
+    </table>
+  </div>
+
+  <!-- VERDICT -->
+  <div class="card">
+    <h2>⚖ Deterministic Verdict</h2>
+    <div class="verdict-box">
+      <div class="verdict-value">CONFIRMED_MALICIOUS</div>
+      <div class="verdict-rule">Derivation rule: any finding with severity critical or high → confirmed_malicious</div>
+      <div class="verdict-rule" style="margin-top:8px">model_contribution: false · signing_tag: <code>sig-8aea1109fb72355c704811ebacfa…</code></div>
+    </div>
+  </div>
+
+  <!-- BLAST RADIUS -->
+  <div class="card">
+    <h2>💥 Blast Radius</h2>
+    <div class="field"><span class="label">Directly affected</span><span class="value">HOST-12 only</span></div>
+    <div class="field"><span class="label">Services at risk</span>
+      <span class="value"><ul><li>Any user sessions active on HOST-12 will be terminated</li><li>Any processes running on HOST-12 will lose network access</li><li>Shared drives mounted from HOST-12 will become unavailable</li></ul></span></div>
+    <div class="field"><span class="label">Lateral movement</span>
+      <span class="value">HOST-13 targeted — already blocked by firewall</span></div>
+    <div class="field"><span class="label">Business impact</span>
+      <span class="value">Single workstation isolation. No shared infrastructure dependency identified in evidence.</span></div>
+  </div>
+
+  <!-- REVERSAL PLAN -->
+  <div class="card">
+    <h2>↩ Reversal / Recovery Plan</h2>
+    <div class="field"><span class="label">Reversibility class</span>
+      <span class="value"><span class="badge badge-green">automatic</span></span></div>
+    <div class="field"><span class="label">Vendor reversal action</span>
+      <span class="value"><code>release_isolation</code></span></div>
+    <div class="field"><span class="label">Reversal window</span><span class="value">4 hours from dispatch</span></div>
+    <div class="field"><span class="label">Manual steps</span><span class="value">None required</span></div>
+    <div class="field"><span class="label">Recovery notes</span>
+      <span class="value">In a live EDR integration, the expected reversal action would be release_isolation. In Slice 001, this is a recommendation only; no EDR action is dispatched. Credential rotation for CORP\jsmith is recommended regardless of isolation outcome given the LSASS access event.</span></div>
+  </div>
+
+  <!-- REPLAY PROOF -->
+  <div class="card">
+    <h2>▶ Replay Verification</h2>
+    <div class="replay-box">
+      <div class="replay-status">✓ succeeded</div>
+      <div style="margin-top:16px">
+        <div class="check-row"><span class="check-pass">✅</span> Evidence hashes verified (5/5)</div>
+        <div class="check-row"><span class="check-pass">✅</span> Verdict recomputed: CONFIRMED_MALICIOUS</div>
+        <div class="check-row"><span class="check-pass">✅</span> Verdict matched stored verdict</div>
+        <div class="check-row"><span class="check-none">❌</span> No live LLM call during replay</div>
+        <div class="check-row"><span class="check-none">❌</span> No live EDR call during replay</div>
+      </div>
+      <div style="margin-top:16px;font-size:0.85rem;color:#718096">
+        Replay ID: <code>replay-001</code> · Mode: <code>recorded_output</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUDIT CHAIN -->
+  <div class="card">
+    <h2>🔗 Audit Chain</h2>
+    <div class="field"><span class="label">Entry 1</span>
+      <span class="value hash-chain">tape_recording_closed · audit-entry-1<br>
+        this_entry_hash: 4acfa348232980cb5210431eff827ece4c3b2af80fa44616…</span></div>
+    <div class="field"><span class="label">Entry 2</span>
+      <span class="value hash-chain">tape_replayed · audit-entry-2<br>
+        prev_entry_hash: 4acfa348232980cb5210431eff827ece4c3b2af80fa44616…<br>
+        this_entry_hash: bc7a09f0da311062a1319d47120a85f0eade84efe6332359…</span></div>
+    <div class="field"><span class="label">Chain integrity</span>
+      <span class="value"><span class="badge badge-green">hash-linked</span>
+        · unsigned tail · root signing deferred to M1+</span></div>
+  </div>
+
+</div>
+
+<div class="footer">
+  Zovark is the AI-native proof layer for high-stakes security response.<br>
+  Static Slice 001 proof-package walkthrough — not a live EDR integration.<br>
+  Full pipeline implementation in progress.
+</div>
+
+</body>
+</html>

@@ -232,7 +232,7 @@ Open these files in a viewer so you can switch to them instantly:
 ```json
 {
   "rollback_plan": {
-    "reversibility_class": "reversible_by_edr",
+    "reversibility_class": "automatic",
     "vendor_reversal_action": "release_isolation",
     "vendor_reversal_target": {
       "kind": "host",
@@ -249,7 +249,7 @@ Open these files in a viewer so you can switch to them instantly:
 > "Before your analyst approves this action, they can see exactly what happens if
 > it turns out to be a false positive.
 >
-> `reversibility_class` is `reversible_by_edr`. That means the EDR vendor exposes a
+> `reversibility_class` is `automatic`. That means the EDR vendor exposes a
 > reversal API. The reversal action is `release_isolation`. The reversal target is
 > the same host. The reversal window is four hours — that is how long after dispatch
 > the reversal is operationally reasonable.
@@ -258,9 +258,9 @@ Open these files in a viewer so you can switch to them instantly:
 > one API call undoes it.
 >
 > Compare that to `disable_account`, where `reversibility_class` would be
-> `manual_recovery_required` — the analyst would see the manual steps listed before
+> `manual_documented` — the analyst would see the manual steps listed before
 > they approve. Or a file deletion, which would be
-> `irreversible_requires_compensation` — the analyst would know before clicking that
+> `irreversible` — the analyst would know before clicking that
 > this cannot be undone.
 >
 > The reversal plan is not an afterthought. It is part of the action card. It is
@@ -357,9 +357,9 @@ Zovark is the audit-grade evidence layer for AI-assisted SOC response.
 **Action:** ISOLATE_HOST
 **Target:** workstation-42.corp.example (host)
 **Approval required:** YES — no action has been dispatched
-**Evidence basis:** ev-..., ev-... (2 evidence items)
+**Evidence basis:** ev-..., ev-..., ev-... (3 evidence items)
 **Verdict:** CONFIRMED_MALICIOUS
-**Reversibility:** reversible_by_edr — automatic release_isolation available
+**Reversibility:** automatic — release_isolation available
 **Authorization:** vault://placeholder/bootstrap (bootstrap mode)
 
 > No action has been dispatched. Human approval is required before any EDR action.

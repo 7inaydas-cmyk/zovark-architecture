@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zovark — YC Demo Walkthrough</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden}
+#shell{display:flex;flex-direction:column;height:100vh;width:100vw}
+#topbar{background:#111827;border-bottom:1px solid #1f2937;padding:10px 32px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+#topbar .brand{font-size:0.9rem;color:#9ca3af;letter-spacing:0.05em}
+#topbar .brand strong{color:#f9fafb}
+#topbar .notice{font-size:0.72rem;color:#f87171;background:#1f0a0a;border:1px solid #7f1d1d;padding:3px 10px;border-radius:4px}
+#progress{background:#111827;border-bottom:1px solid #1f2937;padding:8px 32px;display:flex;gap:8px;align-items:center;flex-shrink:0}
+.dot{width:10px;height:10px;border-radius:50%;background:#374151;transition:background 0.2s}
+.dot.active{background:#3b82f6}
+.dot.done{background:#10b981}
+#progress .label{margin-left:12px;font-size:0.78rem;color:#6b7280}
+#progress .label span{color:#e2e8f0;font-weight:600}
+#scene{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:48px 80px;overflow:hidden}
+.scene-inner{width:100%;max-width:1100px}
+.scene-tag{font-size:0.72rem;color:#6b7280;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:12px}
+.scene-title{font-size:2.4rem;font-weight:800;color:#f9fafb;line-height:1.15;margin-bottom:20px}
+.scene-sub{font-size:1.05rem;color:#9ca3af;margin-bottom:32px;max-width:700px;line-height:1.6}
+.card{background:#111827;border:1px solid #1f2937;border-radius:10px;padding:24px 28px;margin-bottom:16px}
+.card.hero{border-color:#ef4444;background:#130a0a}
+.card.green{border-color:#10b981;background:#0a1a12}
+.field{display:flex;gap:16px;margin-bottom:10px;align-items:flex-start}
+.field .lbl{color:#6b7280;font-size:0.82rem;min-width:200px;flex-shrink:0;padding-top:2px}
+.field .val{color:#e2e8f0;font-size:0.9rem;line-height:1.5}
+.badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:0.78rem;font-weight:700}
+.badge-red{background:#1f0a0a;color:#f87171;border:1px solid #ef4444}
+.badge-green{background:#0a1a12;color:#34d399;border:1px solid #10b981}
+.badge-blue{background:#0a0f1f;color:#93c5fd;border:1px solid #3b82f6}
+.badge-orange{background:#1a0f00;color:#fbbf24;border:1px solid #d97706}
+code{font-family:"SF Mono","Fira Code",monospace;font-size:0.82rem;background:#0f1117;padding:2px 7px;border-radius:3px;color:#93c5fd}
+table{width:100%;border-collapse:collapse;font-size:0.82rem}
+th{text-align:left;color:#6b7280;font-weight:500;padding:8px 10px;border-bottom:1px solid #1f2937}
+td{padding:8px 10px;border-bottom:1px solid #111827;vertical-align:top}
+.verdict-big{font-size:2.8rem;font-weight:900;color:#f87171;letter-spacing:0.08em;text-align:center;padding:20px 0 8px}
+.verdict-rule{text-align:center;color:#6b7280;font-size:0.85rem}
+.check{display:flex;gap:10px;align-items:center;margin:8px 0;font-size:0.9rem;color:#e2e8f0}
+.check .icon{font-size:1.1rem}
+#nav{background:#111827;border-top:1px solid #1f2937;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+#nav button{background:#1f2937;color:#e2e8f0;border:1px solid #374151;padding:10px 28px;border-radius:6px;font-size:0.9rem;cursor:pointer;transition:background 0.15s}
+#nav button:hover{background:#374151}
+#nav button:disabled{opacity:0.3;cursor:default}
+#nav .scene-counter{color:#6b7280;font-size:0.85rem}
+.ev-id{font-family:monospace;font-size:0.72rem;color:#6b7280}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+</style>
+</head>
+<body>
+<div id="shell">
+  <div id="topbar">
+    <div class="brand"><strong>Zovark</strong> — deterministic proof layer for high-stakes security response</div>
+    <div class="notice">Static Slice 001 proof-package walkthrough — not a live EDR integration</div>
+  </div>
+  <div id="progress">
+    <div class="dot" id="d0"></div>
+    <div class="dot" id="d1"></div>
+    <div class="dot" id="d2"></div>
+    <div class="dot" id="d3"></div>
+    <div class="dot" id="d4"></div>
+    <div class="dot" id="d5"></div>
+    <div class="dot" id="d6"></div>
+    <div class="label">Scene <span id="scene-num">1</span> of 7 — <span id="scene-name">The Question</span></div>
+  </div>
+  <div id="scene"></div>
+  <div id="nav">
+    <button id="prev" onclick="go(-1)" disabled>← Previous</button>
+    <div class="scene-counter" id="scene-counter">1 / 7</div>
+    <button id="next" onclick="go(1)">Next →</button>
+  </div>
+</div>
+<script>
+const SCENES = [
+  {
+    name: "The Question",
+    render: () => `
+      <div class="scene-inner" style="text-align:center">
+        <div class="scene-tag">Scene 1 of 7</div>
+        <div style="font-size:1rem;color:#6b7280;margin-bottom:14px;font-style:italic">An AI system just recommended a disruptive action. A human needs to decide.</div>
+        <div class="scene-title" style="font-size:3rem">Should we approve<br>host isolation?</div>
+        <div class="scene-sub" style="margin:0 auto 40px;text-align:center">
+          HOST-12 · tenant-demo · 2026-05-02T09:14Z
+        </div>
+        <div class="card" style="max-width:680px;margin:0 auto;text-align:left">
+          <div class="field"><span class="lbl">Incident</span><span class="val">Phishing document → encoded PowerShell → C2 contact → credential access → lateral movement attempt</span></div>
+          <div class="field"><span class="lbl">Recommended action</span><span class="val"><strong>ISOLATE_HOST</strong> — HOST-12</span></div>
+          <div class="field"><span class="lbl">Status</span><span class="val"><span class="badge badge-orange">pending — awaiting human approval</span></span></div>
+          <div class="field"><span class="lbl">Dispatched?</span><span class="val"><span class="badge badge-red">NO — approval required</span></span></div>
+        </div>
+        <div style="margin-top:32px;color:#6b7280;font-size:0.85rem">
+          Zovark is the AI-native proof layer for high-stakes security response.<br>
+          Before your SOC acts, it produces evidence, verdict, approval gate, and a replayable proof package.
+        </div>
+      </div>`
+  },
+  {
+    name: "Raw Incident",
+    render: () => `
+      <div class="scene-inner">
+        <div class="scene-tag">Scene 2 of 7</div>
+        <div class="scene-title">Raw EDR-style incident</div>
+        <div class="scene-sub">What the EDR system observed on HOST-12 at 09:14 UTC</div>
+        <div class="two-col">
+          <div>
+            <div class="card">
+              <div style="color:#fbbf24;font-size:0.75rem;font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em">Alert</div>
+              <div class="field"><span class="lbl">Alert ID</span><span class="val">alert-20260502-001</span></div>
+              <div class="field"><span class="lbl">Host</span><span class="val">HOST-12.corp.example</span></div>
+              <div class="field"><span class="lbl">Severity</span><span class="val"><span class="badge badge-orange">HIGH</span></span></div>
+              <div class="field"><span class="lbl">Source process</span><span class="val"><code>winword.exe</code></span></div>
+              <div class="field"><span class="lbl">Child process</span><span class="val"><code>powershell.exe -WindowStyle Hidden -EncodedCommand …</code></span></div>
+              <div class="field"><span class="lbl">User</span><span class="val">CORP\jsmith</span></div>
+            </div>
+            <div class="card">
+              <div style="color:#fbbf24;font-size:0.75rem;font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em">Network</div>
+              <div class="field"><span class="lbl">Destination</span><span class="val">203.0.113.50:443 (HTTPS)</span></div>
+              <div class="field"><span class="lbl">Data received</span><span class="val">98 KB</span></div>
+              <div class="field"><span class="lbl">Classification</span><span class="val"><span class="badge badge-red">external_c2_candidate</span></span></div>
+            </div>
+          </div>
+          <div>
+            <div class="card">
+              <div style="color:#f87171;font-size:0.75rem;font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em">Credential Access</div>
+              <div class="field"><span class="lbl">Technique</span><span class="val">T1003.001 — OS Credential Dumping: LSASS Memory</span></div>
+              <div class="field"><span class="lbl">Target process</span><span class="val"><code>lsass.exe</code></span></div>
+              <div class="field"><span class="lbl">Severity</span><span class="val"><span class="badge badge-red">CRITICAL</span></span></div>
+            </div>
+            <div class="card">
+              <div style="color:#fbbf24;font-size:0.75rem;font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em">Lateral Movement</div>
+              <div class="field"><span class="lbl">Technique</span><span class="val">T1021.002 — SMB/Windows Admin Shares</span></div>
+              <div class="field"><span class="lbl">Target</span><span class="val">HOST-13 (10.0.1.13)</span></div>
+              <div class="field"><span class="lbl">Status</span><span class="val"><span class="badge badge-green">blocked by firewall</span></span></div>
+            </div>
+          </div>
+        </div>
+      </div>`
+  },
+  {
+    name: "Action Card",
+    render: () => `
+      <div class="scene-inner">
+        <div class="scene-tag">Scene 3 of 7</div>
+        <div class="scene-title">Approval-required EDR action card</div>
+        <div class="scene-sub">The first artifact your analyst sees — before any action is dispatched</div>
+        <div class="two-col">
+          <div class="card hero">
+            <div style="color:#f87171;font-size:0.75rem;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:0.08em">Recommended Action</div>
+            <div class="field"><span class="lbl">Action</span><span class="val" style="font-size:1.1rem;font-weight:700">ISOLATE_HOST</span></div>
+            <div class="field"><span class="lbl">Target</span><span class="val">HOST-12 (HOST-12.corp.example)</span></div>
+            <div class="field"><span class="lbl">Approval mode</span><span class="val"><span class="badge badge-red">approval_required</span></span></div>
+            <div class="field"><span class="lbl">Dispatch status</span><span class="val"><span class="badge badge-orange">pending — not dispatched</span></span></div>
+            <div class="field"><span class="lbl">Authorization</span><span class="val"><code>vault://placeholder/bootstrap</code></span></div>
+          </div>
+          <div>
+            <div class="card">
+              <div style="color:#fbbf24;font-size:0.75rem;font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em">Blast Radius</div>
+              <div class="field"><span class="lbl">Directly affected</span><span class="val">HOST-12 only</span></div>
+              <div class="field"><span class="lbl">Lateral movement</span><span class="val">HOST-13 attempt already blocked</span></div>
+              <div class="field"><span class="lbl">Business impact</span><span class="val">Single workstation. No shared infrastructure dependency identified.</span></div>
+            </div>
+            <div class="card">
+              <div style="color:#34d399;font-size:0.75rem;font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em">Reversal / Recovery Plan</div>
+              <div class="field"><span class="lbl">Reversibility</span><span class="val"><span class="badge badge-green">automatic</span></span></div>
+              <div class="field"><span class="lbl">Expected reversal</span><span class="val"><code>release_isolation</code> · 4h window</span></div>
+              <div class="field"><span class="lbl">Note</span><span class="val" style="color:#9ca3af;font-size:0.82rem">In a live EDR integration, the expected reversal action would be release_isolation. In Slice 001, this is a recommendation only; no EDR action is dispatched.</span></div>
+            </div>
+          </div>
+        </div>
+      </div>`
+  },
+  {
+    name: "Evidence",
+    render: () => `
+      <div class="scene-inner">
+        <div class="scene-tag">Scene 4 of 7</div>
+        <div class="scene-title">Evidence ledger</div>
+        <div class="scene-sub">5 evidence entries · each with a SHA-256 hash of its exact content · verified during replay</div>
+        <div class="card">
+          <table>
+            <tr><th>#</th><th>Type</th><th>Evidence ID (truncated)</th><th>Hash (SHA-256, truncated)</th><th>Ingested</th></tr>
+            <tr><td>1</td><td>edr_alert</td><td class="ev-id">ev-d7b730986af5a14c…</td><td class="ev-id">794e31dac2f14f5d…</td><td>09:14:22Z</td></tr>
+            <tr><td>2</td><td>process_event</td><td class="ev-id">ev-7c755e0085c1365…</td><td class="ev-id">c65c0ef3f6dad535…</td><td>09:14:22Z</td></tr>
+            <tr><td>3</td><td>network_event</td><td class="ev-id">ev-…</td><td class="ev-id">…</td><td>09:14:22Z</td></tr>
+            <tr><td>4</td><td>credential_access</td><td class="ev-id">ev-b6d04ab6ccf177c…</td><td class="ev-id">f4a832d60d5598ed…</td><td>09:14:22Z</td></tr>
+            <tr><td>5</td><td>lateral_movement_attempt</td><td class="ev-id">ev-a4791665e335c31…</td><td class="ev-id">a825d1974ff6e43f…</td><td>09:14:22Z</td></tr>
+          </table>
+        </div>
+        <div class="card" style="margin-top:0">
+          <div style="color:#6b7280;font-size:0.82rem;line-height:1.7">
+            Each hash is <strong style="color:#e2e8f0">SHA-256 of the canonical JSON bytes</strong> of the source object.<br>
+            The action card's <code>evidence_refs</code> links directly to these IDs — the recommendation is anchored to specific, hash-verified evidence.<br>
+            During replay, every hash is recomputed from the stored content. Any tampering causes replay to fail with <code>evidence_corruption</code>.
+          </div>
+        </div>
+      </div>`
+  },
+  {
+    name: "Verdict",
+    render: () => `
+      <div class="scene-inner">
+        <div class="scene-tag">Scene 5 of 7</div>
+        <div class="scene-title">Deterministic verdict</div>
+        <div class="scene-sub">A pure function of the recorded findings — no AI model, no randomness, same input always produces the same result</div>
+        <div class="two-col">
+          <div>
+            <div class="card hero" style="text-align:center">
+              <div class="verdict-big">CONFIRMED_MALICIOUS</div>
+              <div class="verdict-rule">Derivation rule: any finding with severity critical or high</div>
+              <div style="margin-top:12px;font-size:0.8rem;color:#6b7280">model_contribution: false</div>
+            </div>
+          </div>
+          <div>
+            <div class="card">
+              <div style="color:#fbbf24;font-size:0.75rem;font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em">Findings</div>
+              <table>
+                <tr><th>Finding</th><th>Severity</th><th>MITRE</th></tr>
+                <tr><td>Office app spawned encoded PowerShell</td><td><span class="badge badge-orange">HIGH</span></td><td><code>T1059.001</code></td></tr>
+                <tr><td>PowerShell contacted external IP</td><td><span class="badge badge-orange">HIGH</span></td><td><code>T1071.001</code></td></tr>
+                <tr><td>Credential access via LSASS</td><td><span class="badge badge-red">CRITICAL</span></td><td><code>T1003.001</code></td></tr>
+                <tr><td>Lateral movement to HOST-13 (blocked)</td><td><span class="badge badge-orange">HIGH</span></td><td><code>T1021.002</code></td></tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>`
+  },
+  {
+    name: "Replay Proof",
+    render: () => `
+      <div class="scene-inner">
+        <div class="scene-tag">Scene 6 of 7</div>
+        <div class="scene-title">Replay verification</div>
+        <div class="scene-sub">The proof package is self-contained — an auditor can verify it offline, months later, without access to any live system</div>
+        <div class="two-col">
+          <div class="card green">
+            <div style="color:#34d399;font-size:0.75rem;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:0.08em">Replay Result</div>
+            <div style="font-size:2rem;font-weight:800;color:#34d399;margin-bottom:16px">✓ succeeded</div>
+            <div class="check"><span class="icon">✅</span> Evidence hashes verified (5/5)</div>
+            <div class="check"><span class="icon">✅</span> Verdict recomputed: CONFIRMED_MALICIOUS</div>
+            <div class="check"><span class="icon">✅</span> Verdict matched stored verdict</div>
+            <div class="check"><span class="icon">✅</span> No live LLM call during replay</div>
+            <div class="check"><span class="icon">✅</span> No live EDR call during replay</div>
+            <div class="check"><span class="icon">✅</span> No autonomous dispatch</div>
+          </div>
+          <div>
+            <div class="card">
+              <div style="color:#6b7280;font-size:0.75rem;font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em">Replay State</div>
+              <div class="field"><span class="lbl">Replay ID</span><span class="val"><code>replay-001</code></span></div>
+              <div class="field"><span class="lbl">Mode</span><span class="val"><code>recorded_output</code></span></div>
+              <div class="field"><span class="lbl">Schema pin</span><span class="val"><code>tape/1.0</code></span></div>
+              <div class="field"><span class="lbl">Model versions pin</span><span class="val"><code>[]</code> — no models used</span></div>
+            </div>
+            <div class="card">
+              <div style="color:#6b7280;font-size:0.75rem;font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em">Audit Chain</div>
+              <div class="field"><span class="lbl">Entry 1</span><span class="val ev-id">tape_recording_closed · audit-entry-1</span></div>
+              <div class="field"><span class="lbl">Entry 2</span><span class="val ev-id">tape_replayed · audit-entry-2</span></div>
+              <div class="field"><span class="lbl">Linkage</span><span class="val"><span class="badge badge-green">hash-linked</span> · unsigned tail</span></div>
+            </div>
+          </div>
+        </div>
+      </div>`
+  },
+  {
+    name: "Proof Package",
+    render: () => `
+      <div class="scene-inner">
+        <div class="scene-tag">Scene 7 of 7</div>
+        <div class="scene-title">Customer-readable proof package</div>
+        <div class="scene-sub">What the SOC analyst and auditor actually read — eight questions answered before any action is approved</div>
+        <div class="two-col">
+          <div>
+            <div class="card">
+              <div style="color:#93c5fd;font-size:0.75rem;font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em">Eight questions answered</div>
+              <div class="check"><span class="icon">✅</span> What happened?</div>
+              <div class="check"><span class="icon">✅</span> What evidence supports it?</div>
+              <div class="check"><span class="icon">✅</span> Why was this verdict reached?</div>
+              <div class="check"><span class="icon">✅</span> What response action is recommended?</div>
+              <div class="check"><span class="icon">✅</span> What is the approval mode?</div>
+              <div class="check"><span class="icon">✅</span> What is the blast radius?</div>
+              <div class="check"><span class="icon">✅</span> How can the action be reversed or recovered?</div>
+              <div class="check"><span class="icon">✅</span> Can the decision be replayed?</div>
+            </div>
+          </div>
+          <div>
+            <div class="card">
+              <div style="color:#93c5fd;font-size:0.75rem;font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em">Artifacts in this package</div>
+              <div class="field"><span class="lbl" style="min-width:160px">edr-handoff.json</span><span class="val" style="color:#34d399">← EDR action card (hero)</span></div>
+              <div class="field"><span class="lbl" style="min-width:160px">replay-report.json</span><span class="val" style="color:#34d399">← Replayable proof (hero)</span></div>
+              <div class="field"><span class="lbl" style="min-width:160px">customer-report.md</span><span class="val">Human-readable report</span></div>
+              <div class="field"><span class="lbl" style="min-width:160px">investigation-tape.json</span><span class="val">Internal proof substrate</span></div>
+              <div class="field"><span class="lbl" style="min-width:160px">evidence-ledger.json</span><span class="val">5 hashed evidence entries</span></div>
+              <div class="field"><span class="lbl" style="min-width:160px">findings.json</span><span class="val">4 rule-driven findings</span></div>
+              <div class="field"><span class="lbl" style="min-width:160px">verdict.json</span><span class="val">Deterministic verdict</span></div>
+            </div>
+            <div style="margin-top:16px;color:#6b7280;font-size:0.82rem;line-height:1.6">
+              Zovark is the AI-native proof layer for high-stakes security response.<br>
+              <span style="color:#4b5563">Static Slice 001 walkthrough — not a live EDR integration.</span>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:24px;text-align:center;font-size:1.05rem;font-weight:700;color:#f9fafb">
+          Zovark is not another alert summary. It is proof before response.
+        </div>
+      </div>`
+  }
+];
+
+let cur = 0;
+
+function render() {
+  document.getElementById('scene').innerHTML = SCENES[cur].render();
+  document.getElementById('scene-num').textContent = cur + 1;
+  document.getElementById('scene-name').textContent = SCENES[cur].name;
+  document.getElementById('scene-counter').textContent = (cur+1) + ' / ' + SCENES.length;
+  document.getElementById('prev').disabled = cur === 0;
+  document.getElementById('next').disabled = cur === SCENES.length - 1;
+  document.getElementById('next').textContent = cur === SCENES.length - 1 ? 'Done ✓' : 'Next →';
+  for (let i = 0; i < SCENES.length; i++) {
+    const d = document.getElementById('d' + i);
+    d.className = 'dot' + (i === cur ? ' active' : i < cur ? ' done' : '');
+  }
+}
+
+function go(dir) {
+  cur = Math.max(0, Math.min(SCENES.length - 1, cur + dir));
+  render();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ') go(1);
+  if (e.key === 'ArrowLeft') go(-1);
+});
+
+render();
+</script>
+</body>
+</html>

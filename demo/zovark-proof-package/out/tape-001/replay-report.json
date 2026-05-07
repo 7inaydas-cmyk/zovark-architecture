@@ -1,0 +1,48 @@
+{
+  "audit_chain_entry": {
+    "created_at": "2026-05-02T09:14:26Z",
+    "entry_id": "audit-entry-2",
+    "event_type": "tape_replayed",
+    "payload": {
+      "evidence_hashes_verified": true,
+      "replay_id": "replay-001",
+      "replay_state": "succeeded",
+      "tape_id": "tape-001",
+      "verdict_matched": true,
+      "verdict_recomputed": "confirmed_malicious"
+    },
+    "prev_entry_hash": "4acfa348232980cb5210431eff827ece4c3b2af80fa4461670a79cc34ef6d238",
+    "sequence": 2,
+    "signed_root": null,
+    "tenant_id": "tenant-demo",
+    "this_entry_hash": "bc7a09f0da311062a1319d47120a85f0eade84efe6332359b1e58c77876f4a6a"
+  },
+  "replay_state": {
+    "completed_at": "2026-05-02T09:14:26Z",
+    "evidence_hashes_verified": true,
+    "mismatch_details": null,
+    "mode": "recorded_output",
+    "model_versions_pin": [],
+    "no_live_edr_call": true,
+    "no_live_llm_call": true,
+    "replay_id": "replay-001",
+    "replay_status": "succeeded",
+    "schema_pin": "tape/1.0",
+    "started_at": "2026-05-02T09:14:26Z",
+    "state": "succeeded",
+    "tape_ref": "tape-001",
+    "tenant_id": "tenant-demo",
+    "tool_catalog_pin": "none-slice-001",
+    "unsigned_tail_replay": true,
+    "verdict_match": true,
+    "verdict_recomputed": true,
+    "verification_detail": {
+      "evidence_entries_checked": 5,
+      "evidence_entries_failed": 0,
+      "evidence_entries_passed": 5,
+      "verdict_matched": true,
+      "verdict_recomputed_value": "confirmed_malicious",
+      "verdict_stored": "confirmed_malicious"
+    }
+  }
+}

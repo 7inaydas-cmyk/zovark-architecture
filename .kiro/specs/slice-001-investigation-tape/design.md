@@ -37,6 +37,18 @@ This design does not modify any architecture document.
       "parent_pid": 1024,
       "timestamp": "2026-05-01T10:00:01Z"
     }
+  ],
+  "network_events": [
+    {
+      "event_id": "ne-001",
+      "event_type": "network_event",
+      "process_name": "powershell.exe",
+      "pid": 4812,
+      "destination_ip": "203.0.113.50",
+      "destination_port": 443,
+      "protocol": "HTTPS",
+      "timestamp": "2026-05-01T10:00:02Z"
+    }
   ]
 }
 ```
@@ -192,7 +204,7 @@ tenant and alert.
   },
   "idempotency_key": "<sha256-of-tape-id-colon-action-type-colon-target-identifier>",
   "rollback_plan": {
-    "reversibility_class": "reversible_by_edr",
+    "reversibility_class": "automatic",
     "vendor_reversal_action": "release_isolation",
     "vendor_reversal_target": {
       "kind": "host",
@@ -211,13 +223,13 @@ tenant and alert.
 
 | Value | Meaning | When used |
 |---|---|---|
-| `reversible_by_edr` | EDR vendor exposes a reversal API; reversal is automatic | `isolate_host` (→ `release_isolation`), `notify_only` (→ `none`) |
-| `manual_recovery_required` | No vendor reversal API; operator follows documented steps | e.g., `disable_account` where IdP re-enable is manual |
-| `irreversible_requires_compensation` | Action cannot be undone; compensating action required | e.g., permanent file deletion |
+| `automatic` | EDR vendor exposes a reversal API; reversal is automatic | `isolate_host` (→ `release_isolation`), `notify_only` (→ `none`) |
+| `manual_documented` | No vendor reversal API; operator follows documented steps | e.g., `disable_account` where IdP re-enable is manual |
+| `irreversible` | Action cannot be undone; compensating action required | e.g., permanent file deletion |
 
 For Slice 001:
-- `isolate_host` → `reversibility_class: reversible_by_edr`, `vendor_reversal_action: release_isolation`
-- `notify_only` → `reversibility_class: reversible_by_edr`, `vendor_reversal_action: none`
+- `isolate_host` → `reversibility_class: automatic`, `vendor_reversal_action: release_isolation`
+- `notify_only` → `reversibility_class: automatic`, `vendor_reversal_action: none`
 
 `policy_snapshot` derivation: `sha256("slice-001-bootstrap-policy")`, hex-encoded.
 This is a stable, deterministic value for the bootstrap policy.
@@ -593,9 +605,9 @@ replayable proof. It answers the external build rule directly:
 **Action:** ISOLATE_HOST
 **Target:** workstation-42.corp.example (host)
 **Approval required:** YES — no action has been dispatched
-**Evidence basis:** ev-<...>, ev-<...> (2 evidence items)
+**Evidence basis:** ev-<...>, ev-<...>, ev-<...> (3 evidence items)
 **Verdict:** CONFIRMED_MALICIOUS
-**Reversibility:** reversible_by_edr — automatic release_isolation available
+**Reversibility:** automatic — release_isolation available
 **Authorization:** vault://placeholder/bootstrap (bootstrap mode)
 
 > No action has been dispatched. Human approval is required before any EDR action.
