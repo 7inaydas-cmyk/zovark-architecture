@@ -109,6 +109,20 @@ def test_raw_evidence_equals_ingest_output_exactly():
     assert tape["raw_evidence"] == evidence
 
 
+def test_raw_evidence_is_snapshotted_from_ingest_output():
+    raw = load_sample(SAMPLE_PATH)
+    evidence = normalize_evidence(raw)
+    tape = create_tape(raw, evidence)
+
+    original_evidence_id = tape["raw_evidence"][0]["evidence_id"]
+    original_alert_id = tape["raw_evidence"][0]["raw_content"]["alert_id"]
+    evidence[0]["evidence_id"] = "ev-mutated"
+    evidence[0]["raw_content"]["alert_id"] = "alert-mutated"
+
+    assert tape["raw_evidence"][0]["evidence_id"] == original_evidence_id
+    assert tape["raw_evidence"][0]["raw_content"]["alert_id"] == original_alert_id
+
+
 def test_evidence_ordering_is_preserved():
     _raw, evidence, tape = _sample_tape()
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from typing import Any
 
 from zovark.slice001 import ZovarkValidationError
@@ -52,7 +53,7 @@ def create_tape(
         "source_alert_ref": source_alert_ref,
         "state": "recording",
         "created_at": created_at,
-        "raw_evidence": list(evidence_entries),
+        "raw_evidence": deepcopy(evidence_entries),
         "timeline": [],
         "findings": [],
         "verdict": None,
