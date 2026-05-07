@@ -181,6 +181,31 @@ def test_missing_evidence_id_raises_validation_error():
         build_initial_timeline(tape)
 
 
+@pytest.mark.parametrize("field", ["source_type", "hash", "raw_content"])
+def test_missing_required_evidence_shape_field_raises_validation_error(field):
+    tape = _sample_tape()
+    tape["raw_evidence"][0].pop(field)
+
+    with pytest.raises(ZovarkValidationError):
+        build_initial_timeline(tape)
+
+
+def test_non_object_raw_content_raises_validation_error():
+    tape = _sample_tape()
+    tape["raw_evidence"][0]["raw_content"] = "not-object"
+
+    with pytest.raises(ZovarkValidationError):
+        build_initial_timeline(tape)
+
+
+def test_extra_evidence_shape_field_raises_validation_error():
+    tape = _sample_tape()
+    tape["raw_evidence"][0]["unexpected"] = "out-of-contract"
+
+    with pytest.raises(ZovarkValidationError):
+        build_initial_timeline(tape)
+
+
 def test_missing_ingested_at_raises_validation_error():
     tape = _sample_tape()
     tape["raw_evidence"][0].pop("ingested_at")
@@ -202,6 +227,15 @@ def test_attach_timeline_rejects_invalid_timeline_shape():
 
     with pytest.raises(ZovarkValidationError):
         attach_timeline(tape, [{"event_type": "evidence_added"}])
+
+
+def test_attach_timeline_rejects_unknown_evidence_ref():
+    tape = _sample_tape()
+    timeline = build_initial_timeline(tape)
+    timeline[0]["evidence_refs"] = ["ev-not-present"]
+
+    with pytest.raises(ZovarkValidationError):
+        attach_timeline(tape, timeline)
 
 
 def test_no_forbidden_imports_in_timeline_module():

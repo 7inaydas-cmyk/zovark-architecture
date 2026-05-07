@@ -15,6 +15,13 @@ _REQUIRED_TIMELINE_EVENT_FIELDS = {
     "event_type",
     "evidence_refs",
 }
+_REQUIRED_EVIDENCE_FIELDS = {
+    "evidence_id",
+    "source_type",
+    "hash",
+    "raw_content",
+    "ingested_at",
+}
 
 
 def build_initial_timeline(tape: dict[str, Any]) -> list[dict[str, Any]]:
@@ -50,7 +57,10 @@ def attach_timeline(
 ) -> dict[str, Any]:
     """Return a copy of *tape* with *timeline* attached."""
     _validate_tape(tape)
-    _validate_timeline(timeline)
+    evidence_ids = {
+        _non_empty_string(entry, "evidence_id") for entry in tape["raw_evidence"]
+    }
+    _validate_timeline(timeline, evidence_ids=evidence_ids)
 
     updated = deepcopy(tape)
     updated["timeline"] = deepcopy(timeline)
@@ -91,11 +101,23 @@ def _validate_tape(tape: dict[str, Any]) -> None:
     for index, entry in enumerate(raw_evidence):
         if not isinstance(entry, dict):
             raise ZovarkValidationError(f"tape.raw_evidence[{index}] must be an object")
+        if set(entry) != _REQUIRED_EVIDENCE_FIELDS:
+            raise ZovarkValidationError(
+                f"tape.raw_evidence[{index}] does not match the Slice 001 evidence shape"
+            )
         _non_empty_string(entry, "evidence_id")
+        _non_empty_string(entry, "source_type")
+        _non_empty_string(entry, "hash")
         _non_empty_string(entry, "ingested_at")
+        if not isinstance(entry["raw_content"], dict):
+            raise ZovarkValidationError(
+                f"tape.raw_evidence[{index}].raw_content must be an object"
+            )
 
 
-def _validate_timeline(timeline: list[dict[str, Any]]) -> None:
+def _validate_timeline(
+    timeline: list[dict[str, Any]], *, evidence_ids: set[str]
+) -> None:
     if not isinstance(timeline, list):
         raise ZovarkValidationError("timeline must be a list")
     if not timeline:
@@ -122,6 +144,10 @@ def _validate_timeline(timeline: list[dict[str, Any]]) -> None:
             if not isinstance(evidence_ref, str) or not evidence_ref:
                 raise ZovarkValidationError(
                     f"timeline[{index}].evidence_refs[{ref_index}] must be a non-empty string"
+                )
+            if evidence_ref not in evidence_ids:
+                raise ZovarkValidationError(
+                    f"timeline[{index}].evidence_refs[{ref_index}] is not present in raw_evidence"
                 )
 
     _validate_non_decreasing(timeline)
