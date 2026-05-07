@@ -50,6 +50,20 @@ def _evidence_ids(tape: dict) -> set[str]:
     return {entry["evidence_id"] for entry in tape["raw_evidence"]}
 
 
+def _evidence_entry(
+    evidence_id: str,
+    source_type: str,
+    raw_content: dict,
+) -> dict:
+    return {
+        "evidence_id": evidence_id,
+        "hash": "0" * 64,
+        "ingested_at": "2026-05-01T10:00:00Z",
+        "raw_content": raw_content,
+        "source_type": source_type,
+    }
+
+
 def test_derive_findings_succeeds_for_sample_tape():
     findings, no_findings_flag = derive_findings(_sample_tape())
 
@@ -137,13 +151,136 @@ def test_empty_evidence_produces_no_findings_flag():
 
 def test_non_matching_non_empty_evidence_sets_no_findings_flag():
     evidence = [
-        {
-            "evidence_id": "ev-network-flow-only",
-            "hash": "0" * 64,
-            "ingested_at": "2026-05-01T10:00:00Z",
-            "raw_content": {"flow_id": "nf-1"},
-            "source_type": "network_flow",
-        }
+        _evidence_entry("ev-network-flow-only", "network_flow", {"flow_id": "nf-1"})
+    ]
+
+    findings, no_findings_flag = derive_findings(evidence)
+
+    assert findings == []
+    assert no_findings_flag is True
+
+
+def test_source_type_presence_alone_does_not_emit_powershell_findings():
+    evidence = [
+        _evidence_entry(
+            "ev-alert",
+            "edr_alert",
+            {
+                "alert_type": "edr_alert",
+                "description": "Routine browser network activity",
+            },
+        ),
+        _evidence_entry(
+            "ev-process",
+            "process_event",
+            {
+                "command_line": "chrome.exe --type=renderer",
+                "process_name": "chrome.exe",
+            },
+        ),
+        _evidence_entry(
+            "ev-network",
+            "network_event",
+            {
+                "destination_ip": "203.0.113.50",
+                "destination_port": 443,
+                "process": "chrome.exe",
+                "protocol": "HTTPS",
+            },
+        ),
+    ]
+
+    findings, no_findings_flag = derive_findings(evidence)
+
+    assert findings == []
+    assert no_findings_flag is True
+
+
+def test_encoded_powershell_rule_requires_encoded_command_content():
+    evidence = [
+        _evidence_entry(
+            "ev-alert",
+            "edr_alert",
+            {
+                "alert_type": "edr_alert",
+                "description": "Suspicious PowerShell execution detected",
+            },
+        ),
+        _evidence_entry(
+            "ev-process",
+            "process_event",
+            {
+                "command_line": "powershell.exe Get-Process",
+                "process_name": "powershell.exe",
+            },
+        ),
+    ]
+
+    findings, no_findings_flag = derive_findings(evidence)
+
+    assert findings == []
+    assert no_findings_flag is True
+
+
+def test_external_c2_rule_requires_powershell_process_content():
+    evidence = [
+        _evidence_entry(
+            "ev-process",
+            "process_event",
+            {
+                "command_line": "chrome.exe --type=renderer",
+                "process_name": "chrome.exe",
+            },
+        ),
+        _evidence_entry(
+            "ev-network",
+            "network_event",
+            {
+                "classification": "external_c2_candidate",
+                "destination_ip": "203.0.113.50",
+                "destination_port": 443,
+                "process": "chrome.exe",
+                "protocol": "HTTPS",
+            },
+        ),
+    ]
+
+    findings, no_findings_flag = derive_findings(evidence)
+
+    assert findings == []
+    assert no_findings_flag is True
+
+
+def test_credential_access_rule_requires_lsass_or_technique_content():
+    evidence = [
+        _evidence_entry(
+            "ev-credential",
+            "credential_access",
+            {
+                "event_type": "credential_access",
+                "process": "security-tool.exe",
+                "target_process": "notepad.exe",
+            },
+        )
+    ]
+
+    findings, no_findings_flag = derive_findings(evidence)
+
+    assert findings == []
+    assert no_findings_flag is True
+
+
+def test_lateral_movement_rule_requires_smb_or_blocked_attempt_content():
+    evidence = [
+        _evidence_entry(
+            "ev-lateral",
+            "lateral_movement_attempt",
+            {
+                "destination_host": "HOST-13",
+                "event_type": "lateral_movement_attempt",
+                "status": "allowed_admin_maintenance",
+            },
+        )
     ]
 
     findings, no_findings_flag = derive_findings(evidence)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from copy import deepcopy
 from typing import Any
 
@@ -75,13 +76,10 @@ def derive_findings(
     findings: list[dict[str, Any]] = []
 
     for rule in RULES:
-        source_types = rule["evidence_source_types"]
-        if not all(source_type in evidence_by_type for source_type in source_types):
+        matched_entries = _matched_entries_for_rule(rule, evidence_by_type)
+        if matched_entries is None:
             continue
-        evidence_refs = [
-            evidence_by_type[source_type][0]["evidence_id"]
-            for source_type in source_types
-        ]
+        evidence_refs = [entry["evidence_id"] for entry in matched_entries]
         findings.append(_finding_from_rule(rule, evidence_refs))
 
     no_findings_flag = not findings
@@ -194,6 +192,150 @@ def _evidence_by_source_type(
     for entry in evidence_entries:
         by_type.setdefault(entry["source_type"], []).append(entry)
     return by_type
+
+
+def _matched_entries_for_rule(
+    rule: dict[str, Any],
+    evidence_by_type: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, Any]] | None:
+    rule_id = rule["rule_id"]
+    if rule_id == "RULE-OFFICE-SPAWN-ENCODED-PS":
+        alert = _first_entry(evidence_by_type, "edr_alert", _alert_indicates_powershell)
+        process = _first_entry(
+            evidence_by_type,
+            "process_event",
+            _process_indicates_encoded_powershell,
+        )
+        if alert is None or process is None:
+            return None
+        return [alert, process]
+
+    if rule_id == "RULE-PS-EXTERNAL-C2":
+        process = _first_entry(evidence_by_type, "process_event", _is_powershell_process)
+        network = _first_entry(evidence_by_type, "network_event", _network_indicates_c2)
+        if process is None or network is None:
+            return None
+        return [process, network]
+
+    if rule_id == "RULE-LSASS-DUMP":
+        credential = _first_entry(
+            evidence_by_type,
+            "credential_access",
+            _credential_access_indicates_lsass,
+        )
+        if credential is None:
+            return None
+        return [credential]
+
+    if rule_id == "RULE-SMB-LATERAL-MOVEMENT":
+        lateral = _first_entry(
+            evidence_by_type,
+            "lateral_movement_attempt",
+            _lateral_movement_indicates_smb_attempt,
+        )
+        if lateral is None:
+            return None
+        return [lateral]
+
+    raise ZovarkValidationError(f"unsupported finding rule: {rule_id}")
+
+
+def _first_entry(
+    evidence_by_type: dict[str, list[dict[str, Any]]],
+    source_type: str,
+    predicate: Callable[[dict[str, Any]], bool],
+) -> dict[str, Any] | None:
+    for entry in evidence_by_type.get(source_type, []):
+        if predicate(entry["raw_content"]):
+            return entry
+    return None
+
+
+def _alert_indicates_powershell(raw_content: dict[str, Any]) -> bool:
+    alert_text = _text_fields(
+        raw_content,
+        "alert_type",
+        "child_process",
+        "description",
+        "source_process",
+    )
+    return "powershell" in alert_text or "office" in alert_text
+
+
+def _process_indicates_encoded_powershell(raw_content: dict[str, Any]) -> bool:
+    command_line = _text_fields(raw_content, "command_line")
+    return _is_powershell_process(raw_content) and "encodedcommand" in command_line
+
+
+def _is_powershell_process(raw_content: dict[str, Any]) -> bool:
+    process_text = _text_fields(
+        raw_content,
+        "child_process",
+        "command_line",
+        "parent_process",
+        "process",
+        "process_name",
+    )
+    return "powershell" in process_text
+
+
+def _network_indicates_c2(raw_content: dict[str, Any]) -> bool:
+    network_text = _text_fields(
+        raw_content,
+        "classification",
+        "destination_ip",
+        "event_type",
+        "process",
+        "process_name",
+        "protocol",
+    )
+    if "c2" in network_text:
+        return True
+    if "powershell" in network_text and "https" in network_text:
+        return True
+    return (
+        str(raw_content.get("destination_port")) == "443"
+        and "https" in network_text
+        and bool(raw_content.get("destination_ip"))
+    )
+
+
+def _credential_access_indicates_lsass(raw_content: dict[str, Any]) -> bool:
+    credential_text = _text_fields(
+        raw_content,
+        "event_type",
+        "process",
+        "target_process",
+        "technique",
+        "technique_name",
+    )
+    return "lsass" in credential_text or "t1003.001" in credential_text
+
+
+def _lateral_movement_indicates_smb_attempt(raw_content: dict[str, Any]) -> bool:
+    lateral_text = _text_fields(
+        raw_content,
+        "destination_host",
+        "event_type",
+        "process",
+        "status",
+        "technique",
+        "technique_name",
+    )
+    return (
+        "t1021.002" in lateral_text
+        or "smb" in lateral_text
+        or "blocked_by_firewall" in lateral_text
+    )
+
+
+def _text_fields(raw_content: dict[str, Any], *keys: str) -> str:
+    values = []
+    for key in keys:
+        value = raw_content.get(key)
+        if isinstance(value, str):
+            values.append(value.lower())
+    return " ".join(values)
 
 
 def _finding_from_rule(
