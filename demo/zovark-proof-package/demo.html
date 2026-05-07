@@ -113,32 +113,32 @@
       
         <tr>
           <td>EDR Alert</td>
-          <td style="font-size:0.75em;font-family:monospace">ev-d7b730986af5a14c5d257…</td>
-          <td style="font-size:0.75em;font-family:monospace">794e31dac2f14f5df1c802dd…</td>
+          <td style="font-size:0.75em;font-family:monospace">ev-8b68a8878b13f63d979e5…</td>
+          <td style="font-size:0.75em;font-family:monospace">6672b400084bb2961803f1be…</td>
           <td>2026-05-02T09:14:22Z</td>
         </tr>
         <tr>
           <td>Process Event</td>
-          <td style="font-size:0.75em;font-family:monospace">ev-7c755e0085c1365255d70…</td>
-          <td style="font-size:0.75em;font-family:monospace">c65c0ef3f6dad53569a930b7…</td>
+          <td style="font-size:0.75em;font-family:monospace">ev-3908f2ebbbe82687e8448…</td>
+          <td style="font-size:0.75em;font-family:monospace">29ff5eb1131b29a8f45bf7ad…</td>
           <td>2026-05-02T09:14:22Z</td>
         </tr>
         <tr>
           <td>Network Event</td>
-          <td style="font-size:0.75em;font-family:monospace">ev-ec12be18dc1bb56096f56…</td>
-          <td style="font-size:0.75em;font-family:monospace">4e7cdb5bdc70c7b9da486f93…</td>
+          <td style="font-size:0.75em;font-family:monospace">ev-07b610876d393b2cebdf6…</td>
+          <td style="font-size:0.75em;font-family:monospace">1ed6f12444f55a312c3192ec…</td>
           <td>2026-05-02T09:14:22Z</td>
         </tr>
         <tr>
           <td>Credential Access</td>
-          <td style="font-size:0.75em;font-family:monospace">ev-b6d04ab6ccf177c7d8559…</td>
-          <td style="font-size:0.75em;font-family:monospace">f4a832d60d5598ed46ac4b72…</td>
+          <td style="font-size:0.75em;font-family:monospace">ev-dd7a977483dead2ce516c…</td>
+          <td style="font-size:0.75em;font-family:monospace">85ac2b0b3e1431ad50168a50…</td>
           <td>2026-05-02T09:14:22Z</td>
         </tr>
         <tr>
           <td>Lateral Movement</td>
-          <td style="font-size:0.75em;font-family:monospace">ev-a4791665e335c31708b30…</td>
-          <td style="font-size:0.75em;font-family:monospace">a825d1974ff6e43f372428db…</td>
+          <td style="font-size:0.75em;font-family:monospace">ev-81ff493a029944ceb5bb6…</td>
+          <td style="font-size:0.75em;font-family:monospace">a9e3b8d67385f803efaaf48c…</td>
           <td>2026-05-02T09:14:22Z</td>
         </tr>
     </table>
@@ -154,25 +154,25 @@
           <td>Office application spawned encoded PowerShell</td>
           <td style="color:#e67e22;font-weight:bold">HIGH</td>
           <td><code>T1059.001</code></td>
-          <td style="font-size:0.75em">ev-d7b730986af5a…, ev-7c755e0085c13…</td>
+          <td style="font-size:0.75em">ev-8b68a8878b13f…, ev-3908f2ebbbe82…</td>
         </tr>
         <tr>
           <td>PowerShell contacted external IP over HTTPS</td>
           <td style="color:#e67e22;font-weight:bold">HIGH</td>
           <td><code>T1071.001</code></td>
-          <td style="font-size:0.75em">ev-7c755e0085c13…, ev-ec12be18dc1bb…</td>
+          <td style="font-size:0.75em">ev-3908f2ebbbe82…, ev-07b610876d393…</td>
         </tr>
         <tr>
           <td>Credential access via LSASS memory read</td>
           <td style="color:#c0392b;font-weight:bold">CRITICAL</td>
           <td><code>T1003.001</code></td>
-          <td style="font-size:0.75em">ev-b6d04ab6ccf17…</td>
+          <td style="font-size:0.75em">ev-dd7a977483dea…</td>
         </tr>
         <tr>
           <td>Lateral movement attempt to HOST-13 (blocked by firewall)</td>
           <td style="color:#e67e22;font-weight:bold">HIGH</td>
           <td><code>T1021.002</code></td>
-          <td style="font-size:0.75em">ev-a4791665e335c…</td>
+          <td style="font-size:0.75em">ev-81ff493a02994…</td>
         </tr>
     </table>
   </div>
@@ -183,7 +183,7 @@
     <div class="verdict-box">
       <div class="verdict-value">CONFIRMED_MALICIOUS</div>
       <div class="verdict-rule">Derivation rule: any finding with severity critical or high → confirmed_malicious</div>
-      <div class="verdict-rule" style="margin-top:8px">model_contribution: false · signing_tag: <code>sig-04bf0a470d1c7d0641892dc20b88…</code></div>
+      <div class="verdict-rule" style="margin-top:8px">model_contribution: false · signing_tag: <code>sig-8aea1109fb72355c704811ebacfa…</code></div>
     </div>
   </div>
 
@@ -235,11 +235,11 @@
     <h2>🔗 Audit Chain</h2>
     <div class="field"><span class="label">Entry 1</span>
       <span class="value hash-chain">tape_recording_closed · audit-entry-1<br>
-        this_entry_hash: 134fe99d3e80539ec983478b7330f6512c5b247d7998bffa…</span></div>
+        this_entry_hash: 4acfa348232980cb5210431eff827ece4c3b2af80fa44616…</span></div>
     <div class="field"><span class="label">Entry 2</span>
       <span class="value hash-chain">tape_replayed · audit-entry-2<br>
-        prev_entry_hash: 134fe99d3e80539ec983478b7330f6512c5b247d7998bffa…<br>
-        this_entry_hash: d5a093470a152e147baa86b7273e448f51b4a13a40a3cac1…</span></div>
+        prev_entry_hash: 4acfa348232980cb5210431eff827ece4c3b2af80fa44616…<br>
+        this_entry_hash: bc7a09f0da311062a1319d47120a85f0eade84efe6332359…</span></div>
     <div class="field"><span class="label">Chain integrity</span>
       <span class="value"><span class="badge badge-green">hash-linked</span>
         · unsigned tail · root signing deferred to M1+</span></div>

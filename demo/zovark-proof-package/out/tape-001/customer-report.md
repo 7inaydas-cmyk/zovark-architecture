@@ -38,11 +38,11 @@ lateral movement.
 
 | # | Evidence ID | Type | Timestamp | Key detail |
 |---|---|---|---|---|
-| 1 | ev-d7b730986af5a14c5...3eb | edr_alert | 09:14:00Z | winword.exe spawned powershell.exe |
-| 2 | ev-7c755e0085c136525...d01 | process_event | 09:14:03Z | powershell.exe -EncodedCommand (hidden window) |
-| 3 | ev-ec12be18dc1bb5609...f9 | network_event | 09:14:07Z | 203.0.113.50:443, 98 KB received |
-| 4 | ev-b6d04ab6ccf177c7d...3c | credential_access | 09:14:11Z | LSASS memory read (T1003.001) |
-| 5 | ev-a4791665e335c3170...b5 | lateral_movement_attempt | 09:14:19Z | SMB to HOST-13 (blocked) |
+| 1 | ev-8b68a8878b13f63d9...b17 | edr_alert | 09:14:00Z | winword.exe spawned powershell.exe |
+| 2 | ev-3908f2ebbbe82687e...e9e | process_event | 09:14:03Z | powershell.exe -EncodedCommand (hidden window) |
+| 3 | ev-07b610876d393b2ce...c26 | network_event | 09:14:07Z | 203.0.113.50:443, 98 KB received |
+| 4 | ev-dd7a977483dead2ce...65d | credential_access | 09:14:11Z | LSASS memory read (T1003.001) |
+| 5 | ev-81ff493a029944ceb...4d0 | lateral_movement_attempt | 09:14:19Z | SMB to HOST-13 (blocked) |
 
 Each evidence entry carries a SHA-256 hash of its exact content. The hashes are
 verified during replay — any post-ingestion tampering would cause replay to fail
@@ -159,8 +159,8 @@ Replay mode: `recorded_output`
 
 | Entry | Event | Entry ID | Hash |
 |---|---|---|---|
-| 1 | tape_recording_closed | audit-entry-1 | 134fe99d3e80539e...8288 |
-| 2 | tape_replayed | audit-entry-2 | d5a093470a152e14...e328 |
+| 1 | tape_recording_closed | audit-entry-1 | 4acfa348232980cb...d238 |
+| 2 | tape_replayed | audit-entry-2 | bc7a09f0da311062...4a6a |
 
 Chain: hash-linked. Entry 2's `prev_entry_hash` equals entry 1's `this_entry_hash`.
 Root signing deferred to M1+ (production vault runtime).
@@ -174,7 +174,7 @@ Tenant: tenant-demo
 Source alert: alert-20260502-001
 Generated: 2026-05-02T09:14:22Z
 Schema: tape/1.0
-Signing tag: sig-04bf0a470d1c7d0641892dc20b88c57ab32371fd0bba39426c3366dbcc41b1b9
+Signing tag: sig-8aea1109fb72355c704811ebacfa0cd9a6ebc093bd809fc957991e0cd9af3231
 
 ---
 

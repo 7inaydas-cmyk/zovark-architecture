@@ -127,16 +127,6 @@ def test_demo_sample_evidence_shape_matches_committed_contract():
     committed_ledger = json.loads(DEMO_LEDGER_PATH.read_text(encoding="utf-8"))
 
     evidence = normalize_evidence(raw)
-    expected = [
-        {
-            "evidence_id": entry["evidence_id"],
-            "source_type": entry["source_type"],
-            "hash": entry["hash"],
-            "raw_content": entry["raw_content"],
-            "ingested_at": entry["raw_content"]["timestamp"],
-        }
-        for entry in committed_ledger
-    ]
 
     assert [entry["source_type"] for entry in evidence] == [
         "edr_alert",
@@ -147,7 +137,7 @@ def test_demo_sample_evidence_shape_matches_committed_contract():
     ]
     assert len(evidence) == 5
     assert all("ingested_at" in entry for entry in committed_ledger)
-    assert evidence == expected
+    assert evidence == committed_ledger
 
 
 def test_changing_raw_content_changes_hash_and_evidence_id():

@@ -11,11 +11,11 @@
       "verdict_matched": true,
       "verdict_recomputed": "confirmed_malicious"
     },
-    "prev_entry_hash": "134fe99d3e80539ec983478b7330f6512c5b247d7998bffa55943e8e00b08288",
+    "prev_entry_hash": "4acfa348232980cb5210431eff827ece4c3b2af80fa4461670a79cc34ef6d238",
     "sequence": 2,
     "signed_root": null,
     "tenant_id": "tenant-demo",
-    "this_entry_hash": "d5a093470a152e147baa86b7273e448f51b4a13a40a3cac1c3efdfa09f34e328"
+    "this_entry_hash": "bc7a09f0da311062a1319d47120a85f0eade84efe6332359b1e58c77876f4a6a"
   },
   "replay_state": {
     "completed_at": "2026-05-02T09:14:26Z",

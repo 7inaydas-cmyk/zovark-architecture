@@ -1,7 +1,7 @@
 [
   {
-    "evidence_id": "ev-d7b730986af5a14c5d2575759dc83b8932a1276f5ba05a12cc717b247410e3eb",
-    "hash": "794e31dac2f14f5df1c802dd9bbf57dd56bdbba75e301bb972b2c3609d72e45d",
+    "evidence_id": "ev-8b68a8878b13f63d979e5ce3ce398845b53933130ffeb9951efc07b8b5a8db17",
+    "hash": "6672b400084bb2961803f1be6ccb0e83a797a2698b511db05520194c647eeaaa",
     "ingested_at": "2026-05-02T09:14:22Z",
     "raw_content": {
       "alert_id": "alert-20260502-001",
@@ -10,6 +10,7 @@
       "description": "Suspicious child process spawned by Office application",
       "host": "HOST-12",
       "host_fqdn": "HOST-12.corp.example",
+      "ingested_at": "2026-05-02T09:14:22Z",
       "severity": "high",
       "source_process": "winword.exe",
       "timestamp": "2026-05-02T09:14:00Z"
@@ -17,12 +18,13 @@
     "source_type": "edr_alert"
   },
   {
-    "evidence_id": "ev-7c755e0085c1365255d70796c78f1ba27138aa47df7d629ee324cdf3ac34bd01",
-    "hash": "c65c0ef3f6dad53569a930b7260d503f146f89656759d76472c8875d4bac4f0d",
+    "evidence_id": "ev-3908f2ebbbe82687e8448b79a3d1ee4becc55a4da8f9bd6388825d0002062e9e",
+    "hash": "29ff5eb1131b29a8f45bf7ad3a976994b08f93ed8ce76510761828ad7be41626",
     "ingested_at": "2026-05-02T09:14:22Z",
     "raw_content": {
       "event_id": "pe-001",
       "event_type": "process_event",
+      "ingested_at": "2026-05-02T09:14:22Z",
       "parent_pid": 3104,
       "parent_process": "winword.exe",
       "pid": 7832,
@@ -34,8 +36,8 @@
     "source_type": "process_event"
   },
   {
-    "evidence_id": "ev-ec12be18dc1bb56096f56e944d55fea59251f5c9f251d2344ca0b3da98858d5a",
-    "hash": "4e7cdb5bdc70c7b9da486f935a9f361c2d930a20a4721a068ff7ddf4a815ed63",
+    "evidence_id": "ev-07b610876d393b2cebdf64f78cc3ad4e05d172e5762400cc804d4be176c3bc26",
+    "hash": "1ed6f12444f55a312c3192ec0afd290aea297e1b899a4230d7d23b85ff177b4c",
     "ingested_at": "2026-05-02T09:14:22Z",
     "raw_content": {
       "bytes_received": 98304,
@@ -45,6 +47,7 @@
       "destination_port": 443,
       "event_id": "ne-001",
       "event_type": "network_event",
+      "ingested_at": "2026-05-02T09:14:22Z",
       "pid": 7832,
       "process": "powershell.exe",
       "protocol": "HTTPS",
@@ -54,13 +57,14 @@
     "source_type": "network_event"
   },
   {
-    "evidence_id": "ev-b6d04ab6ccf177c7d8559bb3875950cb86daa7d701f4206d4c68d0a337e0053c",
-    "hash": "f4a832d60d5598ed46ac4b72cc8f69ed2a030373ddfbaafd4ebbde8d9043c224",
+    "evidence_id": "ev-dd7a977483dead2ce516cd43e83da08f5157dd4028691e97d71a46d07227f65d",
+    "hash": "85ac2b0b3e1431ad50168a506de9cc88a5dded56eb93e3dc916e067968e525e2",
     "ingested_at": "2026-05-02T09:14:22Z",
     "raw_content": {
       "event_id": "ca-001",
       "event_type": "credential_access",
       "host": "HOST-12",
+      "ingested_at": "2026-05-02T09:14:22Z",
       "pid": 7832,
       "process": "powershell.exe",
       "target_process": "lsass.exe",
@@ -71,14 +75,15 @@
     "source_type": "credential_access"
   },
   {
-    "evidence_id": "ev-a4791665e335c31708b308bd79f11d6f4e266d1eeff828f9ee9a84e69b3a8fb5",
-    "hash": "a825d1974ff6e43f372428db972c99a27d86c3fd1222708b1395e791999a127d",
+    "evidence_id": "ev-81ff493a029944ceb5bb6f8dd81fd26bd5f7cc12b28923a3ad6b1150083964d0",
+    "hash": "a9e3b8d67385f803efaaf48c5bfa66b99f4e2c6b9a5fa69a638ee14cba4d6af0",
     "ingested_at": "2026-05-02T09:14:22Z",
     "raw_content": {
       "destination_host": "HOST-13",
       "destination_ip": "10.0.1.13",
       "event_id": "lm-001",
       "event_type": "lateral_movement_attempt",
+      "ingested_at": "2026-05-02T09:14:22Z",
       "pid": 7832,
       "process": "powershell.exe",
       "source_host": "HOST-12",

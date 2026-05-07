@@ -97,6 +97,7 @@ ALERT_OBJ = {
     "description": "Suspicious child process spawned by Office application",
     "host": "HOST-12",
     "host_fqdn": "HOST-12.corp.example",
+    "ingested_at": INGESTED_AT,
     "severity": "high",
     "source_process": "winword.exe",
     "timestamp": "2026-05-02T09:14:00Z",
@@ -105,6 +106,7 @@ ALERT_OBJ = {
 PE_001 = {
     "event_id": "pe-001",
     "event_type": "process_event",
+    "ingested_at": INGESTED_AT,
     "parent_pid": 3104,
     "parent_process": "winword.exe",
     "pid": 7832,
@@ -129,6 +131,7 @@ NE_001 = {
     "destination_port": 443,
     "event_id": "ne-001",
     "event_type": "network_event",
+    "ingested_at": INGESTED_AT,
     "pid": 7832,
     "process": "powershell.exe",
     "protocol": "HTTPS",
@@ -140,6 +143,7 @@ CA_001 = {
     "event_id": "ca-001",
     "event_type": "credential_access",
     "host": "HOST-12",
+    "ingested_at": INGESTED_AT,
     "pid": 7832,
     "process": "powershell.exe",
     "target_process": "lsass.exe",
@@ -153,6 +157,7 @@ LM_001 = {
     "destination_ip": "10.0.1.13",
     "event_id": "lm-001",
     "event_type": "lateral_movement_attempt",
+    "ingested_at": INGESTED_AT,
     "pid": 7832,
     "process": "powershell.exe",
     "source_host": "HOST-12",
@@ -491,6 +496,7 @@ SAMPLE_JSON_CONTENT = {
             "event_id": "ca-001",
             "event_type": "credential_access",
             "host": "HOST-12",
+            "ingested_at": INGESTED_AT,
             "pid": 7832,
             "process": "powershell.exe",
             "target_process": "lsass.exe",
@@ -502,12 +508,14 @@ SAMPLE_JSON_CONTENT = {
     "description": "Suspicious child process spawned by Office application",
     "host": "HOST-12",
     "host_fqdn": "HOST-12.corp.example",
+    "ingested_at": INGESTED_AT,
     "lateral_movement_events": [
         {
             "destination_host": "HOST-13",
             "destination_ip": "10.0.1.13",
             "event_id": "lm-001",
             "event_type": "lateral_movement_attempt",
+            "ingested_at": INGESTED_AT,
             "pid": 7832,
             "process": "powershell.exe",
             "source_host": "HOST-12",
@@ -526,6 +534,7 @@ SAMPLE_JSON_CONTENT = {
             "destination_port": 443,
             "event_id": "ne-001",
             "event_type": "network_event",
+            "ingested_at": INGESTED_AT,
             "pid": 7832,
             "process": "powershell.exe",
             "protocol": "HTTPS",
@@ -545,6 +554,7 @@ SAMPLE_JSON_CONTENT = {
             ),
             "event_id": "pe-001",
             "event_type": "process_event",
+            "ingested_at": INGESTED_AT,
             "parent_pid": 3104,
             "parent_process": "winword.exe",
             "pid": 7832,
@@ -560,8 +570,8 @@ SAMPLE_JSON_CONTENT = {
 
 
 def build_customer_report(ledger, findings, verdict, handoff, replay_report) -> str:
-    ev_short = {e["evidence_id"]: e["evidence_id"][:20] + "..." for e in ledger}
     ev_ids = [e["evidence_id"] for e in ledger]
+    ev_short = [eid[:20] + "..." + eid[-3:] for eid in ev_ids]
     signing_tag = verdict["signing_tag"]
     entry1_hash = replay_report["audit_chain_entry"]["prev_entry_hash"]
     entry1_this = entry1_hash  # prev of entry2 = this of entry1
@@ -608,11 +618,11 @@ def build_customer_report(ledger, findings, verdict, handoff, replay_report) -> 
         "",
         "| # | Evidence ID | Type | Timestamp | Key detail |",
         "|---|---|---|---|---|",
-        f"| 1 | {ev_ids[0][:20]}...3eb | edr_alert | 09:14:00Z | winword.exe spawned powershell.exe |",
-        f"| 2 | {ev_ids[1][:20]}...d01 | process_event | 09:14:03Z | powershell.exe -EncodedCommand (hidden window) |",
-        f"| 3 | {ev_ids[2][:20]}...f9 | network_event | 09:14:07Z | 203.0.113.50:443, 98 KB received |",
-        f"| 4 | {ev_ids[3][:20]}...3c | credential_access | 09:14:11Z | LSASS memory read (T1003.001) |",
-        f"| 5 | {ev_ids[4][:20]}...b5 | lateral_movement_attempt | 09:14:19Z | SMB to HOST-13 (blocked) |",
+        f"| 1 | {ev_short[0]} | edr_alert | 09:14:00Z | winword.exe spawned powershell.exe |",
+        f"| 2 | {ev_short[1]} | process_event | 09:14:03Z | powershell.exe -EncodedCommand (hidden window) |",
+        f"| 3 | {ev_short[2]} | network_event | 09:14:07Z | 203.0.113.50:443, 98 KB received |",
+        f"| 4 | {ev_short[3]} | credential_access | 09:14:11Z | LSASS memory read (T1003.001) |",
+        f"| 5 | {ev_short[4]} | lateral_movement_attempt | 09:14:19Z | SMB to HOST-13 (blocked) |",
         "",
         "Each evidence entry carries a SHA-256 hash of its exact content. The hashes are",
         "verified during replay — any post-ingestion tampering would cause replay to fail",
