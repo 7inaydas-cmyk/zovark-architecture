@@ -65,6 +65,8 @@ def build_close_entry(
     _validate_sequence(sequence)
     if not isinstance(prev_hash, str) or not prev_hash:
         raise ZovarkValidationError("prev_hash must be a non-empty string")
+    if sequence == 1 and prev_hash != GENESIS_HASH:
+        raise ZovarkValidationError("first audit entry must anchor to genesis")
 
     entry_id = _entry_id(sequence)
     audit_ref = tape.get("audit_ref")
@@ -288,6 +290,8 @@ def _validate_audit_entry(
         raise ZovarkValidationError("audit entry sequence is invalid")
     if audit_entry["entry_id"] != _entry_id(resolved_sequence):
         raise ZovarkValidationError("audit entry id is invalid")
+    if resolved_sequence == 1 and audit_entry["prev_entry_hash"] != GENESIS_HASH:
+        raise ZovarkValidationError("first audit entry must anchor to genesis")
     if audit_entry["event_type"] != _EVENT_TYPE:
         raise ZovarkValidationError("audit entry event_type is invalid")
     if audit_entry["tenant_id"] != tape["tenant_id"]:

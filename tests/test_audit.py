@@ -148,6 +148,17 @@ def test_close_entry_core_fields_are_deterministic():
     }
 
 
+def test_first_audit_entry_must_anchor_to_genesis():
+    tape = _sample_tape_with_handoff()
+
+    with pytest.raises(ZovarkValidationError):
+        build_close_entry(
+            tape,
+            sequence=1,
+            prev_hash=sha256_of_string("not-genesis"),
+        )
+
+
 def test_build_audit_entry_alias_matches_derive_audit_entry():
     tape = _sample_tape_with_handoff()
 
