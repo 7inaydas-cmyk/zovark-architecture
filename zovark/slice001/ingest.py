@@ -10,9 +10,14 @@ from zovark.slice001 import ZovarkValidationError
 from zovark.slice001.hashing import sha256_of_obj, sha256_of_string
 
 
-_PROCESS_EVENT_KEYS = ("process_events",)
-_NETWORK_FLOW_KEYS = ("network_events", "network_flows")
-_EVENT_ARRAY_KEYS = set(_PROCESS_EVENT_KEYS + _NETWORK_FLOW_KEYS)
+_EVENT_COLLECTIONS = (
+    ("process_events", "process_event"),
+    ("network_events", "network_event"),
+    ("network_flows", "network_flow"),
+    ("credential_access_events", "credential_access"),
+    ("lateral_movement_events", "lateral_movement_attempt"),
+)
+_EVENT_ARRAY_KEYS = {key for key, _source_type in _EVENT_COLLECTIONS}
 
 
 def load_sample(path: str | Path) -> dict[str, Any]:
@@ -42,15 +47,8 @@ def normalize_evidence(raw_input: dict[str, Any]) -> list[dict[str, Any]]:
     if alert_object:
         entries.append(_evidence_entry("edr_alert", alert_object))
 
-    for key in _PROCESS_EVENT_KEYS:
-        entries.extend(
-            _entries_from_array(raw_input, key, source_type="process_event")
-        )
-
-    for key in _NETWORK_FLOW_KEYS:
-        entries.extend(
-            _entries_from_array(raw_input, key, source_type="network_flow")
-        )
+    for key, source_type in _EVENT_COLLECTIONS:
+        entries.extend(_entries_from_array(raw_input, key, source_type=source_type))
 
     if not entries:
         raise ZovarkValidationError("raw input did not produce any evidence")

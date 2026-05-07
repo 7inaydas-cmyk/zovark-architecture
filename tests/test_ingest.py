@@ -13,6 +13,8 @@ from zovark.slice001.ingest import load_sample, normalize_evidence
 
 
 SAMPLE_PATH = Path("samples/edr-sample-001.json")
+DEMO_SAMPLE_PATH = Path("demo/zovark-proof-package/samples/edr/phishing-powershell.json")
+DEMO_LEDGER_PATH = Path("demo/zovark-proof-package/out/tape-001/evidence-ledger.json")
 
 
 def test_sample_file_loads_successfully_with_path_and_str():
@@ -33,7 +35,7 @@ def test_sample_produces_deterministic_evidence_entries():
     assert [entry["source_type"] for entry in first] == [
         "edr_alert",
         "process_event",
-        "network_flow",
+        "network_event",
     ]
 
 
@@ -65,6 +67,27 @@ def test_evidence_id_is_derived_from_source_type_and_hash():
             f"{entry['source_type']}:{entry['hash']}"
         )
         assert entry["evidence_id"] == expected
+
+
+def test_demo_sample_evidence_shape_matches_committed_contract():
+    raw = load_sample(DEMO_SAMPLE_PATH)
+    committed_ledger = json.loads(DEMO_LEDGER_PATH.read_text(encoding="utf-8"))
+
+    evidence = normalize_evidence(raw)
+    committed_without_ingest_time = [
+        {key: value for key, value in entry.items() if key != "ingested_at"}
+        for entry in committed_ledger
+    ]
+
+    assert [entry["source_type"] for entry in evidence] == [
+        "edr_alert",
+        "process_event",
+        "network_event",
+        "credential_access",
+        "lateral_movement_attempt",
+    ]
+    assert len(evidence) == 5
+    assert evidence == committed_without_ingest_time
 
 
 def test_changing_raw_content_changes_hash_and_evidence_id():
