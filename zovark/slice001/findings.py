@@ -212,7 +212,11 @@ def _matched_entries_for_rule(
 
     if rule_id == "RULE-PS-EXTERNAL-C2":
         process = _first_entry(evidence_by_type, "process_event", _is_powershell_process)
-        network = _first_entry(evidence_by_type, "network_event", _network_indicates_c2)
+        network = _first_entry(
+            evidence_by_type,
+            "network_event",
+            lambda raw_content: _network_indicates_c2(raw_content, process),
+        )
         if process is None or network is None:
             return None
         return [process, network]
@@ -279,7 +283,10 @@ def _is_powershell_process(raw_content: dict[str, Any]) -> bool:
     return "powershell" in process_text
 
 
-def _network_indicates_c2(raw_content: dict[str, Any]) -> bool:
+def _network_indicates_c2(
+    raw_content: dict[str, Any],
+    process_entry: dict[str, Any] | None,
+) -> bool:
     network_text = _text_fields(
         raw_content,
         "classification",
@@ -293,9 +300,11 @@ def _network_indicates_c2(raw_content: dict[str, Any]) -> bool:
         return True
     if "powershell" in network_text and "https" in network_text:
         return True
-    return (
-        str(raw_content.get("destination_port")) == "443"
+    return bool(
+        process_entry is not None
+        and _same_process(raw_content, process_entry["raw_content"])
         and "https" in network_text
+        and str(raw_content.get("destination_port")) == "443"
         and bool(raw_content.get("destination_ip"))
     )
 
@@ -336,6 +345,20 @@ def _text_fields(raw_content: dict[str, Any], *keys: str) -> str:
         if isinstance(value, str):
             values.append(value.lower())
     return " ".join(values)
+
+
+def _same_process(
+    network_content: dict[str, Any],
+    process_content: dict[str, Any],
+) -> bool:
+    network_pid = network_content.get("pid")
+    process_pid = process_content.get("pid")
+    if network_pid is not None and process_pid is not None:
+        return network_pid == process_pid
+
+    network_process = _text_fields(network_content, "process", "process_name")
+    process_name = _text_fields(process_content, "process", "process_name")
+    return bool(network_process and process_name and network_process == process_name)
 
 
 def _finding_from_rule(

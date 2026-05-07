@@ -251,6 +251,67 @@ def test_external_c2_rule_requires_powershell_process_content():
     assert no_findings_flag is True
 
 
+def test_external_c2_rule_rejects_uncorrelated_benign_https_network_event():
+    evidence = [
+        _evidence_entry(
+            "ev-process",
+            "process_event",
+            {
+                "command_line": "powershell.exe Get-Process",
+                "pid": 4812,
+                "process_name": "powershell.exe",
+            },
+        ),
+        _evidence_entry(
+            "ev-network",
+            "network_event",
+            {
+                "destination_ip": "203.0.113.50",
+                "destination_port": 443,
+                "pid": 9001,
+                "process": "chrome.exe",
+                "protocol": "HTTPS",
+            },
+        ),
+    ]
+
+    findings, no_findings_flag = derive_findings(evidence)
+
+    assert findings == []
+    assert no_findings_flag is True
+
+
+def test_external_c2_rule_allows_correlated_powershell_https_network_event():
+    evidence = [
+        _evidence_entry(
+            "ev-process",
+            "process_event",
+            {
+                "command_line": "powershell.exe Get-Process",
+                "pid": 4812,
+                "process_name": "powershell.exe",
+            },
+        ),
+        _evidence_entry(
+            "ev-network",
+            "network_event",
+            {
+                "destination_ip": "203.0.113.50",
+                "destination_port": 443,
+                "pid": 4812,
+                "process": "powershell.exe",
+                "protocol": "HTTPS",
+            },
+        ),
+    ]
+
+    findings, no_findings_flag = derive_findings(evidence)
+
+    assert no_findings_flag is False
+    assert [finding["rule_id"] for finding in findings] == ["RULE-PS-EXTERNAL-C2"]
+    assert findings[0]["evidence_refs"] == ["ev-process", "ev-network"]
+
+
 def test_credential_access_rule_requires_lsass_or_technique_content():
     evidence = [
         _evidence_entry(
