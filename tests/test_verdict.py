@@ -394,6 +394,25 @@ def test_attach_verdict_rejects_wrong_signing_tag():
         attach_verdict(tape, verdict)
 
 
+def test_attach_verdict_rejects_signed_but_non_derived_value():
+    tape = _sample_tape_with_findings()
+    verdict = derive_verdict(tape)
+    verdict["value"] = "benign"
+    snapshot = {
+        "findings": tape["findings"],
+        "raw_evidence": tape["raw_evidence"],
+        "schema_version": tape["schema_version"],
+        "source_alert_ref": tape["source_alert_ref"],
+        "tape_id": tape["tape_id"],
+        "tenant_id": tape["tenant_id"],
+        "verdict_value": "benign",
+    }
+    verdict["signing_tag"] = "sig-" + sha256_of_obj(snapshot)
+
+    with pytest.raises(ZovarkValidationError):
+        attach_verdict(tape, verdict)
+
+
 def test_attach_verdict_rejects_model_contribution_true():
     tape = _sample_tape_with_findings()
     verdict = derive_verdict(tape)

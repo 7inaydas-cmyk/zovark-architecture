@@ -136,16 +136,11 @@ def attach_verdict(tape: dict[str, Any], verdict: dict[str, Any]) -> dict[str, A
         evidence_ids=evidence_ids,
         no_findings_flag=no_findings_flag,
     )
-    expected_signing_tag = _signing_tag(
-        tape,
-        findings=tape["findings"],
-        evidence_entries=tape["raw_evidence"],
-        verdict_value=_non_empty_string(verdict, "value"),
-    )
+    expected_verdict = compute_verdict(tape["findings"], tape["raw_evidence"], tape)
     _validate_verdict(
         verdict,
         evidence_ids=evidence_ids,
-        expected_signing_tag=expected_signing_tag,
+        expected_verdict=expected_verdict,
     )
 
     updated = deepcopy(tape)
@@ -414,7 +409,7 @@ def _validate_verdict(
     verdict: dict[str, Any],
     *,
     evidence_ids: set[str],
-    expected_signing_tag: str | None = None,
+    expected_verdict: dict[str, Any] | None = None,
 ) -> None:
     if not isinstance(verdict, dict):
         raise ZovarkValidationError("verdict must be an object")
@@ -425,8 +420,8 @@ def _validate_verdict(
         _non_empty_string(verdict, key)
     if not verdict["signing_tag"].startswith("sig-"):
         raise ZovarkValidationError("verdict.signing_tag must start with sig-")
-    if expected_signing_tag is not None and verdict["signing_tag"] != expected_signing_tag:
-        raise ZovarkValidationError("verdict.signing_tag does not match tape snapshot")
+    if expected_verdict is not None and verdict != expected_verdict:
+        raise ZovarkValidationError("verdict does not match derived tape verdict")
     if verdict["model_contribution"] is not False:
         raise ZovarkValidationError("verdict.model_contribution must be false")
     if not isinstance(verdict["evidence_refs"], list):
