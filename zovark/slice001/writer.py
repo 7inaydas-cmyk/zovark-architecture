@@ -200,6 +200,14 @@ def render_customer_report(tape: dict[str, Any]) -> str:
     verdict = tape["verdict"]
     handoff = tape["handoff"]
     replay_report = tape["replay_report"]
+    source_types = {entry["source_type"] for entry in ledger}
+    if not {
+        "credential_access",
+        "lateral_movement_attempt",
+        "network_event",
+        "process_event",
+    }.issubset(source_types):
+        return _render_generic_customer_report(tape)
 
     ev_ids = [entry["evidence_id"] for entry in ledger]
     ev_short = [_short_evidence_id(evidence_id) for evidence_id in ev_ids]
@@ -449,6 +457,196 @@ def render_customer_report(tape: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _render_generic_customer_report(tape: dict[str, Any]) -> str:
+    ledger = tape["raw_evidence"]
+    findings = tape["findings"]
+    verdict = tape["verdict"]
+    handoff = tape["handoff"]
+    replay_report = tape["replay_report"]
+    target = handoff["target"]
+    rollback = handoff["rollback_plan"]
+    alert = _first_raw_content(ledger, "edr_alert")
+    target_identifier = target["identifier"]
+    target_label = _target_label(target)
+    action_title = (
+        f"Isolate {target_identifier}."
+        if handoff["action_type"] == "isolate_host"
+        else "Notify the response owner."
+    )
+    entry1_this = replay_report["audit_chain_entry"]["prev_entry_hash"]
+    entry2_this = replay_report["audit_chain_entry"]["this_entry_hash"]
+
+    lines = [
+        "# Zovark Proof Package",
+        "",
+        "**Zovark is the AI-native proof layer for high-stakes security response.**",
+        "",
+        "---",
+        "",
+        "## Recommended Action (EDR Action Card)",
+        "",
+        f"**Action:** {handoff['action_type'].upper()}",
+        f"**Target:** {target_label}",
+        "**Approval required:** YES — no action has been dispatched",
+        f"**Evidence basis:** {len(ledger)} evidence items (see below)",
+        f"**Verdict:** {verdict['value'].upper()}",
+        (
+            f"**Reversibility:** {rollback['reversibility_class']} — "
+            f"`{rollback['vendor_reversal_action']}` available"
+        ),
+        f"**Authorization:** {handoff['authorization_record_ref']} (bootstrap mode)",
+        "",
+        "> No action has been dispatched. Human approval is required before any EDR action is taken.",
+        "",
+        "---",
+        "",
+        "## 1. What happened?",
+        "",
+        _string_from(alert, "description", default="A static EDR alert was processed."),
+        "",
+        "Zovark normalized the static EDR-style JSON into content-addressed evidence,",
+        "derived rule-based findings, computed a deterministic verdict, produced an",
+        "approval-required handoff card, sealed the tape, and replay-verified the result.",
+        "",
+        "---",
+        "",
+        "## 2. What evidence supports it?",
+        "",
+        "| # | Evidence ID | Type | Timestamp | Key detail |",
+        "|---|---|---|---|---|",
+    ]
+    for index, entry in enumerate(ledger, start=1):
+        lines.append(
+            f"| {index} | {_short_evidence_id(entry['evidence_id'])} | "
+            f"{entry['source_type']} | {_evidence_timestamp(entry)} | "
+            f"{_evidence_detail(entry)} |"
+        )
+    lines.extend(
+        [
+            "",
+            "Each evidence entry carries a SHA-256 hash of its exact content. The hashes are",
+            "verified during replay — any post-ingestion tampering would cause replay to fail.",
+            "",
+            "---",
+            "",
+            "## 3. Why was this verdict reached?",
+            "",
+            f"**Verdict:** `{verdict['value']}`",
+            "",
+            f"**Derivation rule:** {verdict['derivation_rule']}",
+            "",
+            "**Findings that triggered this verdict:**",
+            "",
+            "| Finding | Severity | MITRE |",
+            "|---|---|---|",
+        ]
+    )
+    for finding in findings:
+        lines.append(
+            f"| {finding['title']} | {finding['severity']} | {finding.get('mitre_technique', '')} |"
+        )
+    lines.extend(
+        [
+            "",
+            "The verdict is deterministic. No AI model contributed.",
+            "",
+            "`model_contribution: false` on all findings and on the verdict.",
+            "",
+            "---",
+            "",
+            "## 4. What response action is recommended?",
+            "",
+            f"**{action_title}**",
+            "",
+            "The action card (`edr-handoff.json`) contains the structured recommendation,",
+            "approval gate, evidence links, policy snapshot, and rollback plan.",
+            "",
+            "---",
+            "",
+            "## 5. What is the approval mode?",
+            "",
+            f"**{handoff['approval_mode']}**",
+            "",
+            "No action has been dispatched. The action card is a recommendation. A human",
+            "approver must review this proof package before any EDR action is taken.",
+            "",
+            f"Authorization record: `{handoff['authorization_record_ref']}` (bootstrap mode).",
+            "",
+            "---",
+            "",
+            "## 6. What is the blast radius?",
+            "",
+            handoff["blast_radius"]["estimated_business_impact"],
+            "",
+            "---",
+            "",
+            "## 7. How can the action be reversed or recovered?",
+            "",
+            f"**Reversibility class:** `{rollback['reversibility_class']}`",
+            "",
+            f"- Expected reversal action: `{rollback['vendor_reversal_action']}`.",
+            "- In Slice 001, this is a recommendation only; no EDR action is dispatched.",
+            f"- Reversal window: {rollback['reversal_window']}.",
+            "",
+            "---",
+            "",
+            "## 8. Can the decision be replayed?",
+            "",
+            "**Yes. Replay result: succeeded.**",
+            "",
+            "The replay engine verified:",
+            "",
+            "| Check | Result |",
+            "|---|---|",
+            f"| Evidence hashes verified | all {len(ledger)} entries matched |",
+            f"| Verdict recomputed | `{verdict['value']}` |",
+            "| Verdict matched stored verdict | yes |",
+            "| Live LLM call during replay | none |",
+            "| Live EDR call during replay | none |",
+            "",
+            f"Replay ID: `{replay_report['replay_state']['replay_id']}`",
+            f"Replay mode: `{replay_report['replay_state']['mode']}`",
+            "",
+            "---",
+            "",
+            "## Audit Chain",
+            "",
+            "| Entry | Event | Entry ID | Hash |",
+            "|---|---|---|---|",
+            f"| 1 | tape_recording_closed | audit-entry-1 | {entry1_this[:16]}...{entry1_this[-4:]} |",
+            f"| 2 | tape_replayed | audit-entry-2 | {entry2_this[:16]}...{entry2_this[-4:]} |",
+            "",
+            "Chain: hash-linked. Entry 2's `prev_entry_hash` equals entry 1's `this_entry_hash`.",
+            "",
+            "---",
+            "",
+            "## Internal Proof Substrate",
+            "",
+            f"Tape ID: {tape['tape_id']}",
+            f"Tenant: {tape['tenant_id']}",
+            f"Source alert: {tape['source_alert_ref']}",
+            f"Generated: {tape['created_at']}",
+            f"Schema: {tape['schema_version']}",
+            f"Signing tag: {verdict['signing_tag']}",
+            "",
+            "---",
+            "",
+            "## Artifacts",
+            "",
+            "- `edr-handoff.json`          ← EDR action card (hero artifact)",
+            "- `replay-report.json`        ← Replayable proof package (hero artifact)",
+            "- `customer-report.md`        ← This document",
+            "- `investigation-tape.json`   ← Internal proof substrate",
+            "- `evidence-ledger.json`",
+            "- `timeline.json`",
+            "- `findings.json`",
+            "- `verdict.json`",
+            "- `audit-chain-entry.json`",
+        ]
+    )
+    return "\n".join(lines) + "\n"
+
+
 def _validate_tape_for_write(tape: dict[str, Any]) -> None:
     if not isinstance(tape, dict):
         raise ZovarkValidationError("tape must be an object")
@@ -566,6 +764,42 @@ def _first_raw_content(
 
 def _short_evidence_id(evidence_id: str) -> str:
     return evidence_id[:20] + "..." + evidence_id[-3:]
+
+
+def _target_label(target: dict[str, Any]) -> str:
+    identifier = target["identifier"]
+    fqdn = target.get("fqdn")
+    if isinstance(fqdn, str) and fqdn and fqdn != identifier:
+        return f"{identifier} ({fqdn})"
+    return identifier
+
+
+def _evidence_timestamp(entry: dict[str, Any]) -> str:
+    raw_content = entry["raw_content"]
+    timestamp = raw_content.get("timestamp", entry["ingested_at"])
+    if not isinstance(timestamp, str) or not timestamp:
+        raise ZovarkValidationError("evidence timestamp must be a non-empty string")
+    return _time_only(timestamp)
+
+
+def _evidence_detail(entry: dict[str, Any]) -> str:
+    raw_content = entry["raw_content"]
+    source_type = entry["source_type"]
+    if source_type == "edr_alert":
+        return _string_from(raw_content, "description", default="EDR alert")
+    if source_type == "process_event":
+        return _string_from(raw_content, "command_line", default="Process event")
+    if source_type in {"network_event", "network_flow"}:
+        destination_ip = _string_from(raw_content, "destination_ip", default="destination")
+        destination_port = raw_content.get("destination_port")
+        if isinstance(destination_port, int):
+            return f"{destination_ip}:{destination_port}"
+        return destination_ip
+    if source_type == "credential_access":
+        return _string_from(raw_content, "technique_name", default="Credential access")
+    if source_type == "lateral_movement_attempt":
+        return _string_from(raw_content, "technique_name", default="Lateral movement")
+    return source_type
 
 
 def _string_from(source: dict[str, Any], key: str, *, default: str) -> str:
