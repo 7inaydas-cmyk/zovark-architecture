@@ -129,10 +129,13 @@ def _print_verify_success(summary: dict) -> None:
     print(f"  status: {summary['status']}")
     print(f"  package_contract: {summary['package_contract']}")
     print(f"  artifact_count: {summary['artifact_count']}")
+    print(f"  checks_passed: {summary['checks_passed']}")
+    print(f"  failure_count: {summary['failure_count']}")
     print(f"  evidence_entries_checked: {summary['evidence_entries_checked']}")
     print(f"  verdict: {summary['verdict']}")
     print(f"  replay_state: {summary['replay_state']}")
     print(f"  tape_id: {summary['tape_id']}")
+    print(f"  verified_components: {', '.join(summary['verified_components'])}")
 
 
 class _CliError(Exception):

@@ -76,7 +76,13 @@ def test_verify_generated_package_succeeds(tmp_path, capsys):
     assert "status: verified" in stdout
     assert "package_contract: slice-001-proof-package/1.0" in stdout
     assert "artifact_count: 9" in stdout
+    assert "checks_passed: 7" in stdout
+    assert "failure_count: 0" in stdout
     assert "replay_state: succeeded" in stdout
+    assert (
+        "verified_components: file_set, json_parse, extracted_views, handoff, "
+        "audit_entry, replay_report, customer_report"
+    ) in stdout
 
 
 def test_verify_committed_demo_package_succeeds(capsys):
@@ -101,7 +107,7 @@ def test_verify_tampered_package_fails(tmp_path, capsys):
 
     assert exit_code == 3
     assert "package verification failed" in stderr
-    assert "state must be closed" in stderr
+    assert "tape_state_invalid:" in stderr
 
 
 def test_verify_missing_package_fails(tmp_path, capsys):
@@ -110,7 +116,7 @@ def test_verify_missing_package_fails(tmp_path, capsys):
 
     assert exit_code == 3
     assert "package verification failed" in stderr
-    assert "directory does not exist" in stderr
+    assert "package_not_found:" in stderr
 
 
 def test_verify_extra_file_fails(tmp_path, capsys):
@@ -122,7 +128,7 @@ def test_verify_extra_file_fails(tmp_path, capsys):
     stderr = capsys.readouterr().err
 
     assert exit_code == 3
-    assert "file set is invalid" in stderr
+    assert "package_file_set_mismatch:" in stderr
 
 
 def test_verify_does_not_mutate_output_files(tmp_path):
@@ -151,7 +157,7 @@ def test_verify_malformed_package_fails(tmp_path, capsys):
     stderr = capsys.readouterr().err
 
     assert exit_code == 3
-    assert "not valid JSON" in stderr
+    assert "malformed_json:" in stderr
 
 
 def test_verify_cli_requires_package_flag():
