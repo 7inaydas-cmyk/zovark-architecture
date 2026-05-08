@@ -93,6 +93,8 @@ def _reconstruct_verified_tape(package: dict[str, Any]) -> dict[str, Any]:
     tape = deepcopy(package["investigation-tape.json"])
     if not isinstance(tape, dict):
         raise ZovarkValidationError("investigation-tape.json must be an object")
+    if tape.get("state") != "closed":
+        raise ZovarkValidationError("investigation-tape.json state must be closed")
 
     _validate_extracted_views(package, tape)
 
@@ -115,8 +117,6 @@ def _reconstruct_verified_tape(package: dict[str, Any]) -> dict[str, Any]:
 
     sealed_tape = deepcopy(with_handoff)
     sealed_tape["audit_entry"] = audit_entry
-    sealed_tape["audit_ref"] = audit_entry["entry_id"]
-    sealed_tape["state"] = "closed"
 
     replay_report = deepcopy(package["replay-report.json"])
     expected_replay_report = derive_replay_report(sealed_tape)

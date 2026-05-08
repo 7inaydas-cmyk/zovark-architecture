@@ -244,6 +244,16 @@ def test_tampered_replay_report_fails_closed(tmp_path):
         verify_proof_package(package_dir)
 
 
+def test_tampered_investigation_tape_state_fails_closed(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    tape = _load_tape(package_dir)
+    tape["state"] = "recording"
+    _store_tape(package_dir, tape)
+
+    with pytest.raises(ZovarkValidationError):
+        verify_proof_package(package_dir)
+
+
 def test_evidence_raw_content_change_without_hash_update_fails_closed(tmp_path):
     package_dir = _copy_demo_package(tmp_path)
     evidence = _load_json(package_dir, "evidence-ledger.json")
