@@ -40,6 +40,15 @@ FORBIDDEN_IMPORTS = (
     "manifest.json",
     "provenance.json",
 )
+EXPECTED_VERIFIED_COMPONENTS = [
+    "file_set",
+    "json_parse",
+    "extracted_views",
+    "handoff",
+    "audit_entry",
+    "replay_report",
+    "customer_report",
+]
 
 
 def _copy_demo_package(tmp_path: Path) -> Path:
@@ -75,14 +84,23 @@ def _sync_tape_view(package_dir: Path, field: str, filename: str, value) -> None
     _store_json(package_dir, filename, value)
 
 
+def _assert_failure_code(callback, expected_code: str) -> None:
+    with pytest.raises(ZovarkValidationError) as exc:
+        callback()
+    assert str(exc.value).startswith(f"{expected_code}:")
+
+
 def test_committed_demo_package_verifies_successfully():
     summary = verify_proof_package(DEMO_PACKAGE_DIR)
 
     assert summary == {
         "artifact_count": 9,
         "audit_entry_id": "audit-entry-1",
+        "checks_passed": len(EXPECTED_VERIFIED_COMPONENTS),
         "customer_report_verified": True,
         "evidence_entries_checked": 5,
+        "failure_codes": [],
+        "failure_count": 0,
         "handoff_id": summary["handoff_id"],
         "package_contract": "slice-001-proof-package/1.0",
         "replay_id": "replay-001",
@@ -90,6 +108,7 @@ def test_committed_demo_package_verifies_successfully():
         "status": "verified",
         "tape_id": "tape-001",
         "verdict": "confirmed_malicious",
+        "verified_components": EXPECTED_VERIFIED_COMPONENTS,
     }
     assert summary["handoff_id"].startswith("handoff-")
 
@@ -111,7 +130,11 @@ def test_cli_generated_temporary_package_verifies_successfully(tmp_path):
     summary = verify_proof_package(package_dir)
     assert summary["status"] == "verified"
     assert summary["artifact_count"] == len(EXPECTED_OUTPUT_FILES)
+    assert summary["checks_passed"] == len(EXPECTED_VERIFIED_COMPONENTS)
+    assert summary["failure_count"] == 0
+    assert summary["failure_codes"] == []
     assert summary["replay_state"] == "succeeded"
+    assert summary["verified_components"] == EXPECTED_VERIFIED_COMPONENTS
 
 
 def test_repeated_verification_is_deterministic_and_path_free(tmp_path):
@@ -133,48 +156,85 @@ def test_missing_required_file_fails_closed(tmp_path, filename):
     package_dir = _copy_demo_package(tmp_path)
     (package_dir / filename).unlink()
 
-    with pytest.raises(ZovarkValidationError):
-        verify_proof_package(package_dir)
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "package_file_set_mismatch",
+    )
 
 
 def test_extra_file_fails_closed(tmp_path):
     package_dir = _copy_demo_package(tmp_path)
     (package_dir / "extra.json").write_text("{}", encoding="utf-8")
 
-    with pytest.raises(ZovarkValidationError):
-        verify_proof_package(package_dir)
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "package_file_set_mismatch",
+    )
 
 
 def test_extra_directory_fails_closed(tmp_path):
     package_dir = _copy_demo_package(tmp_path)
     (package_dir / "extra-dir").mkdir()
 
-    with pytest.raises(ZovarkValidationError):
-        verify_proof_package(package_dir)
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "package_file_set_mismatch",
+    )
+
+
+def test_missing_package_maps_to_stable_failure_code(tmp_path):
+    _assert_failure_code(
+        lambda: verify_proof_package(tmp_path / "missing-package"),
+        "package_not_found",
+    )
+
+
+def test_non_directory_package_maps_to_stable_failure_code(tmp_path):
+    package_path = tmp_path / "not-a-directory"
+    package_path.write_text("not a package", encoding="utf-8")
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_path),
+        "package_not_directory",
+    )
+
+
+def test_artifact_path_that_is_not_file_maps_to_stable_failure_code(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    (package_dir / "verdict.json").unlink()
+    (package_dir / "verdict.json").mkdir()
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "artifact_not_file",
+    )
 
 
 def test_malformed_json_fails_closed(tmp_path):
     package_dir = _copy_demo_package(tmp_path)
     (package_dir / "verdict.json").write_text("{not-json", encoding="utf-8")
 
-    with pytest.raises(ZovarkValidationError):
-        verify_proof_package(package_dir)
+    _assert_failure_code(lambda: verify_proof_package(package_dir), "malformed_json")
 
 
 def test_empty_customer_report_fails_closed(tmp_path):
     package_dir = _copy_demo_package(tmp_path)
     (package_dir / "customer-report.md").write_text("", encoding="utf-8")
 
-    with pytest.raises(ZovarkValidationError):
-        verify_proof_package(package_dir)
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "empty_customer_report",
+    )
 
 
 def test_customer_report_mismatch_fails_closed(tmp_path):
     package_dir = _copy_demo_package(tmp_path)
     (package_dir / "customer-report.md").write_text("tampered\n", encoding="utf-8")
 
-    with pytest.raises(ZovarkValidationError):
-        verify_proof_package(package_dir)
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "customer_report_mismatch",
+    )
 
 
 @pytest.mark.parametrize(
@@ -197,8 +257,10 @@ def test_extracted_views_must_match_tape_fields(tmp_path, filename, field):
         artifact["tampered"] = True
     _store_json(package_dir, filename, artifact)
 
-    with pytest.raises(ZovarkValidationError):
-        verify_proof_package(package_dir)
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "extracted_view_mismatch",
+    )
 
     tape = _load_tape(package_dir)
     assert tape[field] != artifact
@@ -220,8 +282,19 @@ def test_tampered_handoff_fails_closed(tmp_path):
     handoff["execution_result"]["status"] = "succeeded"
     _store_json(package_dir, "edr-handoff.json", handoff)
 
-    with pytest.raises(ZovarkValidationError):
-        verify_proof_package(package_dir)
+    _assert_failure_code(lambda: verify_proof_package(package_dir), "handoff_mismatch")
+
+
+def test_tampered_handoff_link_fails_with_stable_code(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    tape = _load_tape(package_dir)
+    tape["handoff_ref"] = "handoff-not-present"
+    _store_tape(package_dir, tape)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "handoff_link_mismatch",
+    )
 
 
 def test_tampered_audit_entry_fails_closed(tmp_path):
@@ -230,8 +303,10 @@ def test_tampered_audit_entry_fails_closed(tmp_path):
     audit_entry["payload"]["verdict_value"] = "benign"
     _store_json(package_dir, "audit-chain-entry.json", audit_entry)
 
-    with pytest.raises(ZovarkValidationError):
-        verify_proof_package(package_dir)
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "audit_chain_mismatch",
+    )
 
 
 def test_tampered_replay_report_fails_closed(tmp_path):
@@ -240,8 +315,10 @@ def test_tampered_replay_report_fails_closed(tmp_path):
     replay_report["replay_state"]["state"] = "failed"
     _store_json(package_dir, "replay-report.json", replay_report)
 
-    with pytest.raises(ZovarkValidationError):
-        verify_proof_package(package_dir)
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "replay_report_mismatch",
+    )
 
 
 def test_tampered_investigation_tape_state_fails_closed(tmp_path):
@@ -250,8 +327,10 @@ def test_tampered_investigation_tape_state_fails_closed(tmp_path):
     tape["state"] = "recording"
     _store_tape(package_dir, tape)
 
-    with pytest.raises(ZovarkValidationError):
-        verify_proof_package(package_dir)
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "tape_state_invalid",
+    )
 
 
 def test_evidence_raw_content_change_without_hash_update_fails_closed(tmp_path):
@@ -290,8 +369,10 @@ def test_non_genesis_first_audit_entry_fails_closed(tmp_path):
     audit_entry["prev_entry_hash"] = "not-genesis"
     _store_json(package_dir, "audit-chain-entry.json", audit_entry)
 
-    with pytest.raises(ZovarkValidationError):
-        verify_proof_package(package_dir)
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "audit_genesis_mismatch",
+    )
 
 
 def test_load_and_validate_loaded_package_match_verify(tmp_path):
@@ -309,8 +390,20 @@ def test_loaded_package_with_extra_key_is_rejected(tmp_path):
     package = load_proof_package(_copy_demo_package(tmp_path))
     package["manifest.json"] = {}
 
-    with pytest.raises(ZovarkValidationError):
-        validate_loaded_proof_package(package)
+    _assert_failure_code(
+        lambda: validate_loaded_proof_package(package),
+        "package_shape_invalid",
+    )
+
+
+def test_loaded_package_with_malformed_artifact_shape_is_rejected(tmp_path):
+    package = load_proof_package(_copy_demo_package(tmp_path))
+    package["verdict.json"] = "not a JSON artifact"
+
+    _assert_failure_code(
+        lambda: validate_loaded_proof_package(package),
+        "package_shape_invalid",
+    )
 
 
 def test_no_forbidden_imports_or_scope_creep_in_package_verifier():
