@@ -57,13 +57,13 @@ def _verify_main(argv: Sequence[str]) -> int:
     try:
         summary = verify_proof_package(Path(args.package))
     except ZovarkValidationError as exc:
-        print(f"Slice 001 package verification failed: {exc}", file=sys.stderr)
+        print(render_verification_failure(exc), file=sys.stderr)
         return 3
     except OSError as exc:
         print(f"Slice 001 package verification error: {exc}", file=sys.stderr)
         return 4
 
-    _print_verify_success(summary)
+    print(render_verification_success(summary))
     return 0
 
 
@@ -124,18 +124,78 @@ def _print_success(manifest: dict[str, str], *, replay_state: str) -> None:
     print(f"Replay: {replay_state}")
 
 
-def _print_verify_success(summary: dict) -> None:
-    print("Slice 001 package verification succeeded.")
-    print(f"  status: {summary['status']}")
-    print(f"  package_contract: {summary['package_contract']}")
-    print(f"  artifact_count: {summary['artifact_count']}")
-    print(f"  checks_passed: {summary['checks_passed']}")
-    print(f"  failure_count: {summary['failure_count']}")
-    print(f"  evidence_entries_checked: {summary['evidence_entries_checked']}")
-    print(f"  verdict: {summary['verdict']}")
-    print(f"  replay_state: {summary['replay_state']}")
-    print(f"  tape_id: {summary['tape_id']}")
-    print(f"  verified_components: {', '.join(summary['verified_components'])}")
+def render_verification_success(summary: dict) -> str:
+    """Render a deterministic customer-readable verification success summary."""
+    component_labels = {
+        "file_set": "file set",
+        "json_parse": "JSON artifacts",
+        "extracted_views": "extracted views",
+        "handoff": "handoff",
+        "audit_entry": "audit entry",
+        "replay_report": "replay report",
+        "customer_report": "customer report",
+    }
+    lines = [
+        "Zovark package verification: succeeded",
+        f"Result: {summary['status']}",
+        f"Checks passed: {summary['checks_passed']}",
+        f"Failure count: {summary['failure_count']}",
+        "",
+        "Verified components:",
+    ]
+    lines.extend(
+        f"- {component_labels.get(component, component.replace('_', ' '))}"
+        for component in summary["verified_components"]
+    )
+    lines.extend(
+        [
+            "",
+            "Meaning:",
+            (
+                "This proof package is internally consistent with the Slice 001 "
+                "deterministic verifier."
+            ),
+            (
+                "No live EDR, LLM, network, database, dispatcher, or external "
+                "state was used."
+            ),
+            "",
+            "Boundary:",
+            (
+                "This verifies the exported package contents. It does not prove "
+                "legal admissibility, certification readiness, cryptographic "
+                "signing, transparency-log anchoring, or completeness of upstream "
+                "evidence collection."
+            ),
+        ]
+    )
+    return "\n".join(lines)
+
+
+def render_verification_failure(error: ZovarkValidationError) -> str:
+    """Render a deterministic customer-readable verification failure summary."""
+    message = str(error)
+    failure_code = _failure_code_from_message(message)
+    return "\n".join(
+        [
+            "Zovark package verification: failed",
+            f"Failure code: {failure_code}",
+            f"Message: {message}",
+            "",
+            "Meaning:",
+            (
+                "The package could not be verified and should not be trusted until "
+                "regenerated or investigated."
+            ),
+        ]
+    )
+
+
+def _failure_code_from_message(message: str) -> str:
+    prefix, separator, _detail = message.partition(":")
+    if separator and prefix.replace("_", "").isalnum():
+        return prefix
+    return "unknown_verification_error"
 
 
 class _CliError(Exception):
