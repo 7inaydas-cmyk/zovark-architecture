@@ -6,7 +6,8 @@ import json
 import shutil
 from pathlib import Path
 
-from zovark.slice001.cli import main
+from zovark.slice001 import ZovarkValidationError
+from zovark.slice001.cli import main, render_verification_failure
 from zovark.slice001.writer import EXPECTED_OUTPUT_FILES
 
 
@@ -72,17 +73,29 @@ def test_verify_generated_package_succeeds(tmp_path, capsys):
     stdout = capsys.readouterr().out
 
     assert exit_code == 0
-    assert "Slice 001 package verification succeeded." in stdout
-    assert "status: verified" in stdout
-    assert "package_contract: slice-001-proof-package/1.0" in stdout
-    assert "artifact_count: 9" in stdout
-    assert "checks_passed: 7" in stdout
-    assert "failure_count: 0" in stdout
-    assert "replay_state: succeeded" in stdout
+    assert "Zovark package verification: succeeded" in stdout
+    assert "Result: verified" in stdout
+    assert "Checks passed: 7" in stdout
+    assert "Failure count: 0" in stdout
+    assert "Verified components:" in stdout
+    assert "- file set" in stdout
+    assert "- JSON artifacts" in stdout
+    assert "- extracted views" in stdout
+    assert "- handoff" in stdout
+    assert "- audit entry" in stdout
+    assert "- replay report" in stdout
+    assert "- customer report" in stdout
+    assert "Meaning:" in stdout
+    assert "Boundary:" in stdout
     assert (
-        "verified_components: file_set, json_parse, extracted_views, handoff, "
-        "audit_entry, replay_report, customer_report"
-    ) in stdout
+        "No live EDR, LLM, network, database, dispatcher, or external state was used."
+        in stdout
+    )
+    assert "does not prove legal admissibility" in stdout
+    assert "certification readiness" in stdout
+    assert "cryptographic signing" in stdout
+    assert "transparency-log anchoring" in stdout
+    assert "completeness of upstream evidence collection" in stdout
 
 
 def test_verify_committed_demo_package_succeeds(capsys):
@@ -90,9 +103,28 @@ def test_verify_committed_demo_package_succeeds(capsys):
     stdout = capsys.readouterr().out
 
     assert exit_code == 0
-    assert "Slice 001 package verification succeeded." in stdout
-    assert "verdict: confirmed_malicious" in stdout
-    assert "tape_id: tape-001" in stdout
+    assert "Zovark package verification: succeeded" in stdout
+    assert "Result: verified" in stdout
+    assert "Verified components:" in stdout
+
+
+def test_verify_success_output_is_deterministic_and_path_free(tmp_path, capsys):
+    output_dir = tmp_path / "out"
+    assert _run_generate(output_dir) == 0
+    capsys.readouterr()
+
+    assert _run_verify(output_dir) == 0
+    first = capsys.readouterr().out
+    assert _run_verify(output_dir) == 0
+    second = capsys.readouterr().out
+
+    assert first == second
+    assert str(tmp_path) not in first
+    assert "/home/" not in first
+    assert "Zovark-Kiro" not in first
+    assert "Codex-zov" not in first
+    assert "created_at" not in first
+    assert "2026-" not in first
 
 
 def test_verify_tampered_package_fails(tmp_path, capsys):
@@ -106,8 +138,11 @@ def test_verify_tampered_package_fails(tmp_path, capsys):
     stderr = capsys.readouterr().err
 
     assert exit_code == 3
-    assert "package verification failed" in stderr
+    assert "Zovark package verification: failed" in stderr
+    assert "Failure code: tape_state_invalid" in stderr
+    assert "Message: tape_state_invalid:" in stderr
     assert "tape_state_invalid:" in stderr
+    assert "should not be trusted until regenerated or investigated" in stderr
 
 
 def test_verify_missing_package_fails(tmp_path, capsys):
@@ -115,7 +150,8 @@ def test_verify_missing_package_fails(tmp_path, capsys):
     stderr = capsys.readouterr().err
 
     assert exit_code == 3
-    assert "package verification failed" in stderr
+    assert "Zovark package verification: failed" in stderr
+    assert "Failure code: package_not_found" in stderr
     assert "package_not_found:" in stderr
 
 
@@ -128,6 +164,7 @@ def test_verify_extra_file_fails(tmp_path, capsys):
     stderr = capsys.readouterr().err
 
     assert exit_code == 3
+    assert "Failure code: package_file_set_mismatch" in stderr
     assert "package_file_set_mismatch:" in stderr
 
 
@@ -157,7 +194,16 @@ def test_verify_malformed_package_fails(tmp_path, capsys):
     stderr = capsys.readouterr().err
 
     assert exit_code == 3
+    assert "Failure code: malformed_json" in stderr
     assert "malformed_json:" in stderr
+
+
+def test_verification_failure_renderer_uses_unknown_code_fallback():
+    rendered = render_verification_failure(ZovarkValidationError("plain failure"))
+
+    assert "Zovark package verification: failed" in rendered
+    assert "Failure code: unknown_verification_error" in rendered
+    assert "Message: plain failure" in rendered
 
 
 def test_verify_cli_requires_package_flag():
