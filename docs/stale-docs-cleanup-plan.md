@@ -3,6 +3,14 @@
 Status: cleanup plan, docs-only. This document does not archive, delete, banner, or
 rewrite existing files.
 
+## Execution State
+
+This cleanup plan has not been executed. Several listed stale-doc paths are absent
+from the current `zovark-architecture` repo, and no archive, banner-mark, delete,
+or replacement action has occurred in this repo yet. The plan is preemptive and
+future-facing for stale docs that may be imported, rediscovered, or migrated from
+older repo lineage. Execution remains a separate future docs-only action.
+
 ## Purpose
 
 The V3 ground-truth check found that some older product/runtime docs describe the V2
