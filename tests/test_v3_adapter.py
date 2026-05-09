@@ -253,6 +253,23 @@ def test_v3_fixture_rejects_verdict_mismatch():
         build_tape_from_v3_fixture(fixture)
 
 
+def test_v3_fixture_rejects_nested_execution_verdict_mismatch():
+    fixture = _representative_v3_fixture()
+    fixture.pop("verdict")
+    fixture["execution"]["verdict"] = {"value": "benign"}
+
+    with pytest.raises(ZovarkValidationError, match="verdict does not match"):
+        build_tape_from_v3_fixture(fixture)
+
+
+def test_v3_fixture_rejects_conflicting_declared_verdicts():
+    fixture = _representative_v3_fixture()
+    fixture["execution"]["verdict"] = {"value": "benign"}
+
+    with pytest.raises(ZovarkValidationError, match="conflicting verdicts"):
+        build_tape_from_v3_fixture(fixture)
+
+
 def test_adapter_returns_copies_not_caller_owned_structures():
     fixture = _representative_v3_fixture()
     raw_input = adapt_v3_fixture_to_slice_input(fixture)

@@ -73,9 +73,8 @@ def build_tape_from_v3_fixture(
     """Build a complete replay-sealed Slice tape from a V3 fixture."""
     raw_input = adapt_v3_fixture_to_slice_input(fixture)
     tape = build_completed_tape(raw_input, tenant_id=tenant_id)
-    expected_verdict = fixture.get("verdict")
-    if expected_verdict is not None:
-        expected_value = _verdict_value(expected_verdict)
+    expected_value = _declared_verdict_value(fixture)
+    if expected_value is not None:
         actual_value = tape["verdict"]["value"]
         if expected_value != actual_value:
             raise ZovarkValidationError(
@@ -203,6 +202,22 @@ def _verdict_value(verdict: Any) -> str:
     if isinstance(verdict, dict):
         return _non_empty_string(verdict, "value")
     raise ZovarkValidationError("V3 fixture verdict is invalid")
+
+
+def _declared_verdict_value(fixture: dict[str, Any]) -> str | None:
+    declared_values = []
+    if "verdict" in fixture:
+        declared_values.append(_verdict_value(fixture["verdict"]))
+
+    execution = _execution_from_fixture(fixture)
+    if "verdict" in execution:
+        declared_values.append(_verdict_value(execution["verdict"]))
+
+    if not declared_values:
+        return None
+    if len(set(declared_values)) != 1:
+        raise ZovarkValidationError("V3 fixture declares conflicting verdicts")
+    return declared_values[0]
 
 
 def _timestamp_from(alert: dict[str, Any]) -> str:
