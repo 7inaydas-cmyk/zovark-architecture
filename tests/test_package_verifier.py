@@ -10,17 +10,35 @@ from pathlib import Path
 import pytest
 
 from zovark.slice001 import ZovarkValidationError
+from zovark.slice001.audit import attach_audit_entry, derive_audit_entry
 from zovark.slice001.cli import main
+from zovark.slice001.findings import attach_findings
+from zovark.slice001.handoff import attach_handoff, derive_handoff
+from zovark.slice001.ingest import normalize_evidence
 from zovark.slice001.package_verifier import (
+    V2_MARKER_FILE,
+    V2_PACKAGE_CONTRACT,
+    _verdict_requires_false_positive_reasoning,
     load_proof_package,
     validate_loaded_proof_package,
     verify_proof_package,
 )
-from zovark.slice001.writer import EXPECTED_OUTPUT_FILES, JSON_OUTPUT_FILES
+from zovark.slice001.replay import attach_replay_report, derive_replay_report
+from zovark.slice001.tape import create_tape
+from zovark.slice001.timeline import attach_timeline, build_initial_timeline
+from zovark.slice001.verdict import attach_verdict, derive_verdict
+from zovark.slice001.writer import (
+    EXPECTED_OUTPUT_FILES,
+    JSON_OUTPUT_FILES,
+    write_proof_package,
+)
 
 
 DEMO_PACKAGE_DIR = Path("demo/zovark-proof-package/out/tape-001")
 SAMPLE_PATH = Path("samples/edr-sample-001.json")
+DEMO_EVIDENCE_REF = (
+    "evidence:ev-8b68a8878b13f63d979e5ce3ce398845b53933130ffeb9951efc07b8b5a8db17"
+)
 FORBIDDEN_IMPORTS = (
     "requests",
     "httpx",
@@ -49,11 +67,51 @@ EXPECTED_VERIFIED_COMPONENTS = [
     "replay_report",
     "customer_report",
 ]
+EXPECTED_V2_VERIFIED_COMPONENTS = EXPECTED_VERIFIED_COMPONENTS + [
+    "package_version",
+    "v2_required_objects",
+    "v2_object_shapes",
+]
 
 
 def _copy_demo_package(tmp_path: Path) -> Path:
     package_dir = tmp_path / "package"
     shutil.copytree(DEMO_PACKAGE_DIR, package_dir)
+    return package_dir
+
+
+def _write_notify_only_package(tmp_path: Path, *, severity: str = "medium") -> Path:
+    package_dir = tmp_path / f"notify-only-{severity}-package"
+    raw_input = {
+        "alert_id": "notify-alert-001",
+        "alert_type": "informational",
+        "description": f"Informational alert with {severity} manual finding",
+        "host": "HOST-NOTIFY",
+        "ingested_at": "2026-05-01T10:00:00Z",
+        "severity": severity,
+        "timestamp": "2026-05-01T10:00:00Z",
+    }
+    evidence = normalize_evidence(raw_input)
+    tape = create_tape(raw_input, evidence, tenant_id="tenant-notify")
+    tape = attach_timeline(tape, build_initial_timeline(tape))
+    tape = attach_findings(
+        tape,
+        [
+            {
+                "evidence_refs": [evidence[0]["evidence_id"]],
+                "model_contribution": False,
+                "severity": severity,
+                "title": f"{severity} severity notification-only finding",
+            }
+        ],
+    )
+    tape = attach_verdict(tape, derive_verdict(tape))
+    tape["audit_ref"] = "audit-entry-1"
+    tape = attach_handoff(tape, derive_handoff(tape))
+    tape = attach_audit_entry(tape, derive_audit_entry(tape))
+    tape = attach_replay_report(tape, derive_replay_report(tape))
+    assert tape["handoff"]["action_type"] == "notify_only"
+    write_proof_package(tape, package_dir)
     return package_dir
 
 
@@ -75,6 +133,95 @@ def _load_tape(package_dir: Path) -> dict:
 
 def _store_tape(package_dir: Path, tape: dict) -> None:
     _store_json(package_dir, "investigation-tape.json", tape)
+
+
+def _v2_object(
+    object_type: str,
+    *,
+    status: str = "populated",
+    source_refs: list[str] | None = None,
+    data_unavailable_reason: str | None = None,
+) -> dict:
+    obj = {
+        "object_type": object_type,
+        "object_version": "v2-skeleton/0.1",
+        "source_refs": source_refs if source_refs is not None else [DEMO_EVIDENCE_REF],
+        "status": status,
+    }
+    if data_unavailable_reason is not None:
+        obj["data_unavailable_reason"] = data_unavailable_reason
+    return obj
+
+
+def _v2_marker() -> dict:
+    return {
+        "base_package_contract": "slice-001-proof-package/1.0",
+        "conditions": {
+            "analyst_override_present": False,
+            "benign_verdict": False,
+            "containment_recommended": True,
+            "context_enrichment_used": False,
+            "customer_impact_language_present": True,
+            "rejected_findings_present": False,
+            "response_action_present": True,
+        },
+        "objects": {
+            "approval_record": _v2_object("approval_record"),
+            "blast_radius": _v2_object("blast_radius"),
+            "compliance_mapping": _v2_object(
+                "compliance_mapping",
+                status="not_applicable",
+                source_refs=[],
+            ),
+            "context_enrichment": _v2_object("context_enrichment"),
+            "controls_in_place_at_incident": _v2_object(
+                "controls_in_place_at_incident",
+                status="unavailable",
+                source_refs=[],
+                data_unavailable_reason="customer_not_supplied",
+            ),
+            "customer_report_v2": _v2_object("customer_report_v2"),
+            "decision_rationale": _v2_object("decision_rationale"),
+            "false_positive_reasoning": _v2_object(
+                "false_positive_reasoning",
+                status="not_applicable",
+                source_refs=[],
+            ),
+            "rollback_plan": _v2_object("rollback_plan"),
+            "visibility_gaps": _v2_object(
+                "visibility_gaps",
+                status="unavailable",
+                data_unavailable_reason="not_emitted_by_v3",
+            ),
+        },
+        "package_version": V2_PACKAGE_CONTRACT,
+    }
+
+
+def _set_notify_only_v2_conditions(
+    marker: dict,
+    *,
+    false_positive_required: bool,
+) -> None:
+    marker["conditions"]["benign_verdict"] = false_positive_required
+    marker["conditions"]["containment_recommended"] = False
+    marker["conditions"]["customer_impact_language_present"] = False
+    marker["conditions"]["response_action_present"] = False
+
+
+def _first_evidence_source_ref(package_dir: Path) -> str:
+    evidence = _load_json(package_dir, "evidence-ledger.json")
+    return f"evidence:{evidence[0]['evidence_id']}"
+
+
+def _retarget_v2_source_refs(marker: dict, source_ref: str) -> None:
+    for obj in marker["objects"].values():
+        if obj["source_refs"]:
+            obj["source_refs"] = [source_ref]
+
+
+def _add_v2_marker(package_dir: Path, marker: dict | None = None) -> None:
+    _store_json(package_dir, V2_MARKER_FILE, marker or _v2_marker())
 
 
 def _sync_tape_view(package_dir: Path, field: str, filename: str, value) -> None:
@@ -135,6 +282,365 @@ def test_cli_generated_temporary_package_verifies_successfully(tmp_path):
     assert summary["failure_codes"] == []
     assert summary["replay_state"] == "succeeded"
     assert summary["verified_components"] == EXPECTED_VERIFIED_COMPONENTS
+
+
+def test_v1_package_remains_backward_compatible_without_v2_marker(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+
+    summary = verify_proof_package(package_dir)
+
+    assert summary["package_contract"] == "slice-001-proof-package/1.0"
+    assert "package_version" not in summary
+    assert V2_MARKER_FILE not in {path.name for path in package_dir.iterdir()}
+
+
+def test_minimal_static_v2_package_verifies_successfully(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    _add_v2_marker(package_dir)
+
+    summary = verify_proof_package(package_dir)
+
+    assert summary["status"] == "verified"
+    assert summary["base_package_contract"] == "slice-001-proof-package/1.0"
+    assert summary["package_contract"] == V2_PACKAGE_CONTRACT
+    assert summary["package_version"] == V2_PACKAGE_CONTRACT
+    assert summary["artifact_count"] == len(EXPECTED_OUTPUT_FILES)
+    assert summary["checks_passed"] == len(EXPECTED_V2_VERIFIED_COMPONENTS)
+    assert summary["failure_count"] == 0
+    assert summary["failure_codes"] == []
+    assert summary["v2_object_count"] == len(_v2_marker()["objects"])
+    assert summary["v2_objects_checked"] == sorted(_v2_marker()["objects"])
+    assert summary["verified_components"] == EXPECTED_V2_VERIFIED_COMPONENTS
+    assert summary == verify_proof_package(package_dir)
+
+
+def test_v2_object_source_ref_must_resolve_to_verified_evidence(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["objects"]["decision_rationale"]["source_refs"] = ["made-up-ref"]
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_source_ref_unresolved",
+    )
+
+
+def test_v2_object_mixed_valid_and_invalid_source_refs_fail(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["objects"]["decision_rationale"]["source_refs"] = [
+        DEMO_EVIDENCE_REF,
+        "made-up-ref",
+    ]
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_source_ref_unresolved",
+    )
+
+
+def test_v2_object_refs_to_v2_local_object_ids_are_not_trusted(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["objects"]["decision_rationale"]["source_refs"] = ["approval_record"]
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_source_ref_unresolved",
+    )
+
+
+def test_v2_object_valid_source_refs_to_verified_evidence_pass(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["objects"]["approval_record"]["source_refs"] = [DEMO_EVIDENCE_REF]
+    marker["objects"]["decision_rationale"]["source_refs"] = [DEMO_EVIDENCE_REF]
+    marker["objects"]["customer_report_v2"]["source_refs"] = [DEMO_EVIDENCE_REF]
+    _add_v2_marker(package_dir, marker)
+
+    assert verify_proof_package(package_dir)["status"] == "verified"
+
+
+def test_v2_required_decision_rationale_cannot_be_not_applicable(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["objects"]["decision_rationale"]["status"] = "not_applicable"
+    marker["objects"]["decision_rationale"]["source_refs"] = []
+    marker["objects"]["decision_rationale"][
+        "data_unavailable_reason"
+    ] = "not_applicable"
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_required_object_not_applicable",
+    )
+
+
+def test_v2_required_customer_report_cannot_be_not_applicable(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["objects"]["customer_report_v2"]["status"] = "not_applicable"
+    marker["objects"]["customer_report_v2"]["source_refs"] = []
+    marker["objects"]["customer_report_v2"][
+        "data_unavailable_reason"
+    ] = "not_applicable"
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_required_object_not_applicable",
+    )
+
+
+def test_v2_benign_verdict_without_false_positive_reasoning_fails(tmp_path):
+    package_dir = _write_notify_only_package(tmp_path, severity="low")
+    marker = _v2_marker()
+    _set_notify_only_v2_conditions(marker, false_positive_required=True)
+    _retarget_v2_source_refs(marker, _first_evidence_source_ref(package_dir))
+    del marker["objects"]["false_positive_reasoning"]
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_conditional_object_missing",
+    )
+
+
+def test_v2_low_confidence_verdict_without_false_positive_reasoning_fails(tmp_path):
+    package_dir = _write_notify_only_package(tmp_path, severity="medium")
+    marker = _v2_marker()
+    _set_notify_only_v2_conditions(marker, false_positive_required=True)
+    _retarget_v2_source_refs(marker, _first_evidence_source_ref(package_dir))
+    del marker["objects"]["false_positive_reasoning"]
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_conditional_object_missing",
+    )
+
+
+def test_v2_false_positive_reasoning_cannot_be_not_applicable_when_required(tmp_path):
+    package_dir = _write_notify_only_package(tmp_path, severity="medium")
+    marker = _v2_marker()
+    _set_notify_only_v2_conditions(marker, false_positive_required=True)
+    _retarget_v2_source_refs(marker, _first_evidence_source_ref(package_dir))
+    marker["objects"]["false_positive_reasoning"]["status"] = "not_applicable"
+    marker["objects"]["false_positive_reasoning"]["source_refs"] = []
+    marker["objects"]["false_positive_reasoning"][
+        "data_unavailable_reason"
+    ] = "not_applicable"
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_required_object_not_applicable",
+    )
+
+
+def test_v2_false_positive_reasoning_with_unresolved_refs_fails(tmp_path):
+    package_dir = _write_notify_only_package(tmp_path, severity="medium")
+    marker = _v2_marker()
+    _set_notify_only_v2_conditions(marker, false_positive_required=True)
+    _retarget_v2_source_refs(marker, _first_evidence_source_ref(package_dir))
+    marker["objects"]["false_positive_reasoning"] = _v2_object(
+        "false_positive_reasoning",
+        source_refs=["made-up-ref"],
+    )
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_source_ref_unresolved",
+    )
+
+
+def test_v2_confirmed_malicious_does_not_require_false_positive_reasoning(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    del marker["objects"]["false_positive_reasoning"]
+    _add_v2_marker(package_dir, marker)
+
+    assert verify_proof_package(package_dir)["status"] == "verified"
+
+
+def test_v2_unknown_verdict_classification_fails_closed():
+    _assert_failure_code(
+        lambda: _verdict_requires_false_positive_reasoning("future_verdict"),
+        "v2_verdict_unclassified",
+    )
+
+
+def test_v2_required_conditional_object_with_unresolved_source_ref_fails(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["objects"]["rollback_plan"]["source_refs"] = ["made-up-ref"]
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_source_ref_unresolved",
+    )
+
+
+def test_v2_triggered_conditional_object_cannot_be_not_applicable(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["objects"]["rollback_plan"]["status"] = "not_applicable"
+    marker["objects"]["rollback_plan"]["source_refs"] = []
+    marker["objects"]["rollback_plan"]["data_unavailable_reason"] = "not_applicable"
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_required_object_not_applicable",
+    )
+
+
+def test_v2_triggered_conditional_object_unavailable_still_needs_refs(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["objects"]["rollback_plan"]["status"] = "unavailable"
+    marker["objects"]["rollback_plan"]["source_refs"] = []
+    marker["objects"]["rollback_plan"]["data_unavailable_reason"] = "not_emitted_by_v3"
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_required_object_source_refs_missing",
+    )
+
+
+def test_v2_triggered_conditional_object_empty_source_refs_fail(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["objects"]["blast_radius"]["source_refs"] = []
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_required_object_source_refs_missing",
+    )
+
+
+def test_v2_marker_false_conditions_cannot_hide_verified_response_action(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["conditions"]["containment_recommended"] = False
+    marker["conditions"]["customer_impact_language_present"] = False
+    marker["conditions"]["response_action_present"] = False
+    del marker["objects"]["blast_radius"]
+    del marker["objects"]["rollback_plan"]
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_condition_mismatch",
+    )
+
+
+def test_v2_marker_condition_mismatch_fails_even_with_conditional_objects(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["conditions"]["containment_recommended"] = False
+    marker["conditions"]["customer_impact_language_present"] = False
+    marker["conditions"]["response_action_present"] = False
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_condition_mismatch",
+    )
+
+
+def test_v2_marker_true_conditions_without_verified_action_fail_closed(tmp_path):
+    package_dir = _write_notify_only_package(tmp_path)
+    marker = _v2_marker()
+    marker["conditions"]["containment_recommended"] = True
+    marker["conditions"]["customer_impact_language_present"] = True
+    marker["conditions"]["response_action_present"] = True
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_condition_mismatch",
+    )
+
+
+def test_v2_package_missing_required_object_fails_with_stable_code(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    del marker["objects"]["decision_rationale"]
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_required_object_missing",
+    )
+
+
+def test_v2_package_missing_conditions_fails_closed(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    del marker["conditions"]
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_package_shape_invalid",
+    )
+
+
+def test_v2_package_missing_condition_flag_fails_closed(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    del marker["conditions"]["response_action_present"]
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_package_shape_invalid",
+    )
+
+
+def test_v2_package_missing_conditional_object_fails_with_stable_code(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    del marker["objects"]["rollback_plan"]
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_conditional_object_missing",
+    )
+
+
+def test_v2_package_malformed_object_fails_with_stable_code(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["objects"]["decision_rationale"]["status"] = "not-a-status"
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_object_shape_invalid",
+    )
+
+
+def test_v2_unavailable_object_requires_reason(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["objects"]["visibility_gaps"].pop("data_unavailable_reason")
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_unavailable_reason_missing",
+    )
 
 
 def test_repeated_verification_is_deterministic_and_path_free(tmp_path):
