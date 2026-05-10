@@ -11,6 +11,7 @@ from zovark.slice001 import ZovarkValidationError
 from zovark.slice001.audit import GENESIS_HASH, derive_audit_entry
 from zovark.slice001.handoff import derive_handoff
 from zovark.slice001.replay import derive_replay_report
+from zovark.slice001.verdict import APPROVED_VERDICTS
 from zovark.slice001.writer import (
     EXPECTED_OUTPUT_FILES,
     JSON_OUTPUT_FILES,
@@ -78,6 +79,14 @@ _V2_OBJECT_STATUSES = {"populated", "partial", "unavailable", "not_applicable"}
 _VERIFIED_RESPONSE_ACTION_TYPES = frozenset({"isolate_host"})
 _VERIFIED_CONTAINMENT_ACTION_TYPES = frozenset({"isolate_host"})
 _VERIFIED_NON_RESPONSE_ACTION_TYPES = frozenset({"notify_only"})
+_FALSE_POSITIVE_REASONING_VERDICTS = frozenset(
+    {
+        "benign",
+        "inconclusive_insufficient_evidence",
+        "suspicious_unconfirmed",
+    }
+)
+_VERDICTS_WITHOUT_FALSE_POSITIVE_TRIGGER = frozenset({"confirmed_malicious"})
 
 
 def load_proof_package(package_dir: str | Path) -> dict[str, Any]:
@@ -354,13 +363,17 @@ def _derive_v2_conditions(full_tape: dict[str, Any]) -> dict[str, bool]:
             "V2 conditions cannot be derived from verified action evidence",
         )
     raw_contexts = _v3_trace_contexts(full_tape)
+    verdict_value = full_tape["verdict"]["value"]
 
+    # The skeleton marker key is named for benign verdicts, but it gates
+    # false_positive_reasoning, which the V2 contract also requires for
+    # low-confidence outcomes.
     return {
         "analyst_override_present": _context_has_non_empty_key(
             raw_contexts,
             "analyst_override",
         ),
-        "benign_verdict": full_tape["verdict"]["value"] == "benign",
+        "benign_verdict": _verdict_requires_false_positive_reasoning(verdict_value),
         "containment_recommended": action_type in _VERIFIED_CONTAINMENT_ACTION_TYPES,
         "context_enrichment_used": _context_has_non_empty_key(
             raw_contexts,
@@ -380,6 +393,22 @@ def _derive_v2_conditions(full_tape: dict[str, Any]) -> dict[str, bool]:
         ),
         "response_action_present": action_type in _VERIFIED_RESPONSE_ACTION_TYPES,
     }
+
+
+def _verdict_requires_false_positive_reasoning(verdict_value: str) -> bool:
+    if verdict_value in _FALSE_POSITIVE_REASONING_VERDICTS:
+        return True
+    if verdict_value in _VERDICTS_WITHOUT_FALSE_POSITIVE_TRIGGER:
+        return False
+    if verdict_value not in APPROVED_VERDICTS:
+        _fail(
+            "v2_verdict_unclassified",
+            "V2 false-positive requirement cannot classify verdict",
+        )
+    _fail(
+        "v2_verdict_unclassified",
+        "V2 false-positive requirement is undefined for verdict",
+    )
 
 
 def _trusted_reference_index(full_tape: dict[str, Any]) -> frozenset[str]:

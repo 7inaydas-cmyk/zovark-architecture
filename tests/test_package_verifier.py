@@ -18,6 +18,7 @@ from zovark.slice001.ingest import normalize_evidence
 from zovark.slice001.package_verifier import (
     V2_MARKER_FILE,
     V2_PACKAGE_CONTRACT,
+    _verdict_requires_false_positive_reasoning,
     load_proof_package,
     validate_loaded_proof_package,
     verify_proof_package,
@@ -79,15 +80,15 @@ def _copy_demo_package(tmp_path: Path) -> Path:
     return package_dir
 
 
-def _write_notify_only_package(tmp_path: Path) -> Path:
-    package_dir = tmp_path / "notify-only-package"
+def _write_notify_only_package(tmp_path: Path, *, severity: str = "medium") -> Path:
+    package_dir = tmp_path / f"notify-only-{severity}-package"
     raw_input = {
         "alert_id": "notify-alert-001",
         "alert_type": "informational",
-        "description": "Informational alert with medium manual finding",
+        "description": f"Informational alert with {severity} manual finding",
         "host": "HOST-NOTIFY",
         "ingested_at": "2026-05-01T10:00:00Z",
-        "severity": "medium",
+        "severity": severity,
         "timestamp": "2026-05-01T10:00:00Z",
     }
     evidence = normalize_evidence(raw_input)
@@ -99,8 +100,8 @@ def _write_notify_only_package(tmp_path: Path) -> Path:
             {
                 "evidence_refs": [evidence[0]["evidence_id"]],
                 "model_contribution": False,
-                "severity": "medium",
-                "title": "Medium severity notification-only finding",
+                "severity": severity,
+                "title": f"{severity} severity notification-only finding",
             }
         ],
     )
@@ -195,6 +196,28 @@ def _v2_marker() -> dict:
         },
         "package_version": V2_PACKAGE_CONTRACT,
     }
+
+
+def _set_notify_only_v2_conditions(
+    marker: dict,
+    *,
+    false_positive_required: bool,
+) -> None:
+    marker["conditions"]["benign_verdict"] = false_positive_required
+    marker["conditions"]["containment_recommended"] = False
+    marker["conditions"]["customer_impact_language_present"] = False
+    marker["conditions"]["response_action_present"] = False
+
+
+def _first_evidence_source_ref(package_dir: Path) -> str:
+    evidence = _load_json(package_dir, "evidence-ledger.json")
+    return f"evidence:{evidence[0]['evidence_id']}"
+
+
+def _retarget_v2_source_refs(marker: dict, source_ref: str) -> None:
+    for obj in marker["objects"].values():
+        if obj["source_refs"]:
+            obj["source_refs"] = [source_ref]
 
 
 def _add_v2_marker(package_dir: Path, marker: dict | None = None) -> None:
@@ -370,6 +393,85 @@ def test_v2_required_customer_report_cannot_be_not_applicable(tmp_path):
     _assert_failure_code(
         lambda: verify_proof_package(package_dir),
         "v2_required_object_not_applicable",
+    )
+
+
+def test_v2_benign_verdict_without_false_positive_reasoning_fails(tmp_path):
+    package_dir = _write_notify_only_package(tmp_path, severity="low")
+    marker = _v2_marker()
+    _set_notify_only_v2_conditions(marker, false_positive_required=True)
+    _retarget_v2_source_refs(marker, _first_evidence_source_ref(package_dir))
+    del marker["objects"]["false_positive_reasoning"]
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_conditional_object_missing",
+    )
+
+
+def test_v2_low_confidence_verdict_without_false_positive_reasoning_fails(tmp_path):
+    package_dir = _write_notify_only_package(tmp_path, severity="medium")
+    marker = _v2_marker()
+    _set_notify_only_v2_conditions(marker, false_positive_required=True)
+    _retarget_v2_source_refs(marker, _first_evidence_source_ref(package_dir))
+    del marker["objects"]["false_positive_reasoning"]
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_conditional_object_missing",
+    )
+
+
+def test_v2_false_positive_reasoning_cannot_be_not_applicable_when_required(tmp_path):
+    package_dir = _write_notify_only_package(tmp_path, severity="medium")
+    marker = _v2_marker()
+    _set_notify_only_v2_conditions(marker, false_positive_required=True)
+    _retarget_v2_source_refs(marker, _first_evidence_source_ref(package_dir))
+    marker["objects"]["false_positive_reasoning"]["status"] = "not_applicable"
+    marker["objects"]["false_positive_reasoning"]["source_refs"] = []
+    marker["objects"]["false_positive_reasoning"][
+        "data_unavailable_reason"
+    ] = "not_applicable"
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_required_object_not_applicable",
+    )
+
+
+def test_v2_false_positive_reasoning_with_unresolved_refs_fails(tmp_path):
+    package_dir = _write_notify_only_package(tmp_path, severity="medium")
+    marker = _v2_marker()
+    _set_notify_only_v2_conditions(marker, false_positive_required=True)
+    _retarget_v2_source_refs(marker, _first_evidence_source_ref(package_dir))
+    marker["objects"]["false_positive_reasoning"] = _v2_object(
+        "false_positive_reasoning",
+        source_refs=["made-up-ref"],
+    )
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_source_ref_unresolved",
+    )
+
+
+def test_v2_confirmed_malicious_does_not_require_false_positive_reasoning(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    del marker["objects"]["false_positive_reasoning"]
+    _add_v2_marker(package_dir, marker)
+
+    assert verify_proof_package(package_dir)["status"] == "verified"
+
+
+def test_v2_unknown_verdict_classification_fails_closed():
+    _assert_failure_code(
+        lambda: _verdict_requires_false_positive_reasoning("future_verdict"),
+        "v2_verdict_unclassified",
     )
 
 
