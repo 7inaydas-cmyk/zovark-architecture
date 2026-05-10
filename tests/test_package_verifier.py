@@ -35,6 +35,9 @@ from zovark.slice001.writer import (
 
 DEMO_PACKAGE_DIR = Path("demo/zovark-proof-package/out/tape-001")
 SAMPLE_PATH = Path("samples/edr-sample-001.json")
+DEMO_EVIDENCE_REF = (
+    "evidence:ev-8b68a8878b13f63d979e5ce3ce398845b53933130ffeb9951efc07b8b5a8db17"
+)
 FORBIDDEN_IMPORTS = (
     "requests",
     "httpx",
@@ -141,7 +144,7 @@ def _v2_object(
     obj = {
         "object_type": object_type,
         "object_version": "v2-skeleton/0.1",
-        "source_refs": source_refs or ["evidence:ev-alert"],
+        "source_refs": source_refs if source_refs is not None else [DEMO_EVIDENCE_REF],
         "status": status,
     }
     if data_unavailable_reason is not None:
@@ -287,6 +290,66 @@ def test_minimal_static_v2_package_verifies_successfully(tmp_path):
     assert summary["v2_objects_checked"] == sorted(_v2_marker()["objects"])
     assert summary["verified_components"] == EXPECTED_V2_VERIFIED_COMPONENTS
     assert summary == verify_proof_package(package_dir)
+
+
+def test_v2_object_source_ref_must_resolve_to_verified_evidence(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["objects"]["decision_rationale"]["source_refs"] = ["made-up-ref"]
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_source_ref_unresolved",
+    )
+
+
+def test_v2_object_mixed_valid_and_invalid_source_refs_fail(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["objects"]["decision_rationale"]["source_refs"] = [
+        DEMO_EVIDENCE_REF,
+        "made-up-ref",
+    ]
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_source_ref_unresolved",
+    )
+
+
+def test_v2_object_refs_to_v2_local_object_ids_are_not_trusted(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["objects"]["decision_rationale"]["source_refs"] = ["approval_record"]
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_source_ref_unresolved",
+    )
+
+
+def test_v2_object_valid_source_refs_to_verified_evidence_pass(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["objects"]["decision_rationale"]["source_refs"] = [DEMO_EVIDENCE_REF]
+    _add_v2_marker(package_dir, marker)
+
+    assert verify_proof_package(package_dir)["status"] == "verified"
+
+
+def test_v2_required_conditional_object_with_unresolved_source_ref_fails(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["objects"]["rollback_plan"]["source_refs"] = ["made-up-ref"]
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_source_ref_unresolved",
+    )
 
 
 def test_v2_marker_false_conditions_cannot_hide_verified_response_action(tmp_path):

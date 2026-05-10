@@ -131,7 +131,8 @@ def _validate_loaded_v2_package(package: dict[str, Any]) -> dict[str, Any]:
     base_package = {filename: package[filename] for filename in EXPECTED_OUTPUT_FILES}
     base_summary, full_tape = _verify_v1_package(base_package)
     derived_conditions = _derive_v2_conditions(full_tape)
-    objects = _validate_v2_marker(marker, derived_conditions)
+    trusted_refs = _trusted_reference_index(full_tape)
+    objects = _validate_v2_marker(marker, derived_conditions, trusted_refs)
     return _v2_verification_summary(base_summary, objects)
 
 
@@ -381,6 +382,82 @@ def _derive_v2_conditions(full_tape: dict[str, Any]) -> dict[str, bool]:
     }
 
 
+def _trusted_reference_index(full_tape: dict[str, Any]) -> frozenset[str]:
+    refs: set[str] = set()
+
+    for filename in EXPECTED_OUTPUT_FILES:
+        refs.add(f"artifact:{filename}")
+
+    _add_ref_aliases(refs, full_tape["tape_id"], "tape")
+    _add_ref_aliases(refs, full_tape["audit_entry"]["entry_id"], "audit")
+    _add_ref_aliases(refs, full_tape["handoff"]["handoff_id"], "handoff")
+    _add_ref_aliases(
+        refs,
+        full_tape["replay_report"]["replay_state"]["replay_id"],
+        "replay",
+    )
+    for optional_key in ("source_alert_ref", "audit_ref", "handoff_ref"):
+        value = full_tape.get(optional_key)
+        if isinstance(value, str) and value:
+            refs.add(value)
+
+    for entry in full_tape["raw_evidence"]:
+        evidence_id = entry["evidence_id"]
+        _add_ref_aliases(refs, evidence_id, "evidence")
+        raw_content = entry.get("raw_content", {})
+        if isinstance(raw_content, dict):
+            _collect_recorded_refs(raw_content, refs)
+
+    for timeline_event in full_tape["timeline"]:
+        if isinstance(timeline_event, dict):
+            _collect_recorded_refs(timeline_event, refs)
+
+    for finding in full_tape["findings"]:
+        if isinstance(finding, dict):
+            _collect_recorded_refs(finding, refs)
+
+    _collect_recorded_refs(full_tape["verdict"], refs)
+    _collect_recorded_refs(full_tape["handoff"], refs)
+    return frozenset(refs)
+
+
+def _add_ref_aliases(refs: set[str], value: Any, prefix: str) -> None:
+    if isinstance(value, str) and value:
+        refs.add(value)
+        refs.add(f"{prefix}:{value}")
+
+
+def _collect_recorded_refs(value: Any, refs: set[str]) -> None:
+    if isinstance(value, dict):
+        for key, child in value.items():
+            if _is_reference_key(key):
+                _add_recorded_ref_value(child, refs)
+            _collect_recorded_refs(child, refs)
+    elif isinstance(value, list):
+        for child in value:
+            _collect_recorded_refs(child, refs)
+
+
+def _is_reference_key(key: str) -> bool:
+    return (
+        key.endswith("_id")
+        or key.endswith("_ids")
+        or key.endswith("_ref")
+        or key.endswith("_refs")
+        or key in {"record_id", "capability_refs", "trace_record_refs"}
+    )
+
+
+def _add_recorded_ref_value(value: Any, refs: set[str]) -> None:
+    if isinstance(value, str) and value:
+        refs.add(value)
+    elif isinstance(value, list):
+        for item in value:
+            _add_recorded_ref_value(item, refs)
+    elif isinstance(value, dict):
+        _collect_recorded_refs(value, refs)
+
+
 def _v3_trace_contexts(full_tape: dict[str, Any]) -> list[dict[str, Any]]:
     contexts: list[dict[str, Any]] = []
     for entry in full_tape["raw_evidence"]:
@@ -432,6 +509,7 @@ def _handoff_has_blast_radius(handoff: dict[str, Any]) -> bool:
 def _validate_v2_marker(
     marker: dict[str, Any],
     derived_conditions: dict[str, bool],
+    trusted_refs: frozenset[str],
 ) -> dict[str, Any]:
     if marker.get("package_version") != V2_PACKAGE_CONTRACT:
         _fail(
@@ -486,11 +564,15 @@ def _validate_v2_marker(
                 "v2_object_shape_invalid",
                 f"V2 object {object_name} is unsupported",
             )
-        _validate_v2_object(object_name, obj)
+        _validate_v2_object(object_name, obj, trusted_refs)
     return objects
 
 
-def _validate_v2_object(object_name: str, obj: Any) -> None:
+def _validate_v2_object(
+    object_name: str,
+    obj: Any,
+    trusted_refs: frozenset[str],
+) -> None:
     if not isinstance(obj, dict):
         _fail("v2_object_shape_invalid", f"V2 object {object_name} must be an object")
     if obj.get("object_type") != object_name:
@@ -511,6 +593,7 @@ def _validate_v2_object(object_name: str, obj: Any) -> None:
             "v2_object_shape_invalid",
             f"V2 object {object_name} must have source_refs",
         )
+    _validate_v2_source_refs(object_name, obj, trusted_refs)
     if "object_hash" in obj and obj["object_hash"] is not None and not isinstance(
         obj["object_hash"], str
     ):
@@ -528,6 +611,33 @@ def _validate_v2_object(object_name: str, obj: Any) -> None:
             "v2_unavailable_reason_missing",
             f"V2 object {object_name} requires data_unavailable_reason",
         )
+
+
+def _validate_v2_source_refs(
+    object_name: str,
+    obj: dict[str, Any],
+    trusted_refs: frozenset[str],
+) -> None:
+    source_refs = obj["source_refs"]
+    if not source_refs:
+        if obj["status"] in {"not_applicable", "unavailable"}:
+            return
+        _fail(
+            "v2_source_ref_unresolved",
+            f"V2 object {object_name} must cite verified source refs",
+        )
+
+    for source_ref in source_refs:
+        if not isinstance(source_ref, str) or not source_ref:
+            _fail(
+                "v2_source_ref_unresolved",
+                f"V2 object {object_name} has invalid source_ref",
+            )
+        if source_ref not in trusted_refs:
+            _fail(
+                "v2_source_ref_unresolved",
+                f"V2 object {object_name} source_ref does not resolve",
+            )
 
 
 def _contains_null_value(value: Any) -> bool:
