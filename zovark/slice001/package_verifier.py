@@ -75,6 +75,9 @@ _V2_KNOWN_OBJECTS = frozenset(
     )
 )
 _V2_OBJECT_STATUSES = {"populated", "partial", "unavailable", "not_applicable"}
+_VERIFIED_RESPONSE_ACTION_TYPES = frozenset({"isolate_host"})
+_VERIFIED_CONTAINMENT_ACTION_TYPES = frozenset({"isolate_host"})
+_VERIFIED_NON_RESPONSE_ACTION_TYPES = frozenset({"notify_only"})
 
 
 def load_proof_package(package_dir: str | Path) -> dict[str, Any]:
@@ -116,6 +119,23 @@ def verify_proof_package(package_dir: str | Path) -> dict[str, Any]:
 
 
 def _validate_loaded_v1_package(package: dict[str, Any]) -> dict[str, Any]:
+    summary, _ = _verify_v1_package(package)
+    return summary
+
+
+def _validate_loaded_v2_package(package: dict[str, Any]) -> dict[str, Any]:
+    marker = package[V2_MARKER_FILE]
+    if not isinstance(marker, dict):
+        _fail("v2_package_shape_invalid", f"{V2_MARKER_FILE} must be an object")
+
+    base_package = {filename: package[filename] for filename in EXPECTED_OUTPUT_FILES}
+    base_summary, full_tape = _verify_v1_package(base_package)
+    derived_conditions = _derive_v2_conditions(full_tape)
+    objects = _validate_v2_marker(marker, derived_conditions)
+    return _v2_verification_summary(base_summary, objects)
+
+
+def _verify_v1_package(package: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
     if set(package) != _EXPECTED_FILE_SET:
         _fail("package_shape_invalid", "proof package file set is invalid")
     for filename in JSON_OUTPUT_FILES:
@@ -128,18 +148,7 @@ def _validate_loaded_v1_package(package: dict[str, Any]) -> dict[str, Any]:
 
     full_tape = _reconstruct_verified_tape(package)
     _validate_customer_report(package, full_tape)
-    return _verification_summary(full_tape)
-
-
-def _validate_loaded_v2_package(package: dict[str, Any]) -> dict[str, Any]:
-    marker = package[V2_MARKER_FILE]
-    if not isinstance(marker, dict):
-        _fail("v2_package_shape_invalid", f"{V2_MARKER_FILE} must be an object")
-
-    base_package = {filename: package[filename] for filename in EXPECTED_OUTPUT_FILES}
-    base_summary = _validate_loaded_v1_package(base_package)
-    objects = _validate_v2_marker(marker)
-    return _v2_verification_summary(base_summary, objects)
+    return _verification_summary(full_tape), full_tape
 
 
 def _validate_package_dir(package_dir: Path) -> None:
@@ -333,7 +342,97 @@ def _verification_summary(full_tape: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _validate_v2_marker(marker: dict[str, Any]) -> dict[str, Any]:
+def _derive_v2_conditions(full_tape: dict[str, Any]) -> dict[str, bool]:
+    handoff = full_tape["handoff"]
+    action_type = handoff["action_type"]
+    if action_type not in (
+        _VERIFIED_RESPONSE_ACTION_TYPES | _VERIFIED_NON_RESPONSE_ACTION_TYPES
+    ):
+        _fail(
+            "v2_condition_mismatch",
+            "V2 conditions cannot be derived from verified action evidence",
+        )
+    raw_contexts = _v3_trace_contexts(full_tape)
+
+    return {
+        "analyst_override_present": _context_has_non_empty_key(
+            raw_contexts,
+            "analyst_override",
+        ),
+        "benign_verdict": full_tape["verdict"]["value"] == "benign",
+        "containment_recommended": action_type in _VERIFIED_CONTAINMENT_ACTION_TYPES,
+        "context_enrichment_used": _context_has_non_empty_key(
+            raw_contexts,
+            "context_enrichment",
+            "institutional_knowledge",
+            "correlation_history",
+        )
+        or _context_tool_name_matches(
+            raw_contexts,
+            "lookup_institutional_knowledge",
+            "correlate_with_history",
+        ),
+        "customer_impact_language_present": _handoff_has_blast_radius(handoff),
+        "rejected_findings_present": _context_has_non_empty_key(
+            raw_contexts,
+            "rejected_findings",
+        ),
+        "response_action_present": action_type in _VERIFIED_RESPONSE_ACTION_TYPES,
+    }
+
+
+def _v3_trace_contexts(full_tape: dict[str, Any]) -> list[dict[str, Any]]:
+    contexts: list[dict[str, Any]] = []
+    for entry in full_tape["raw_evidence"]:
+        raw_content = entry.get("raw_content", {})
+        if not isinstance(raw_content, dict):
+            continue
+        context = raw_content.get("v3_trace_context")
+        if isinstance(context, dict):
+            contexts.append(context)
+    return contexts
+
+
+def _context_has_non_empty_key(
+    contexts: list[dict[str, Any]],
+    *keys: str,
+) -> bool:
+    for context in contexts:
+        for key in keys:
+            value = context.get(key)
+            if value not in (None, False, [], {}, ""):
+                return True
+    return False
+
+
+def _context_tool_name_matches(
+    contexts: list[dict[str, Any]],
+    *tool_names: str,
+) -> bool:
+    expected = set(tool_names)
+    for context in contexts:
+        names = context.get("tool_names", [])
+        if isinstance(names, list) and any(name in expected for name in names):
+            return True
+    return False
+
+
+def _handoff_has_blast_radius(handoff: dict[str, Any]) -> bool:
+    blast_radius = handoff["blast_radius"]
+    return any(
+        blast_radius.get(key)
+        for key in (
+            "directly_affected",
+            "lateral_movement_blocked",
+            "services_at_risk",
+        )
+    )
+
+
+def _validate_v2_marker(
+    marker: dict[str, Any],
+    derived_conditions: dict[str, bool],
+) -> dict[str, Any]:
     if marker.get("package_version") != V2_PACKAGE_CONTRACT:
         _fail(
             "v2_package_shape_invalid",
@@ -356,6 +455,11 @@ def _validate_v2_marker(marker: dict[str, Any]) -> dict[str, Any]:
     for key in _V2_CONDITION_KEYS:
         if not isinstance(conditions[key], bool):
             _fail("v2_package_shape_invalid", "V2 conditions must be booleans")
+    if conditions != derived_conditions:
+        _fail(
+            "v2_condition_mismatch",
+            "V2 declared conditions do not match verified package evidence",
+        )
 
     objects = marker.get("objects")
     if not isinstance(objects, dict):
@@ -369,11 +473,11 @@ def _validate_v2_marker(marker: dict[str, Any]) -> dict[str, Any]:
             )
 
     for object_name, condition_keys in _V2_CONDITIONAL_OBJECTS.items():
-        if any(conditions.get(condition_key, False) for condition_key in condition_keys):
+        if any(derived_conditions[condition_key] for condition_key in condition_keys):
             if object_name not in objects:
                 _fail(
                     "v2_conditional_object_missing",
-                    f"V2 object {object_name} is required by package conditions",
+                    f"V2 object {object_name} is required by verified package evidence",
                 )
 
     for object_name, obj in objects.items():

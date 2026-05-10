@@ -10,7 +10,11 @@ from pathlib import Path
 import pytest
 
 from zovark.slice001 import ZovarkValidationError
+from zovark.slice001.audit import attach_audit_entry, derive_audit_entry
 from zovark.slice001.cli import main
+from zovark.slice001.findings import attach_findings
+from zovark.slice001.handoff import attach_handoff, derive_handoff
+from zovark.slice001.ingest import normalize_evidence
 from zovark.slice001.package_verifier import (
     V2_MARKER_FILE,
     V2_PACKAGE_CONTRACT,
@@ -18,7 +22,15 @@ from zovark.slice001.package_verifier import (
     validate_loaded_proof_package,
     verify_proof_package,
 )
-from zovark.slice001.writer import EXPECTED_OUTPUT_FILES, JSON_OUTPUT_FILES
+from zovark.slice001.replay import attach_replay_report, derive_replay_report
+from zovark.slice001.tape import create_tape
+from zovark.slice001.timeline import attach_timeline, build_initial_timeline
+from zovark.slice001.verdict import attach_verdict, derive_verdict
+from zovark.slice001.writer import (
+    EXPECTED_OUTPUT_FILES,
+    JSON_OUTPUT_FILES,
+    write_proof_package,
+)
 
 
 DEMO_PACKAGE_DIR = Path("demo/zovark-proof-package/out/tape-001")
@@ -61,6 +73,41 @@ EXPECTED_V2_VERIFIED_COMPONENTS = EXPECTED_VERIFIED_COMPONENTS + [
 def _copy_demo_package(tmp_path: Path) -> Path:
     package_dir = tmp_path / "package"
     shutil.copytree(DEMO_PACKAGE_DIR, package_dir)
+    return package_dir
+
+
+def _write_notify_only_package(tmp_path: Path) -> Path:
+    package_dir = tmp_path / "notify-only-package"
+    raw_input = {
+        "alert_id": "notify-alert-001",
+        "alert_type": "informational",
+        "description": "Informational alert with medium manual finding",
+        "host": "HOST-NOTIFY",
+        "ingested_at": "2026-05-01T10:00:00Z",
+        "severity": "medium",
+        "timestamp": "2026-05-01T10:00:00Z",
+    }
+    evidence = normalize_evidence(raw_input)
+    tape = create_tape(raw_input, evidence, tenant_id="tenant-notify")
+    tape = attach_timeline(tape, build_initial_timeline(tape))
+    tape = attach_findings(
+        tape,
+        [
+            {
+                "evidence_refs": [evidence[0]["evidence_id"]],
+                "model_contribution": False,
+                "severity": "medium",
+                "title": "Medium severity notification-only finding",
+            }
+        ],
+    )
+    tape = attach_verdict(tape, derive_verdict(tape))
+    tape["audit_ref"] = "audit-entry-1"
+    tape = attach_handoff(tape, derive_handoff(tape))
+    tape = attach_audit_entry(tape, derive_audit_entry(tape))
+    tape = attach_replay_report(tape, derive_replay_report(tape))
+    assert tape["handoff"]["action_type"] == "notify_only"
+    write_proof_package(tape, package_dir)
     return package_dir
 
 
@@ -108,15 +155,15 @@ def _v2_marker() -> dict:
         "conditions": {
             "analyst_override_present": False,
             "benign_verdict": False,
-            "containment_recommended": False,
+            "containment_recommended": True,
             "context_enrichment_used": False,
-            "customer_impact_language_present": False,
+            "customer_impact_language_present": True,
             "rejected_findings_present": False,
-            "response_action_present": False,
+            "response_action_present": True,
         },
         "objects": {
             "approval_record": _v2_object("approval_record"),
-            "blast_radius": _v2_object("blast_radius", status="not_applicable", source_refs=[]),
+            "blast_radius": _v2_object("blast_radius"),
             "compliance_mapping": _v2_object(
                 "compliance_mapping",
                 status="not_applicable",
@@ -136,11 +183,7 @@ def _v2_marker() -> dict:
                 status="not_applicable",
                 source_refs=[],
             ),
-            "rollback_plan": _v2_object(
-                "rollback_plan",
-                status="not_applicable",
-                source_refs=[],
-            ),
+            "rollback_plan": _v2_object("rollback_plan"),
             "visibility_gaps": _v2_object(
                 "visibility_gaps",
                 status="unavailable",
@@ -246,6 +289,50 @@ def test_minimal_static_v2_package_verifies_successfully(tmp_path):
     assert summary == verify_proof_package(package_dir)
 
 
+def test_v2_marker_false_conditions_cannot_hide_verified_response_action(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["conditions"]["containment_recommended"] = False
+    marker["conditions"]["customer_impact_language_present"] = False
+    marker["conditions"]["response_action_present"] = False
+    del marker["objects"]["blast_radius"]
+    del marker["objects"]["rollback_plan"]
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_condition_mismatch",
+    )
+
+
+def test_v2_marker_condition_mismatch_fails_even_with_conditional_objects(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["conditions"]["containment_recommended"] = False
+    marker["conditions"]["customer_impact_language_present"] = False
+    marker["conditions"]["response_action_present"] = False
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_condition_mismatch",
+    )
+
+
+def test_v2_marker_true_conditions_without_verified_action_fail_closed(tmp_path):
+    package_dir = _write_notify_only_package(tmp_path)
+    marker = _v2_marker()
+    marker["conditions"]["containment_recommended"] = True
+    marker["conditions"]["customer_impact_language_present"] = True
+    marker["conditions"]["response_action_present"] = True
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_condition_mismatch",
+    )
+
+
 def test_v2_package_missing_required_object_fails_with_stable_code(tmp_path):
     package_dir = _copy_demo_package(tmp_path)
     marker = _v2_marker()
@@ -285,8 +372,7 @@ def test_v2_package_missing_condition_flag_fails_closed(tmp_path):
 def test_v2_package_missing_conditional_object_fails_with_stable_code(tmp_path):
     package_dir = _copy_demo_package(tmp_path)
     marker = _v2_marker()
-    marker["conditions"]["rejected_findings_present"] = True
-    del marker["objects"]["false_positive_reasoning"]
+    del marker["objects"]["rollback_plan"]
     _add_v2_marker(package_dir, marker)
 
     _assert_failure_code(
