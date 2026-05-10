@@ -270,6 +270,18 @@ def test_v2_package_missing_conditions_fails_closed(tmp_path):
     )
 
 
+def test_v2_package_missing_condition_flag_fails_closed(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    del marker["conditions"]["response_action_present"]
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_package_shape_invalid",
+    )
+
+
 def test_v2_package_missing_conditional_object_fails_with_stable_code(tmp_path):
     package_dir = _copy_demo_package(tmp_path)
     marker = _v2_marker()

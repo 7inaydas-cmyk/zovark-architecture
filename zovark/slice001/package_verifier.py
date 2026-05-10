@@ -57,6 +57,15 @@ _V2_CONDITIONAL_OBJECTS = {
     ),
     "rollback_plan": ("response_action_present", "containment_recommended"),
 }
+_V2_CONDITION_KEYS = tuple(
+    sorted(
+        {
+            condition_key
+            for condition_keys in _V2_CONDITIONAL_OBJECTS.values()
+            for condition_key in condition_keys
+        }
+    )
+)
 _V2_KNOWN_OBJECTS = frozenset(
     _V2_REQUIRED_OBJECTS
     + tuple(_V2_CONDITIONAL_OBJECTS)
@@ -339,8 +348,13 @@ def _validate_v2_marker(marker: dict[str, Any]) -> dict[str, Any]:
     conditions = marker.get("conditions")
     if not isinstance(conditions, dict):
         _fail("v2_package_shape_invalid", "V2 conditions must be an object")
-    for key, value in conditions.items():
-        if not isinstance(key, str) or not isinstance(value, bool):
+    if set(conditions) != set(_V2_CONDITION_KEYS):
+        _fail(
+            "v2_package_shape_invalid",
+            "V2 conditions must include the expected condition flags",
+        )
+    for key in _V2_CONDITION_KEYS:
+        if not isinstance(conditions[key], bool):
             _fail("v2_package_shape_invalid", "V2 conditions must be booleans")
 
     objects = marker.get("objects")
