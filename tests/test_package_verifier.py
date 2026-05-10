@@ -12,6 +12,8 @@ import pytest
 from zovark.slice001 import ZovarkValidationError
 from zovark.slice001.cli import main
 from zovark.slice001.package_verifier import (
+    V2_MARKER_FILE,
+    V2_PACKAGE_CONTRACT,
     load_proof_package,
     validate_loaded_proof_package,
     verify_proof_package,
@@ -49,6 +51,11 @@ EXPECTED_VERIFIED_COMPONENTS = [
     "replay_report",
     "customer_report",
 ]
+EXPECTED_V2_VERIFIED_COMPONENTS = EXPECTED_VERIFIED_COMPONENTS + [
+    "package_version",
+    "v2_required_objects",
+    "v2_object_shapes",
+]
 
 
 def _copy_demo_package(tmp_path: Path) -> Path:
@@ -75,6 +82,78 @@ def _load_tape(package_dir: Path) -> dict:
 
 def _store_tape(package_dir: Path, tape: dict) -> None:
     _store_json(package_dir, "investigation-tape.json", tape)
+
+
+def _v2_object(
+    object_type: str,
+    *,
+    status: str = "populated",
+    source_refs: list[str] | None = None,
+    data_unavailable_reason: str | None = None,
+) -> dict:
+    obj = {
+        "object_type": object_type,
+        "object_version": "v2-skeleton/0.1",
+        "source_refs": source_refs or ["evidence:ev-alert"],
+        "status": status,
+    }
+    if data_unavailable_reason is not None:
+        obj["data_unavailable_reason"] = data_unavailable_reason
+    return obj
+
+
+def _v2_marker() -> dict:
+    return {
+        "base_package_contract": "slice-001-proof-package/1.0",
+        "conditions": {
+            "analyst_override_present": False,
+            "benign_verdict": False,
+            "containment_recommended": False,
+            "context_enrichment_used": False,
+            "customer_impact_language_present": False,
+            "rejected_findings_present": False,
+            "response_action_present": False,
+        },
+        "objects": {
+            "approval_record": _v2_object("approval_record"),
+            "blast_radius": _v2_object("blast_radius", status="not_applicable", source_refs=[]),
+            "compliance_mapping": _v2_object(
+                "compliance_mapping",
+                status="not_applicable",
+                source_refs=[],
+            ),
+            "context_enrichment": _v2_object("context_enrichment"),
+            "controls_in_place_at_incident": _v2_object(
+                "controls_in_place_at_incident",
+                status="unavailable",
+                source_refs=[],
+                data_unavailable_reason="customer_not_supplied",
+            ),
+            "customer_report_v2": _v2_object("customer_report_v2"),
+            "decision_rationale": _v2_object("decision_rationale"),
+            "false_positive_reasoning": _v2_object(
+                "false_positive_reasoning",
+                status="not_applicable",
+                source_refs=[],
+            ),
+            "rollback_plan": _v2_object(
+                "rollback_plan",
+                status="not_applicable",
+                source_refs=[],
+            ),
+            "visibility_gaps": _v2_object(
+                "visibility_gaps",
+                status="unavailable",
+                source_refs=[],
+                data_unavailable_reason="not_emitted_by_v3",
+            ),
+        },
+        "package_version": V2_PACKAGE_CONTRACT,
+    }
+
+
+def _add_v2_marker(package_dir: Path, marker: dict | None = None) -> None:
+    _store_json(package_dir, V2_MARKER_FILE, marker or _v2_marker())
 
 
 def _sync_tape_view(package_dir: Path, field: str, filename: str, value) -> None:
@@ -135,6 +214,85 @@ def test_cli_generated_temporary_package_verifies_successfully(tmp_path):
     assert summary["failure_codes"] == []
     assert summary["replay_state"] == "succeeded"
     assert summary["verified_components"] == EXPECTED_VERIFIED_COMPONENTS
+
+
+def test_v1_package_remains_backward_compatible_without_v2_marker(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+
+    summary = verify_proof_package(package_dir)
+
+    assert summary["package_contract"] == "slice-001-proof-package/1.0"
+    assert "package_version" not in summary
+    assert V2_MARKER_FILE not in {path.name for path in package_dir.iterdir()}
+
+
+def test_minimal_static_v2_package_verifies_successfully(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    _add_v2_marker(package_dir)
+
+    summary = verify_proof_package(package_dir)
+
+    assert summary["status"] == "verified"
+    assert summary["base_package_contract"] == "slice-001-proof-package/1.0"
+    assert summary["package_contract"] == V2_PACKAGE_CONTRACT
+    assert summary["package_version"] == V2_PACKAGE_CONTRACT
+    assert summary["artifact_count"] == len(EXPECTED_OUTPUT_FILES)
+    assert summary["checks_passed"] == len(EXPECTED_V2_VERIFIED_COMPONENTS)
+    assert summary["failure_count"] == 0
+    assert summary["failure_codes"] == []
+    assert summary["v2_object_count"] == len(_v2_marker()["objects"])
+    assert summary["v2_objects_checked"] == sorted(_v2_marker()["objects"])
+    assert summary["verified_components"] == EXPECTED_V2_VERIFIED_COMPONENTS
+    assert summary == verify_proof_package(package_dir)
+
+
+def test_v2_package_missing_required_object_fails_with_stable_code(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    del marker["objects"]["decision_rationale"]
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_required_object_missing",
+    )
+
+
+def test_v2_package_missing_conditional_object_fails_with_stable_code(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["conditions"]["rejected_findings_present"] = True
+    del marker["objects"]["false_positive_reasoning"]
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_conditional_object_missing",
+    )
+
+
+def test_v2_package_malformed_object_fails_with_stable_code(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["objects"]["decision_rationale"]["status"] = "not-a-status"
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_object_shape_invalid",
+    )
+
+
+def test_v2_unavailable_object_requires_reason(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["objects"]["visibility_gaps"].pop("data_unavailable_reason")
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_unavailable_reason_missing",
+    )
 
 
 def test_repeated_verification_is_deterministic_and_path_free(tmp_path):

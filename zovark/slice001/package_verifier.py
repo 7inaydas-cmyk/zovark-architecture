@@ -19,7 +19,10 @@ from zovark.slice001.writer import (
 
 
 MARKDOWN_OUTPUT_FILES = ("customer-report.md",)
+V2_MARKER_FILE = "proof-package-v2.json"
+V2_PACKAGE_CONTRACT = "proof-package-v2/0.1"
 _EXPECTED_FILE_SET = set(EXPECTED_OUTPUT_FILES)
+_V2_EXPECTED_FILE_SET = _EXPECTED_FILE_SET | {V2_MARKER_FILE}
 _VERIFIED_COMPONENTS = (
     "file_set",
     "json_parse",
@@ -29,17 +32,53 @@ _VERIFIED_COMPONENTS = (
     "replay_report",
     "customer_report",
 )
+_V2_VERIFIED_COMPONENTS = _VERIFIED_COMPONENTS + (
+    "package_version",
+    "v2_required_objects",
+    "v2_object_shapes",
+)
+_V2_REQUIRED_OBJECTS = (
+    "decision_rationale",
+    "visibility_gaps",
+    "approval_record",
+    "customer_report_v2",
+)
+_V2_CONDITIONAL_OBJECTS = {
+    "false_positive_reasoning": (
+        "benign_verdict",
+        "rejected_findings_present",
+        "analyst_override_present",
+    ),
+    "context_enrichment": ("context_enrichment_used",),
+    "blast_radius": (
+        "response_action_present",
+        "containment_recommended",
+        "customer_impact_language_present",
+    ),
+    "rollback_plan": ("response_action_present", "containment_recommended"),
+}
+_V2_KNOWN_OBJECTS = frozenset(
+    _V2_REQUIRED_OBJECTS
+    + tuple(_V2_CONDITIONAL_OBJECTS)
+    + (
+        "compliance_mapping",
+        "controls_in_place_at_incident",
+    )
+)
+_V2_OBJECT_STATUSES = {"populated", "partial", "unavailable", "not_applicable"}
 
 
 def load_proof_package(package_dir: str | Path) -> dict[str, Any]:
-    """Load the Slice 001 proof-package artifacts from *package_dir*."""
+    """Load proof-package artifacts from *package_dir*."""
     package_path = Path(package_dir)
     _validate_package_dir(package_path)
-    _validate_file_set(package_path)
+    package_shape = _validate_file_set(package_path)
 
     package: dict[str, Any] = {}
     for filename in JSON_OUTPUT_FILES:
         package[filename] = _load_json_file(package_path / filename)
+    if package_shape == "v2":
+        package[V2_MARKER_FILE] = _load_json_file(package_path / V2_MARKER_FILE)
 
     report_text = (package_path / "customer-report.md").read_text(encoding="utf-8")
     if not report_text:
@@ -49,9 +88,25 @@ def load_proof_package(package_dir: str | Path) -> dict[str, Any]:
 
 
 def validate_loaded_proof_package(package: dict[str, Any]) -> dict[str, Any]:
-    """Validate an already-loaded Slice 001 proof package."""
+    """Validate an already-loaded proof package."""
     if not isinstance(package, dict):
         _fail("package_shape_invalid", "proof package must be an object")
+
+    package_keys = set(package)
+    if package_keys == _EXPECTED_FILE_SET:
+        return _validate_loaded_v1_package(package)
+    if package_keys == _V2_EXPECTED_FILE_SET:
+        return _validate_loaded_v2_package(package)
+    _fail("package_shape_invalid", "proof package file set is invalid")
+
+
+def verify_proof_package(package_dir: str | Path) -> dict[str, Any]:
+    """Load and verify a proof-package directory offline."""
+    package = load_proof_package(package_dir)
+    return validate_loaded_proof_package(package)
+
+
+def _validate_loaded_v1_package(package: dict[str, Any]) -> dict[str, Any]:
     if set(package) != _EXPECTED_FILE_SET:
         _fail("package_shape_invalid", "proof package file set is invalid")
     for filename in JSON_OUTPUT_FILES:
@@ -67,10 +122,15 @@ def validate_loaded_proof_package(package: dict[str, Any]) -> dict[str, Any]:
     return _verification_summary(full_tape)
 
 
-def verify_proof_package(package_dir: str | Path) -> dict[str, Any]:
-    """Load and verify a Slice 001 proof-package directory offline."""
-    package = load_proof_package(package_dir)
-    return validate_loaded_proof_package(package)
+def _validate_loaded_v2_package(package: dict[str, Any]) -> dict[str, Any]:
+    marker = package[V2_MARKER_FILE]
+    if not isinstance(marker, dict):
+        _fail("v2_package_shape_invalid", f"{V2_MARKER_FILE} must be an object")
+
+    base_package = {filename: package[filename] for filename in EXPECTED_OUTPUT_FILES}
+    base_summary = _validate_loaded_v1_package(base_package)
+    objects = _validate_v2_marker(marker)
+    return _v2_verification_summary(base_summary, objects)
 
 
 def _validate_package_dir(package_dir: Path) -> None:
@@ -80,16 +140,23 @@ def _validate_package_dir(package_dir: Path) -> None:
         _fail("package_not_directory", "proof package path must be a directory")
 
 
-def _validate_file_set(package_dir: Path) -> None:
+def _validate_file_set(package_dir: Path) -> str:
     actual_entries = {entry.name for entry in package_dir.iterdir()}
-    if actual_entries != _EXPECTED_FILE_SET:
+    if actual_entries == _EXPECTED_FILE_SET:
+        expected_files = EXPECTED_OUTPUT_FILES
+        package_shape = "v1"
+    elif actual_entries == _V2_EXPECTED_FILE_SET:
+        expected_files = EXPECTED_OUTPUT_FILES + (V2_MARKER_FILE,)
+        package_shape = "v2"
+    else:
         _fail(
             "package_file_set_mismatch",
             "proof package directory file set is invalid",
         )
-    for filename in EXPECTED_OUTPUT_FILES:
+    for filename in expected_files:
         if not (package_dir / filename).is_file():
             _fail("artifact_not_file", f"{filename} must be a file")
+    return package_shape
 
 
 def _load_json_file(path: Path) -> Any:
@@ -255,6 +322,127 @@ def _verification_summary(full_tape: dict[str, Any]) -> dict[str, Any]:
         "verdict": full_tape["verdict"]["value"],
         "verified_components": list(_VERIFIED_COMPONENTS),
     }
+
+
+def _validate_v2_marker(marker: dict[str, Any]) -> dict[str, Any]:
+    if marker.get("package_version") != V2_PACKAGE_CONTRACT:
+        _fail(
+            "v2_package_shape_invalid",
+            f"{V2_MARKER_FILE} package_version is unsupported",
+        )
+    if marker.get("base_package_contract") != "slice-001-proof-package/1.0":
+        _fail(
+            "v2_package_shape_invalid",
+            f"{V2_MARKER_FILE} base_package_contract is invalid",
+        )
+
+    conditions = marker.get("conditions", {})
+    if not isinstance(conditions, dict):
+        _fail("v2_package_shape_invalid", "V2 conditions must be an object")
+    for key, value in conditions.items():
+        if not isinstance(key, str) or not isinstance(value, bool):
+            _fail("v2_package_shape_invalid", "V2 conditions must be booleans")
+
+    objects = marker.get("objects")
+    if not isinstance(objects, dict):
+        _fail("v2_package_shape_invalid", "V2 objects must be an object")
+
+    for object_name in _V2_REQUIRED_OBJECTS:
+        if object_name not in objects:
+            _fail(
+                "v2_required_object_missing",
+                f"V2 object {object_name} is required",
+            )
+
+    for object_name, condition_keys in _V2_CONDITIONAL_OBJECTS.items():
+        if any(conditions.get(condition_key, False) for condition_key in condition_keys):
+            if object_name not in objects:
+                _fail(
+                    "v2_conditional_object_missing",
+                    f"V2 object {object_name} is required by package conditions",
+                )
+
+    for object_name, obj in objects.items():
+        if object_name not in _V2_KNOWN_OBJECTS:
+            _fail(
+                "v2_object_shape_invalid",
+                f"V2 object {object_name} is unsupported",
+            )
+        _validate_v2_object(object_name, obj)
+    return objects
+
+
+def _validate_v2_object(object_name: str, obj: Any) -> None:
+    if not isinstance(obj, dict):
+        _fail("v2_object_shape_invalid", f"V2 object {object_name} must be an object")
+    if obj.get("object_type") != object_name:
+        _fail(
+            "v2_object_shape_invalid",
+            f"V2 object {object_name} has invalid object_type",
+        )
+    if not isinstance(obj.get("object_version"), str) or not obj["object_version"]:
+        _fail(
+            "v2_object_shape_invalid",
+            f"V2 object {object_name} must have object_version",
+        )
+    status = obj.get("status")
+    if status not in _V2_OBJECT_STATUSES:
+        _fail("v2_object_shape_invalid", f"V2 object {object_name} has invalid status")
+    if not isinstance(obj.get("source_refs"), list):
+        _fail(
+            "v2_object_shape_invalid",
+            f"V2 object {object_name} must have source_refs",
+        )
+    if "object_hash" in obj and obj["object_hash"] is not None and not isinstance(
+        obj["object_hash"], str
+    ):
+        _fail(
+            "v2_object_shape_invalid",
+            f"V2 object {object_name} has invalid object_hash",
+        )
+
+    needs_reason = status in {"partial", "unavailable"} or _contains_null_value(obj)
+    if needs_reason and (
+        not isinstance(obj.get("data_unavailable_reason"), str)
+        or not obj["data_unavailable_reason"]
+    ):
+        _fail(
+            "v2_unavailable_reason_missing",
+            f"V2 object {object_name} requires data_unavailable_reason",
+        )
+
+
+def _contains_null_value(value: Any) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, dict):
+        return any(
+            _contains_null_value(child)
+            for key, child in value.items()
+            if key != "object_hash"
+        )
+    if isinstance(value, list):
+        return any(_contains_null_value(child) for child in value)
+    return False
+
+
+def _v2_verification_summary(
+    base_summary: dict[str, Any],
+    objects: dict[str, Any],
+) -> dict[str, Any]:
+    summary = dict(base_summary)
+    summary.update(
+        {
+            "base_package_contract": base_summary["package_contract"],
+            "checks_passed": len(_V2_VERIFIED_COMPONENTS),
+            "package_contract": V2_PACKAGE_CONTRACT,
+            "package_version": V2_PACKAGE_CONTRACT,
+            "v2_object_count": len(objects),
+            "v2_objects_checked": sorted(objects),
+            "verified_components": list(_V2_VERIFIED_COMPONENTS),
+        }
+    )
+    return summary
 
 
 def _fail(code: str, message: str) -> NoReturn:
