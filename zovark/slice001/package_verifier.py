@@ -560,6 +560,7 @@ def _validate_v2_marker(
                     f"V2 object {object_name} is required by verified package evidence",
                 )
 
+    required_envelope_objects = set(_V2_REQUIRED_OBJECTS) | condition_required_objects
     for object_name, obj in objects.items():
         if object_name not in _V2_KNOWN_OBJECTS:
             _fail(
@@ -570,7 +571,7 @@ def _validate_v2_marker(
             object_name,
             obj,
             trusted_refs,
-            required_by_condition=object_name in condition_required_objects,
+            required_envelope=object_name in required_envelope_objects,
         )
     return objects
 
@@ -580,7 +581,7 @@ def _validate_v2_object(
     obj: Any,
     trusted_refs: frozenset[str],
     *,
-    required_by_condition: bool,
+    required_envelope: bool,
 ) -> None:
     if not isinstance(obj, dict):
         _fail("v2_object_shape_invalid", f"V2 object {object_name} must be an object")
@@ -597,7 +598,7 @@ def _validate_v2_object(
     status = obj.get("status")
     if status not in _V2_OBJECT_STATUSES:
         _fail("v2_object_shape_invalid", f"V2 object {object_name} has invalid status")
-    if required_by_condition and status == "not_applicable":
+    if required_envelope and status == "not_applicable":
         _fail(
             "v2_required_object_not_applicable",
             f"V2 object {object_name} is required by verified package evidence",
@@ -611,7 +612,7 @@ def _validate_v2_object(
         object_name,
         obj,
         trusted_refs,
-        required_by_condition=required_by_condition,
+        required_envelope=required_envelope,
     )
     if "object_hash" in obj and obj["object_hash"] is not None and not isinstance(
         obj["object_hash"], str
@@ -637,11 +638,11 @@ def _validate_v2_source_refs(
     obj: dict[str, Any],
     trusted_refs: frozenset[str],
     *,
-    required_by_condition: bool,
+    required_envelope: bool,
 ) -> None:
     source_refs = obj["source_refs"]
     if not source_refs:
-        if required_by_condition:
+        if required_envelope:
             _fail(
                 "v2_required_object_source_refs_missing",
                 f"V2 object {object_name} must cite verified source refs",

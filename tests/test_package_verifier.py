@@ -190,7 +190,6 @@ def _v2_marker() -> dict:
             "visibility_gaps": _v2_object(
                 "visibility_gaps",
                 status="unavailable",
-                source_refs=[],
                 data_unavailable_reason="not_emitted_by_v3",
             ),
         },
@@ -334,10 +333,44 @@ def test_v2_object_refs_to_v2_local_object_ids_are_not_trusted(tmp_path):
 def test_v2_object_valid_source_refs_to_verified_evidence_pass(tmp_path):
     package_dir = _copy_demo_package(tmp_path)
     marker = _v2_marker()
+    marker["objects"]["approval_record"]["source_refs"] = [DEMO_EVIDENCE_REF]
     marker["objects"]["decision_rationale"]["source_refs"] = [DEMO_EVIDENCE_REF]
+    marker["objects"]["customer_report_v2"]["source_refs"] = [DEMO_EVIDENCE_REF]
     _add_v2_marker(package_dir, marker)
 
     assert verify_proof_package(package_dir)["status"] == "verified"
+
+
+def test_v2_required_decision_rationale_cannot_be_not_applicable(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["objects"]["decision_rationale"]["status"] = "not_applicable"
+    marker["objects"]["decision_rationale"]["source_refs"] = []
+    marker["objects"]["decision_rationale"][
+        "data_unavailable_reason"
+    ] = "not_applicable"
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_required_object_not_applicable",
+    )
+
+
+def test_v2_required_customer_report_cannot_be_not_applicable(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["objects"]["customer_report_v2"]["status"] = "not_applicable"
+    marker["objects"]["customer_report_v2"]["source_refs"] = []
+    marker["objects"]["customer_report_v2"][
+        "data_unavailable_reason"
+    ] = "not_applicable"
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_required_object_not_applicable",
+    )
 
 
 def test_v2_required_conditional_object_with_unresolved_source_ref_fails(tmp_path):
