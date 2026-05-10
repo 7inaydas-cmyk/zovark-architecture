@@ -336,7 +336,7 @@ def _validate_v2_marker(marker: dict[str, Any]) -> dict[str, Any]:
             f"{V2_MARKER_FILE} base_package_contract is invalid",
         )
 
-    conditions = marker.get("conditions", {})
+    conditions = marker.get("conditions")
     if not isinstance(conditions, dict):
         _fail("v2_package_shape_invalid", "V2 conditions must be an object")
     for key, value in conditions.items():
