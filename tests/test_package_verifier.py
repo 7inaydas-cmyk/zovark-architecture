@@ -35,6 +35,7 @@ from zovark.slice001.writer import (
 
 
 DEMO_PACKAGE_DIR = Path("demo/zovark-proof-package/out/tape-001")
+STATIC_V2_PACKAGE_DIR = Path("tests/fixtures/proof-package-v2/response-action")
 SAMPLE_PATH = Path("samples/edr-sample-001.json")
 DEMO_EVIDENCE_REF = (
     "evidence:ev-8b68a8878b13f63d979e5ce3ce398845b53933130ffeb9951efc07b8b5a8db17"
@@ -77,6 +78,12 @@ EXPECTED_V2_VERIFIED_COMPONENTS = EXPECTED_VERIFIED_COMPONENTS + [
 def _copy_demo_package(tmp_path: Path) -> Path:
     package_dir = tmp_path / "package"
     shutil.copytree(DEMO_PACKAGE_DIR, package_dir)
+    return package_dir
+
+
+def _copy_static_v2_fixture(tmp_path: Path) -> Path:
+    package_dir = tmp_path / "static-v2-package"
+    shutil.copytree(STATIC_V2_PACKAGE_DIR, package_dir)
     return package_dir
 
 
@@ -312,6 +319,70 @@ def test_minimal_static_v2_package_verifies_successfully(tmp_path):
     assert summary["v2_objects_checked"] == sorted(_v2_marker()["objects"])
     assert summary["verified_components"] == EXPECTED_V2_VERIFIED_COMPONENTS
     assert summary == verify_proof_package(package_dir)
+
+
+def test_committed_static_v2_fixture_verifies_successfully():
+    summary = verify_proof_package(STATIC_V2_PACKAGE_DIR)
+
+    assert {path.name for path in STATIC_V2_PACKAGE_DIR.iterdir()} == set(
+        EXPECTED_OUTPUT_FILES
+    ) | {V2_MARKER_FILE}
+    assert summary["status"] == "verified"
+    assert summary["base_package_contract"] == "slice-001-proof-package/1.0"
+    assert summary["package_contract"] == V2_PACKAGE_CONTRACT
+    assert summary["package_version"] == V2_PACKAGE_CONTRACT
+    assert summary["artifact_count"] == len(EXPECTED_OUTPUT_FILES)
+    assert summary["checks_passed"] == len(EXPECTED_V2_VERIFIED_COMPONENTS)
+    assert summary["failure_count"] == 0
+    assert summary["failure_codes"] == []
+    assert summary["v2_object_count"] == len(_v2_marker()["objects"])
+    assert summary["v2_objects_checked"] == sorted(_v2_marker()["objects"])
+    assert summary["verified_components"] == EXPECTED_V2_VERIFIED_COMPONENTS
+    assert summary == verify_proof_package(STATIC_V2_PACKAGE_DIR)
+
+
+def test_static_v2_fixture_does_not_change_v1_demo_contract():
+    summary = verify_proof_package(DEMO_PACKAGE_DIR)
+
+    assert summary["package_contract"] == "slice-001-proof-package/1.0"
+    assert "package_version" not in summary
+    assert V2_MARKER_FILE not in {path.name for path in DEMO_PACKAGE_DIR.iterdir()}
+
+
+def test_static_v2_fixture_missing_required_object_fails(tmp_path):
+    package_dir = _copy_static_v2_fixture(tmp_path)
+    marker = _load_json(package_dir, V2_MARKER_FILE)
+    del marker["objects"]["decision_rationale"]
+    _store_json(package_dir, V2_MARKER_FILE, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_required_object_missing",
+    )
+
+
+def test_static_v2_fixture_unresolved_source_ref_fails(tmp_path):
+    package_dir = _copy_static_v2_fixture(tmp_path)
+    marker = _load_json(package_dir, V2_MARKER_FILE)
+    marker["objects"]["approval_record"]["source_refs"] = ["made-up-ref"]
+    _store_json(package_dir, V2_MARKER_FILE, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_source_ref_unresolved",
+    )
+
+
+def test_static_v2_fixture_condition_mismatch_fails(tmp_path):
+    package_dir = _copy_static_v2_fixture(tmp_path)
+    marker = _load_json(package_dir, V2_MARKER_FILE)
+    marker["conditions"]["response_action_present"] = False
+    _store_json(package_dir, V2_MARKER_FILE, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_condition_mismatch",
+    )
 
 
 def test_v2_object_source_ref_must_resolve_to_verified_evidence(tmp_path):
