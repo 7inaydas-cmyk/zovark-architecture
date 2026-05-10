@@ -352,6 +352,46 @@ def test_v2_required_conditional_object_with_unresolved_source_ref_fails(tmp_pat
     )
 
 
+def test_v2_triggered_conditional_object_cannot_be_not_applicable(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["objects"]["rollback_plan"]["status"] = "not_applicable"
+    marker["objects"]["rollback_plan"]["source_refs"] = []
+    marker["objects"]["rollback_plan"]["data_unavailable_reason"] = "not_applicable"
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_required_object_not_applicable",
+    )
+
+
+def test_v2_triggered_conditional_object_unavailable_still_needs_refs(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["objects"]["rollback_plan"]["status"] = "unavailable"
+    marker["objects"]["rollback_plan"]["source_refs"] = []
+    marker["objects"]["rollback_plan"]["data_unavailable_reason"] = "not_emitted_by_v3"
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_required_object_source_refs_missing",
+    )
+
+
+def test_v2_triggered_conditional_object_empty_source_refs_fail(tmp_path):
+    package_dir = _copy_demo_package(tmp_path)
+    marker = _v2_marker()
+    marker["objects"]["blast_radius"]["source_refs"] = []
+    _add_v2_marker(package_dir, marker)
+
+    _assert_failure_code(
+        lambda: verify_proof_package(package_dir),
+        "v2_required_object_source_refs_missing",
+    )
+
+
 def test_v2_marker_false_conditions_cannot_hide_verified_response_action(tmp_path):
     package_dir = _copy_demo_package(tmp_path)
     marker = _v2_marker()

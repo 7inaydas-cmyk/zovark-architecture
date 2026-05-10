@@ -550,8 +550,10 @@ def _validate_v2_marker(
                 f"V2 object {object_name} is required",
             )
 
+    condition_required_objects: set[str] = set()
     for object_name, condition_keys in _V2_CONDITIONAL_OBJECTS.items():
         if any(derived_conditions[condition_key] for condition_key in condition_keys):
+            condition_required_objects.add(object_name)
             if object_name not in objects:
                 _fail(
                     "v2_conditional_object_missing",
@@ -564,7 +566,12 @@ def _validate_v2_marker(
                 "v2_object_shape_invalid",
                 f"V2 object {object_name} is unsupported",
             )
-        _validate_v2_object(object_name, obj, trusted_refs)
+        _validate_v2_object(
+            object_name,
+            obj,
+            trusted_refs,
+            required_by_condition=object_name in condition_required_objects,
+        )
     return objects
 
 
@@ -572,6 +579,8 @@ def _validate_v2_object(
     object_name: str,
     obj: Any,
     trusted_refs: frozenset[str],
+    *,
+    required_by_condition: bool,
 ) -> None:
     if not isinstance(obj, dict):
         _fail("v2_object_shape_invalid", f"V2 object {object_name} must be an object")
@@ -588,12 +597,22 @@ def _validate_v2_object(
     status = obj.get("status")
     if status not in _V2_OBJECT_STATUSES:
         _fail("v2_object_shape_invalid", f"V2 object {object_name} has invalid status")
+    if required_by_condition and status == "not_applicable":
+        _fail(
+            "v2_required_object_not_applicable",
+            f"V2 object {object_name} is required by verified package evidence",
+        )
     if not isinstance(obj.get("source_refs"), list):
         _fail(
             "v2_object_shape_invalid",
             f"V2 object {object_name} must have source_refs",
         )
-    _validate_v2_source_refs(object_name, obj, trusted_refs)
+    _validate_v2_source_refs(
+        object_name,
+        obj,
+        trusted_refs,
+        required_by_condition=required_by_condition,
+    )
     if "object_hash" in obj and obj["object_hash"] is not None and not isinstance(
         obj["object_hash"], str
     ):
@@ -617,9 +636,16 @@ def _validate_v2_source_refs(
     object_name: str,
     obj: dict[str, Any],
     trusted_refs: frozenset[str],
+    *,
+    required_by_condition: bool,
 ) -> None:
     source_refs = obj["source_refs"]
     if not source_refs:
+        if required_by_condition:
+            _fail(
+                "v2_required_object_source_refs_missing",
+                f"V2 object {object_name} must cite verified source refs",
+            )
         if obj["status"] in {"not_applicable", "unavailable"}:
             return
         _fail(
