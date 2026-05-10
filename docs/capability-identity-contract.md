@@ -16,6 +16,19 @@ spec. Investigation Trace V1 will define ordered events and relationships later;
 this contract defines stable identities for the capabilities referenced by those
 events.
 
+## Current Implementation Status
+
+The Capability Identity Contract is a forward-looking contract and specification.
+As of the current main branch, the V3 adapter does not emit first-class Capability
+Identity objects. Available V3 trace context is preserved nested inside the
+existing nine-file proof package evidence substrate, which avoids a proof-package
+schema bump. Implementers should not expect standalone Capability Identity
+Contract objects in current generated proof packages.
+
+This status note does not align source enum aliases, clarify `model_ref`
+preservation, change Investigation Trace V1, change adapter behavior, or change
+the proof-package schema. Those items remain explicitly deferred.
+
 ## Scope
 
 This contract must support:

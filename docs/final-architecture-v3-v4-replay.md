@@ -30,6 +30,12 @@ The v4.1 architecture target is 10K alerts/sec at ingestion, narrowed by the fun
 to approximately 100 investigation-worthy events/sec. Current V3 repo evidence does
 not prove that target.
 
+Scale decision: A is the current truth. The v4.1 10K alerts/sec to approximately
+100 investigation-worthy events/sec target is aspirational, not current. Early
+customer validation may proceed only with lower-scale environments that fit current
+measured V3 throughput. An ingestion/funnel rebuild is required before any
+enterprise-scale pilot.
+
 Current measured V3 evidence from the ground-truth and inventory docs:
 
 - About 1.6 alerts/sec submission throughput was observed in V3 benchmark evidence.
@@ -67,15 +73,12 @@ current proof package, verifier success output, and tamper/failure output.
 Future customer signal entries must use this format:
 
 - role/title:
-- company type:
+- company size band:
 - conversation date:
-- key reactions:
-- would they use it?
-- would they pay?
-- where would it live?
-- evidence missing:
-- strongest objection:
-- roadmap impact:
+- top three reactions verbatim:
+- would-they-pay answer:
+- where-would-it-live answer:
+- what-is-missing answer:
 
 Buyer-pain hypotheses are secondary signals. They are not roadmap commitments until
 validated by repeated customer evidence.
