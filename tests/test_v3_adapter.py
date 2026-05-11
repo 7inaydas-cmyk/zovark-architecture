@@ -9,7 +9,11 @@ from pathlib import Path
 import pytest
 
 from zovark.slice001 import ZovarkValidationError
-from zovark.slice001.package_verifier import verify_proof_package
+from zovark.slice001.package_verifier import (
+    V2_MARKER_FILE,
+    V2_PACKAGE_CONTRACT,
+    verify_proof_package,
+)
 from zovark.slice001.v3_adapter import (
     adapt_v3_fixture_to_slice_input,
     build_proof_package_from_v3_fixture,
@@ -127,6 +131,47 @@ def _representative_v3_fixture() -> dict:
     }
 
 
+def _false_positive_context_v3_fixture() -> dict:
+    fixture = _representative_v3_fixture()
+    fixture["execution"]["rejected_findings"] = ["candidate-benign-office-macro"]
+    fixture["execution"]["benign_explanations_considered"] = [
+        "expected document macro execution",
+    ]
+    fixture["execution"]["benign_indicators"] = [
+        "known user opened business document",
+    ]
+    fixture["execution"]["contradicting_evidence_refs"] = []
+    return fixture
+
+
+def _load_json(package_dir: Path, filename: str):
+    return json.loads((package_dir / filename).read_text(encoding="utf-8"))
+
+
+V2_ONLY_CONTEXT_KEYS = {
+    "analyst_override",
+    "baseline_match_evidence",
+    "benign_explanation_chosen",
+    "benign_explanations_considered",
+    "benign_indicators",
+    "confirmation_records",
+    "contacted_parties",
+    "contradicting_evidence_refs",
+    "decision_rationale",
+    "detection_tuning_recommendation",
+    "enrichment_results",
+    "false_positive_reasoning",
+    "match_telemetry",
+    "normal_schedule_match",
+    "rejected_finding_refs",
+    "rejected_findings",
+    "source_refs",
+    "suppression_rule_id",
+    "v2_conditions",
+    "whitelist_match_evidence",
+}
+
+
 def test_v3_fixture_maps_to_slice_input_and_preserves_trace_context():
     raw_input = adapt_v3_fixture_to_slice_input(_representative_v3_fixture())
 
@@ -200,6 +245,172 @@ def test_v3_fixture_written_package_verifies_with_replay_v2(tmp_path):
     assert summary["replay_state"] == "succeeded"
     assert not (output_dir / "manifest.json").exists()
     assert not (output_dir / "provenance.json").exists()
+
+
+def test_v3_fixture_default_package_remains_v1(tmp_path):
+    output_dir = tmp_path / "v1-package"
+
+    manifest = write_proof_package_from_v3_fixture(
+        _representative_v3_fixture(),
+        output_dir,
+    )
+
+    assert sorted(path.name for path in output_dir.iterdir()) == sorted(
+        EXPECTED_OUTPUT_FILES
+    )
+    assert sorted(manifest) == sorted(EXPECTED_OUTPUT_FILES)
+    assert V2_MARKER_FILE not in manifest
+    summary = verify_proof_package(output_dir)
+    assert summary["package_contract"] == "slice-001-proof-package/1.0"
+    assert "package_version" not in summary
+
+
+def test_v3_fixture_default_v1_context_excludes_v2_only_fields(tmp_path):
+    output_dir = tmp_path / "v1-package"
+
+    write_proof_package_from_v3_fixture(
+        _false_positive_context_v3_fixture(),
+        output_dir,
+    )
+    context = _load_json(output_dir, "investigation-tape.json")["raw_evidence"][0][
+        "raw_content"
+    ]["v3_trace_context"]
+
+    assert not (set(context) & V2_ONLY_CONTEXT_KEYS)
+
+
+def test_v3_fixture_can_write_v2_package_that_verifies(tmp_path):
+    output_dir = tmp_path / "v2-package"
+
+    manifest = write_proof_package_from_v3_fixture(
+        _representative_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+
+    assert sorted(path.name for path in output_dir.iterdir()) == sorted(
+        EXPECTED_OUTPUT_FILES + (V2_MARKER_FILE,)
+    )
+    assert sorted(manifest) == sorted(EXPECTED_OUTPUT_FILES + (V2_MARKER_FILE,))
+    assert summary["status"] == "verified"
+    assert summary["package_contract"] == V2_PACKAGE_CONTRACT
+    assert summary["package_version"] == V2_PACKAGE_CONTRACT
+    assert summary["failure_count"] == 0
+
+
+def test_v1_then_v2_generation_does_not_mutate_v1_projection(tmp_path):
+    fixture = _false_positive_context_v3_fixture()
+    v1_dir = tmp_path / "v1-first"
+    v2_dir = tmp_path / "v2-second"
+
+    write_proof_package_from_v3_fixture(fixture, v1_dir)
+    v1_before = {
+        path.name: path.read_text(encoding="utf-8") for path in v1_dir.iterdir()
+    }
+    write_proof_package_from_v3_fixture(
+        fixture,
+        v2_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    v1_after = {
+        path.name: path.read_text(encoding="utf-8") for path in v1_dir.iterdir()
+    }
+
+    assert v1_before == v1_after
+    assert sorted(v1_after) == sorted(EXPECTED_OUTPUT_FILES)
+    assert verify_proof_package(v1_dir)["package_contract"] == (
+        "slice-001-proof-package/1.0"
+    )
+
+
+def test_v2_then_v1_generation_does_not_contaminate_v1_projection(tmp_path):
+    fixture = _false_positive_context_v3_fixture()
+    v2_dir = tmp_path / "v2-first"
+    v1_dir = tmp_path / "v1-second"
+
+    write_proof_package_from_v3_fixture(
+        fixture,
+        v2_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    write_proof_package_from_v3_fixture(fixture, v1_dir)
+    context = _load_json(v1_dir, "investigation-tape.json")["raw_evidence"][0][
+        "raw_content"
+    ]["v3_trace_context"]
+
+    assert sorted(path.name for path in v1_dir.iterdir()) == sorted(
+        EXPECTED_OUTPUT_FILES
+    )
+    assert not (set(context) & V2_ONLY_CONTEXT_KEYS)
+    assert verify_proof_package(v1_dir)["package_contract"] == (
+        "slice-001-proof-package/1.0"
+    )
+
+
+def test_generated_v2_decision_rationale_refs_resolve_to_evidence(tmp_path):
+    output_dir = tmp_path / "v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _representative_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    evidence = _load_json(output_dir, "evidence-ledger.json")
+    verified_refs = {f"evidence:{entry['evidence_id']}" for entry in evidence}
+    decision_rationale = marker["objects"]["decision_rationale"]
+
+    assert decision_rationale["source_refs"]
+    assert set(decision_rationale["source_refs"]) <= verified_refs
+    assert decision_rationale["working_hypothesis"]
+    assert decision_rationale["final_decision"] == "confirmed_malicious"
+    assert decision_rationale["decision_rationale_summary"]
+
+
+def test_generated_v2_rejected_finding_emits_false_positive_reasoning(tmp_path):
+    output_dir = tmp_path / "false-positive-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _false_positive_context_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    false_positive = marker["objects"]["false_positive_reasoning"]
+
+    assert summary["status"] == "verified"
+    assert marker["conditions"]["rejected_findings_present"] is True
+    assert false_positive["status"] == "partial"
+    assert false_positive["source_refs"]
+    assert false_positive["rejected_finding_refs"] == []
+    assert false_positive["rejected_finding_summaries"] == [
+        "candidate-benign-office-macro"
+    ]
+    assert false_positive["reasoning_summary"]
+
+
+def test_generated_v2_marker_does_not_export_hidden_reasoning_or_raw_prompts(tmp_path):
+    output_dir = tmp_path / "v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _representative_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    rendered = json.dumps(_load_json(output_dir, V2_MARKER_FILE), sort_keys=True).lower()
+
+    forbidden = [
+        "chain_of_thought",
+        "hidden_reasoning",
+        "raw_reasoning",
+        "raw_system_prompt",
+        "system_prompt",
+        "raw_prompt",
+    ]
+    for token in forbidden:
+        assert token not in rendered
 
 
 def test_v3_fixture_adapter_is_deterministic(tmp_path):
