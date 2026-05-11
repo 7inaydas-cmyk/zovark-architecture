@@ -145,6 +145,14 @@ def _false_positive_context_v3_fixture() -> dict:
     return fixture
 
 
+def _false_positive_tuning_v3_fixture() -> dict:
+    fixture = _false_positive_context_v3_fixture()
+    fixture["execution"]["detection_tuning_recommendation"] = (
+        "Require approved macro allowlist evidence before auto-closing similar alerts"
+    )
+    return fixture
+
+
 def _context_visibility_v3_fixture() -> dict:
     fixture = _representative_v3_fixture()
     fixture["execution"].update(
@@ -356,6 +364,17 @@ def _control_evidence_without_metadata_v3_fixture() -> dict:
         {
             "backup_status": "available",
             "mfa_status": "enabled",
+        }
+    )
+    return fixture
+
+
+def _disabled_control_v3_fixture() -> dict:
+    fixture = _action_card_v3_fixture()
+    fixture["execution"].update(
+        {
+            "backup_status": "available",
+            "mfa_status": "disabled",
         }
     )
     return fixture
@@ -1334,6 +1353,337 @@ def test_compliance_controls_v1_and_v2_generation_do_not_cross_contaminate(tmp_p
         "slice-001-proof-package/1.0"
     )
     assert verify_proof_package(v2_dir)["package_contract"] == V2_PACKAGE_CONTRACT
+
+
+def test_generated_v2_populates_customer_report_v2(tmp_path):
+    output_dir = tmp_path / "customer-report-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _compliance_controls_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    customer_report = marker["objects"]["customer_report_v2"]
+
+    assert summary["status"] == "verified"
+    assert customer_report["status"] == "partial"
+    assert customer_report["source_refs"]
+    assert customer_report["executive_summary"]
+    assert customer_report["verified_scope"] == "recorded package artifacts only"
+    assert customer_report["decision_summary"]
+    assert customer_report["evidence_summary"]
+    assert customer_report["visibility_gaps"]
+    assert customer_report["customer_responsibility_actions"]
+    assert customer_report["prevention_recommendations"]
+    assert customer_report["proof_verification_status"]
+
+
+def test_generated_v2_customer_report_decision_summary_uses_v2_objects(tmp_path):
+    output_dir = tmp_path / "customer-report-decision-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _compliance_controls_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    customer_report = marker["objects"]["customer_report_v2"]
+    decision_rationale = marker["objects"]["decision_rationale"]
+    approval_record = marker["objects"]["approval_record"]
+    decision_summary = customer_report["decision_summary"]
+
+    assert decision_summary["final_decision"] == "confirmed_malicious"
+    assert decision_summary["decision_rationale_summary"] == decision_rationale[
+        "decision_rationale_summary"
+    ]
+    assert decision_summary["working_hypothesis"] == decision_rationale[
+        "working_hypothesis"
+    ]
+    assert decision_summary["action_type"] == "isolate_host"
+    assert decision_summary["approval_state"] == approval_record["approval_state"]
+    assert decision_summary["approval_status"] == "conditional"
+
+
+def test_generated_v2_customer_report_evidence_summary_refs_resolve(tmp_path):
+    output_dir = tmp_path / "customer-report-evidence-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _compliance_controls_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    evidence = _load_json(output_dir, "evidence-ledger.json")
+    verified_refs = {f"evidence:{entry['evidence_id']}" for entry in evidence}
+    customer_report = marker["objects"]["customer_report_v2"]
+    evidence_summary = customer_report["evidence_summary"]
+
+    assert set(customer_report["source_refs"]) <= verified_refs
+    assert set(evidence_summary["verdict_evidence_refs"]) <= verified_refs
+    assert set(evidence_summary["action_evidence_refs"]) <= verified_refs
+    assert evidence_summary["finding_summaries"]
+    assert evidence_summary["compliance_mapping_summary"]["source_refs"] == marker[
+        "objects"
+    ]["compliance_mapping"]["source_refs"]
+    assert evidence_summary["controls_summary"]["source_refs"] == marker["objects"][
+        "controls_in_place_at_incident"
+    ]["source_refs"]
+
+
+def test_generated_v2_customer_report_includes_visibility_gaps(tmp_path):
+    output_dir = tmp_path / "customer-report-gaps-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _context_visibility_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    customer_gaps = marker["objects"]["customer_report_v2"]["visibility_gaps"]
+
+    assert customer_gaps["status"] == "partial"
+    assert customer_gaps["gaps"]
+    assert {
+        "missing_dns_logs",
+        "telemetry_missing",
+        "access_denied_paths",
+    } <= {gap["gap_type"] for gap in customer_gaps["gaps"]}
+
+
+def test_generated_v2_customer_report_actions_are_supported_by_v2_objects(tmp_path):
+    output_dir = tmp_path / "customer-report-actions-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _compliance_controls_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    actions = marker["objects"]["customer_report_v2"][
+        "customer_responsibility_actions"
+    ]
+    action_names = {action["action"] for action in actions}
+
+    assert action_names == {
+        "human_review_required",
+        "rollback_validation_needed",
+        "visibility_gap_follow_up",
+    }
+    for action in actions:
+        assert "source_refs" in action
+        assert "reason" in action
+
+
+def test_generated_v2_customer_report_does_not_invent_visibility_gap_action(
+    tmp_path,
+):
+    output_dir = tmp_path / "customer-report-no-recorded-gaps-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _representative_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    report = marker["objects"]["customer_report_v2"]
+    action_names = {
+        action["action"] for action in report["customer_responsibility_actions"]
+    }
+
+    assert report["visibility_gaps"]["status"] == "unavailable"
+    assert "visibility_gap_follow_up" not in action_names
+    assert "controls_evidence_unavailable" not in action_names
+    assert "controls_follow_up_required" not in action_names
+
+
+def test_generated_v2_customer_report_does_not_invent_controls_action_for_metadata(
+    tmp_path,
+):
+    output_dir = tmp_path / "customer-report-metadata-only-controls-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _control_metadata_only_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    report = marker["objects"]["customer_report_v2"]
+    action_names = {
+        action["action"] for action in report["customer_responsibility_actions"]
+    }
+
+    assert marker["objects"]["controls_in_place_at_incident"]["status"] == (
+        "unavailable"
+    )
+    assert "controls_evidence_unavailable" not in action_names
+    assert "controls_follow_up_required" not in action_names
+
+
+def test_generated_v2_customer_report_flags_recorded_disabled_control(tmp_path):
+    output_dir = tmp_path / "customer-report-disabled-control-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _disabled_control_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    controls = marker["objects"]["controls_in_place_at_incident"]
+    actions = marker["objects"]["customer_report_v2"][
+        "customer_responsibility_actions"
+    ]
+    controls_actions = [
+        action for action in actions if action["action"] == "controls_follow_up_required"
+    ]
+
+    assert summary["status"] == "verified"
+    assert controls["status"] == "partial"
+    assert controls["control_values"]["mfa_status"] == "disabled"
+    assert len(controls_actions) == 1
+    assert controls_actions[0]["control_refs"] == ["mfa_status"]
+    assert controls_actions[0]["source_refs"] == controls["source_refs"]
+
+
+def test_generated_v2_customer_report_prevention_uses_recorded_recommendations(
+    tmp_path,
+):
+    output_dir = tmp_path / "customer-report-prevention-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _false_positive_tuning_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    prevention = marker["objects"]["customer_report_v2"][
+        "prevention_recommendations"
+    ]
+
+    assert summary["status"] == "verified"
+    assert prevention["status"] == "populated"
+    assert prevention["recommendations"] == [
+        "Require approved macro allowlist evidence before auto-closing similar alerts"
+    ]
+    assert prevention["source_refs"]
+
+
+def test_generated_v2_customer_report_missing_prevention_is_explicit(tmp_path):
+    output_dir = tmp_path / "customer-report-no-prevention-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _representative_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    prevention = marker["objects"]["customer_report_v2"][
+        "prevention_recommendations"
+    ]
+
+    assert prevention == {
+        "data_unavailable_reason": "not_emitted_by_v3",
+        "recommendations": [],
+        "source_refs": [],
+        "status": "unavailable",
+    }
+
+
+def test_generated_v2_customer_report_does_not_self_attest_verification(tmp_path):
+    output_dir = tmp_path / "customer-report-verification-status-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _compliance_controls_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    proof_status = marker["objects"]["customer_report_v2"][
+        "proof_verification_status"
+    ]
+
+    assert proof_status["status"] == "not_verified_at_generation"
+    assert proof_status["replay_state"] == "succeeded"
+    assert proof_status["data_unavailable_reason"] == (
+        "verifier_result_not_recorded_at_generation"
+    )
+    assert proof_status["status"] != "verified"
+
+
+def test_default_v1_generation_excludes_customer_report_v2(tmp_path):
+    output_dir = tmp_path / "v1-customer-report-package"
+
+    write_proof_package_from_v3_fixture(
+        _compliance_controls_v3_fixture(),
+        output_dir,
+    )
+    context = _load_json(output_dir, "investigation-tape.json")["raw_evidence"][0][
+        "raw_content"
+    ]["v3_trace_context"]
+
+    assert V2_MARKER_FILE not in {path.name for path in output_dir.iterdir()}
+    assert "customer_report_v2" not in context
+    assert verify_proof_package(output_dir)["package_contract"] == (
+        "slice-001-proof-package/1.0"
+    )
+
+
+def test_customer_report_v1_and_v2_generation_do_not_cross_contaminate(tmp_path):
+    fixture = _compliance_controls_v3_fixture()
+    v1_dir = tmp_path / "v1-first"
+    v2_dir = tmp_path / "v2-second"
+
+    write_proof_package_from_v3_fixture(fixture, v1_dir)
+    v1_before = {
+        path.name: path.read_text(encoding="utf-8") for path in v1_dir.iterdir()
+    }
+    write_proof_package_from_v3_fixture(
+        fixture,
+        v2_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    v1_after = {
+        path.name: path.read_text(encoding="utf-8") for path in v1_dir.iterdir()
+    }
+    v2_marker = _load_json(v2_dir, V2_MARKER_FILE)
+
+    assert v1_before == v1_after
+    assert "customer_report_v2" in v2_marker["objects"]
+    assert verify_proof_package(v1_dir)["package_contract"] == (
+        "slice-001-proof-package/1.0"
+    )
+    assert verify_proof_package(v2_dir)["package_contract"] == V2_PACKAGE_CONTRACT
+
+
+def test_generated_v2_customer_report_does_not_claim_legal_or_certification(
+    tmp_path,
+):
+    output_dir = tmp_path / "customer-report-bounded-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _compliance_controls_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    rendered = json.dumps(
+        marker["objects"]["customer_report_v2"],
+        sort_keys=True,
+    ).lower()
+
+    forbidden_claims = [
+        "compliance achieved",
+        "certified",
+        "certification",
+        "legal admissibility",
+        "soc 2 compliant",
+        "sec ready",
+    ]
+    for claim in forbidden_claims:
+        assert claim not in rendered
 
 
 def test_generated_v2_compliance_mapping_does_not_claim_certification(tmp_path):
