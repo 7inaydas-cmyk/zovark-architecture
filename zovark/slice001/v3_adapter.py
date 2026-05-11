@@ -116,6 +116,16 @@ _CONTROL_METADATA_KEYS = (
     "customer_attestation_ref",
 )
 _CONTROL_SNAPSHOT_KEYS = _CONTROL_EVIDENCE_KEYS + _CONTROL_METADATA_KEYS
+_SAFE_V2_TRACE_CONTEXT_KEYS = (
+    "model_ref",
+    "model_fingerprint",
+    "input_provenance_tags",
+    "prompt_transformation_log",
+    "third_party_feed_identifiers",
+    "counter_evidence_considered",
+    "exploitability_validation",
+    "separation_of_reasoning_execution_flag",
+)
 _COMPLIANCE_ACTION_MAPPINGS = {
     "isolate_host": {
         "control_refs": [
@@ -1328,6 +1338,14 @@ def _v3_context_from_fixture(
                 "control_owner": execution.get("control_owner"),
                 "control_refs": execution.get("control_refs"),
                 "customer_attestation_ref": execution.get("customer_attestation_ref"),
+                **{
+                    key: execution.get(key)
+                    for key in _SAFE_V2_TRACE_CONTEXT_KEYS
+                },
+                "tool_call_chain_summary": execution.get(
+                    "tool_call_chain_summary"
+                )
+                or _tool_call_chain_summary(execution),
             }
         )
         context_values = _recorded_context_values(
@@ -1347,6 +1365,30 @@ def _v3_context_from_fixture(
     }
     context["execution_path"] = _execution_path(execution)
     return context
+
+
+def _tool_call_chain_summary(execution: dict[str, Any]) -> list[dict[str, Any]] | None:
+    tool_names = execution.get("tool_names")
+    if not isinstance(tool_names, list) or not tool_names:
+        return None
+    tool_results = execution.get("tool_results", {})
+    if not isinstance(tool_results, dict):
+        tool_results = {}
+    records: list[dict[str, Any]] = []
+    for index, tool_name in enumerate(tool_names, start=1):
+        if not isinstance(tool_name, str) or not tool_name:
+            continue
+        result = tool_results.get(tool_name, {})
+        status = result.get("status") if isinstance(result, dict) else None
+        record = {
+            "sequence": index,
+            "tool_name": tool_name,
+            "tool_result_hash": sha256_of_obj(result),
+        }
+        if isinstance(status, str) and status:
+            record["tool_status"] = status
+        records.append(record)
+    return records or None
 
 
 def _execution_path(execution: dict[str, Any]) -> str:

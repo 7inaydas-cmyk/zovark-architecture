@@ -380,6 +380,47 @@ def _disabled_control_v3_fixture() -> dict:
     return fixture
 
 
+def _safe_trace_metadata_v3_fixture() -> dict:
+    fixture = _compliance_controls_v3_fixture()
+    fixture["execution"].update(
+        {
+            "chain_of_thought": "never export hidden reasoning",
+            "counter_evidence_considered": [
+                "No lateral movement success event was recorded"
+            ],
+            "exploitability_validation": {
+                "method": "recorded_tool_output",
+                "result": "not_exercised_by_adapter",
+            },
+            "hidden_reasoning": "never export hidden reasoning",
+            "input_provenance_tags": [
+                "static_fixture",
+                "recorded_tool_output",
+            ],
+            "model_fingerprint": "fp-static-fixture-001",
+            "model_ref": "model:v3-fixture-selector",
+            "prompt_hash": "sha256:prompt-hash-static-fixture",
+            "prompt_transformation_log": [
+                {
+                    "operation": "redact_prompt_body",
+                    "output_ref": "prompt_hash",
+                }
+            ],
+            "prompt_version": "prompt-v3-fixture-001",
+            "raw_prompt": "never export raw prompt text",
+            "raw_system_prompt": "never export raw system prompt text",
+            "raw_user_prompt": "never export raw user prompt text",
+            "separation_of_reasoning_execution_flag": True,
+            "system_prompt": "never export system prompt text",
+            "third_party_feed_identifiers": [
+                "static-fixture-ti-feed",
+            ],
+            "user_prompt": "never export user prompt text",
+        }
+    )
+    return fixture
+
+
 def _load_json(package_dir: Path, filename: str):
     return json.loads((package_dir / filename).read_text(encoding="utf-8"))
 
@@ -452,14 +493,23 @@ V2_ONLY_CONTEXT_KEYS = {
     "control_snapshot_timestamp",
     "control_source",
     "control_time_scope",
+    "counter_evidence_considered",
+    "exploitability_validation",
     "source_refs",
+    "input_provenance_tags",
+    "model_fingerprint",
+    "model_ref",
+    "prompt_transformation_log",
+    "separation_of_reasoning_execution_flag",
     "single_points_of_failure",
     "suppression_rule_id",
     "telemetry_missing",
     "third_party_integration_gaps",
+    "third_party_feed_identifiers",
     "third_party_dependencies",
     "threat_intel_hash_match",
     "threat_intel_ip_match",
+    "tool_call_chain_summary",
     "unavailable_logs",
     "unobserved_integrations",
     "unsupported_integrations",
@@ -1684,6 +1734,152 @@ def test_generated_v2_customer_report_does_not_claim_legal_or_certification(
     ]
     for claim in forbidden_claims:
         assert claim not in rendered
+
+
+def test_generated_v2_preserves_safe_trace_metadata_when_recorded(tmp_path):
+    output_dir = tmp_path / "safe-trace-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _safe_trace_metadata_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    context = _load_json(output_dir, "investigation-tape.json")["raw_evidence"][0][
+        "raw_content"
+    ]["v3_trace_context"]
+
+    assert summary["status"] == "verified"
+    assert context["model_ref"] == "model:v3-fixture-selector"
+    assert context["model_fingerprint"] == "fp-static-fixture-001"
+    assert context["input_provenance_tags"] == [
+        "static_fixture",
+        "recorded_tool_output",
+    ]
+    assert context["prompt_hash"] == "sha256:prompt-hash-static-fixture"
+    assert context["prompt_version"] == "prompt-v3-fixture-001"
+    assert context["prompt_transformation_log"] == [
+        {
+            "operation": "redact_prompt_body",
+            "output_ref": "prompt_hash",
+        }
+    ]
+    assert context["third_party_feed_identifiers"] == [
+        "static-fixture-ti-feed"
+    ]
+    assert context["counter_evidence_considered"] == [
+        "No lateral movement success event was recorded"
+    ]
+    assert context["exploitability_validation"] == {
+        "method": "recorded_tool_output",
+        "result": "not_exercised_by_adapter",
+    }
+    assert context["separation_of_reasoning_execution_flag"] is True
+    assert context["tool_call_chain_summary"]
+    assert {
+        "sequence",
+        "tool_name",
+        "tool_result_hash",
+        "tool_status",
+    } <= set(context["tool_call_chain_summary"][0])
+
+
+def test_generated_v2_safe_trace_fields_are_emitted_only_when_recorded(tmp_path):
+    output_dir = tmp_path / "safe-trace-absent-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _representative_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    context = _load_json(output_dir, "investigation-tape.json")["raw_evidence"][0][
+        "raw_content"
+    ]["v3_trace_context"]
+
+    for absent_key in (
+        "model_ref",
+        "model_fingerprint",
+        "input_provenance_tags",
+        "prompt_transformation_log",
+        "third_party_feed_identifiers",
+        "counter_evidence_considered",
+        "exploitability_validation",
+        "separation_of_reasoning_execution_flag",
+    ):
+        assert absent_key not in context
+
+
+def test_generated_v2_safe_trace_context_omits_raw_prompts_and_hidden_reasoning(
+    tmp_path,
+):
+    output_dir = tmp_path / "safe-trace-redacted-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _safe_trace_metadata_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    context = _load_json(output_dir, "investigation-tape.json")["raw_evidence"][0][
+        "raw_content"
+    ]["v3_trace_context"]
+    rendered = json.dumps(context, sort_keys=True).lower()
+
+    forbidden = [
+        "chain_of_thought",
+        "hidden_reasoning",
+        "raw_prompt",
+        "raw_system_prompt",
+        "raw_user_prompt",
+        "system_prompt",
+        "user_prompt",
+        "never export",
+    ]
+    for token in forbidden:
+        assert token not in rendered
+
+
+def test_default_v1_generation_excludes_safe_v2_trace_fields(tmp_path):
+    output_dir = tmp_path / "safe-trace-v1-package"
+
+    write_proof_package_from_v3_fixture(
+        _safe_trace_metadata_v3_fixture(),
+        output_dir,
+    )
+    context = _load_json(output_dir, "investigation-tape.json")["raw_evidence"][0][
+        "raw_content"
+    ]["v3_trace_context"]
+
+    assert V2_MARKER_FILE not in {path.name for path in output_dir.iterdir()}
+    assert not (set(context) & V2_ONLY_CONTEXT_KEYS)
+    assert context["prompt_hash"] == "sha256:prompt-hash-static-fixture"
+    assert context["prompt_version"] == "prompt-v3-fixture-001"
+
+
+def test_safe_trace_v1_and_v2_generation_do_not_cross_contaminate(tmp_path):
+    fixture = _safe_trace_metadata_v3_fixture()
+    v2_dir = tmp_path / "safe-trace-v2-first"
+    v1_dir = tmp_path / "safe-trace-v1-second"
+
+    write_proof_package_from_v3_fixture(
+        fixture,
+        v2_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    write_proof_package_from_v3_fixture(fixture, v1_dir)
+    v2_context = _load_json(v2_dir, "investigation-tape.json")["raw_evidence"][0][
+        "raw_content"
+    ]["v3_trace_context"]
+    v1_context = _load_json(v1_dir, "investigation-tape.json")["raw_evidence"][0][
+        "raw_content"
+    ]["v3_trace_context"]
+
+    assert "model_ref" in v2_context
+    assert "tool_call_chain_summary" in v2_context
+    assert not (set(v1_context) & V2_ONLY_CONTEXT_KEYS)
+    assert verify_proof_package(v2_dir)["package_contract"] == V2_PACKAGE_CONTRACT
+    assert verify_proof_package(v1_dir)["package_contract"] == (
+        "slice-001-proof-package/1.0"
+    )
 
 
 def test_generated_v2_compliance_mapping_does_not_claim_certification(tmp_path):
