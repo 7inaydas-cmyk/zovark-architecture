@@ -120,11 +120,31 @@ _SAFE_V2_TRACE_CONTEXT_KEYS = (
     "model_ref",
     "model_fingerprint",
     "input_provenance_tags",
-    "prompt_transformation_log",
     "third_party_feed_identifiers",
     "counter_evidence_considered",
     "exploitability_validation",
     "separation_of_reasoning_execution_flag",
+)
+_SAFE_PROMPT_TRANSFORMATION_LOG_KEYS = frozenset(
+    {
+        "transformation_id",
+        "step_id",
+        "transformation_type",
+        "operation",
+        "prompt_hash",
+        "input_prompt_hash",
+        "output_prompt_hash",
+        "prompt_version",
+        "input_prompt_version",
+        "output_prompt_version",
+        "model_ref",
+        "model_fingerprint",
+        "redaction_applied",
+        "redaction_policy_ref",
+        "status",
+        "data_unavailable_reason",
+        "redacted_reason",
+    }
 )
 _COMPLIANCE_ACTION_MAPPINGS = {
     "isolate_host": {
@@ -1342,6 +1362,9 @@ def _v3_context_from_fixture(
                     key: execution.get(key)
                     for key in _SAFE_V2_TRACE_CONTEXT_KEYS
                 },
+                "prompt_transformation_log": _sanitize_prompt_transformation_log(
+                    execution.get("prompt_transformation_log")
+                ),
                 "tool_call_chain_summary": execution.get(
                     "tool_call_chain_summary"
                 )
@@ -1365,6 +1388,34 @@ def _v3_context_from_fixture(
     }
     context["execution_path"] = _execution_path(execution)
     return context
+
+
+def _sanitize_prompt_transformation_log(value: Any) -> list[dict[str, Any]] | None:
+    entries = value if isinstance(value, list) else [value]
+    sanitized_entries: list[dict[str, Any]] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        sanitized = {
+            key: deepcopy(entry[key])
+            for key in sorted(_SAFE_PROMPT_TRANSFORMATION_LOG_KEYS)
+            if key in entry and _is_safe_prompt_metadata_value(entry[key])
+        }
+        if sanitized:
+            sanitized_entries.append(sanitized)
+    return sanitized_entries or None
+
+
+def _is_safe_prompt_metadata_value(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, bool):
+        return True
+    if isinstance(value, (int, float)):
+        return not isinstance(value, bool)
+    if isinstance(value, str):
+        return bool(value)
+    return False
 
 
 def _tool_call_chain_summary(execution: dict[str, Any]) -> list[dict[str, Any]] | None:

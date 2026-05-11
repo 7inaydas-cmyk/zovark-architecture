@@ -403,7 +403,9 @@ def _safe_trace_metadata_v3_fixture() -> dict:
             "prompt_transformation_log": [
                 {
                     "operation": "redact_prompt_body",
-                    "output_ref": "prompt_hash",
+                    "output_prompt_hash": "sha256:prompt-hash-static-fixture",
+                    "redaction_applied": True,
+                    "redaction_policy_ref": "prompt-redaction-policy-v1",
                 }
             ],
             "prompt_version": "prompt-v3-fixture-001",
@@ -421,8 +423,72 @@ def _safe_trace_metadata_v3_fixture() -> dict:
     return fixture
 
 
+def _unsafe_prompt_transformation_log_v3_fixture() -> dict:
+    fixture = _safe_trace_metadata_v3_fixture()
+    fixture["execution"]["prompt_transformation_log"] = [
+        {
+            "operation": "hash_prompt",
+            "prompt_hash": "sha256:safe-top-level-prompt",
+            "raw_system_prompt": "RAW TOP LEVEL SYSTEM PROMPT SECRET",
+            "raw_user_prompt": "RAW TOP LEVEL USER PROMPT SECRET",
+            "transformation_id": "prompt-transform-top-level",
+        },
+        {
+            "input": {"prompt": "NESTED INPUT PROMPT SECRET"},
+            "input_prompt_hash": "sha256:safe-input-prompt",
+            "messages": [
+                {
+                    "content": "NESTED MESSAGE CONTENT SECRET",
+                    "role": "user",
+                }
+            ],
+            "output_prompt_hash": "sha256:safe-output-prompt",
+            "payload": {
+                "system_prompt": "NESTED PAYLOAD SYSTEM PROMPT SECRET"
+            },
+            "step_id": "prompt-transform-nested",
+            "transformation_type": "redaction",
+        },
+        {
+            "content": "ONLY UNSAFE CONTENT SECRET",
+            "prompt_body": "ONLY UNSAFE PROMPT BODY SECRET",
+        },
+    ]
+    return fixture
+
+
 def _load_json(package_dir: Path, filename: str):
     return json.loads((package_dir / filename).read_text(encoding="utf-8"))
+
+
+def _render_package_dir(package_dir: Path) -> str:
+    return "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in sorted(package_dir.iterdir())
+        if path.is_file()
+    ).lower()
+
+
+def _assert_package_omits_raw_prompt_leakage(package_dir: Path) -> None:
+    rendered = _render_package_dir(package_dir)
+    forbidden = [
+        '"raw_system_prompt"',
+        '"raw_user_prompt"',
+        '"system_prompt"',
+        '"user_prompt"',
+        '"prompt_text"',
+        '"prompt_body"',
+        "raw top level system prompt secret",
+        "raw top level user prompt secret",
+        "nested input prompt secret",
+        "nested message content secret",
+        "nested payload system prompt secret",
+        "only unsafe content secret",
+        "only unsafe prompt body secret",
+        "never export",
+    ]
+    for token in forbidden:
+        assert token not in rendered
 
 
 V2_ONLY_CONTEXT_KEYS = {
@@ -1761,7 +1827,9 @@ def test_generated_v2_preserves_safe_trace_metadata_when_recorded(tmp_path):
     assert context["prompt_transformation_log"] == [
         {
             "operation": "redact_prompt_body",
-            "output_ref": "prompt_hash",
+            "output_prompt_hash": "sha256:prompt-hash-static-fixture",
+            "redaction_applied": True,
+            "redaction_policy_ref": "prompt-redaction-policy-v1",
         }
     ]
     assert context["third_party_feed_identifiers"] == [
@@ -1782,6 +1850,36 @@ def test_generated_v2_preserves_safe_trace_metadata_when_recorded(tmp_path):
         "tool_result_hash",
         "tool_status",
     } <= set(context["tool_call_chain_summary"][0])
+
+
+def test_generated_v2_sanitizes_prompt_transformation_log_prompt_texts(tmp_path):
+    output_dir = tmp_path / "unsafe-prompt-log-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _unsafe_prompt_transformation_log_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    context = _load_json(output_dir, "investigation-tape.json")["raw_evidence"][0][
+        "raw_content"
+    ]["v3_trace_context"]
+
+    assert summary["status"] == "verified"
+    assert context["prompt_transformation_log"] == [
+        {
+            "operation": "hash_prompt",
+            "prompt_hash": "sha256:safe-top-level-prompt",
+            "transformation_id": "prompt-transform-top-level",
+        },
+        {
+            "input_prompt_hash": "sha256:safe-input-prompt",
+            "output_prompt_hash": "sha256:safe-output-prompt",
+            "step_id": "prompt-transform-nested",
+            "transformation_type": "redaction",
+        },
+    ]
+    _assert_package_omits_raw_prompt_leakage(output_dir)
 
 
 def test_generated_v2_safe_trace_fields_are_emitted_only_when_recorded(tmp_path):
@@ -1836,6 +1934,31 @@ def test_generated_v2_safe_trace_context_omits_raw_prompts_and_hidden_reasoning(
     ]
     for token in forbidden:
         assert token not in rendered
+    _assert_package_omits_raw_prompt_leakage(output_dir)
+
+
+def test_generated_v2_omits_prompt_log_entries_without_safe_metadata(tmp_path):
+    output_dir = tmp_path / "unsafe-only-prompt-log-v2-package"
+    fixture = _safe_trace_metadata_v3_fixture()
+    fixture["execution"]["prompt_transformation_log"] = [
+        {
+            "content": "ONLY UNSAFE CONTENT SECRET",
+            "input": {"prompt": "NESTED INPUT PROMPT SECRET"},
+            "prompt_body": "ONLY UNSAFE PROMPT BODY SECRET",
+        }
+    ]
+
+    write_proof_package_from_v3_fixture(
+        fixture,
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    context = _load_json(output_dir, "investigation-tape.json")["raw_evidence"][0][
+        "raw_content"
+    ]["v3_trace_context"]
+
+    assert "prompt_transformation_log" not in context
+    _assert_package_omits_raw_prompt_leakage(output_dir)
 
 
 def test_default_v1_generation_excludes_safe_v2_trace_fields(tmp_path):
@@ -1853,6 +1976,23 @@ def test_default_v1_generation_excludes_safe_v2_trace_fields(tmp_path):
     assert not (set(context) & V2_ONLY_CONTEXT_KEYS)
     assert context["prompt_hash"] == "sha256:prompt-hash-static-fixture"
     assert context["prompt_version"] == "prompt-v3-fixture-001"
+
+
+def test_default_v1_generation_excludes_unsafe_prompt_transformation_log(tmp_path):
+    output_dir = tmp_path / "unsafe-prompt-log-v1-package"
+
+    write_proof_package_from_v3_fixture(
+        _unsafe_prompt_transformation_log_v3_fixture(),
+        output_dir,
+    )
+    context = _load_json(output_dir, "investigation-tape.json")["raw_evidence"][0][
+        "raw_content"
+    ]["v3_trace_context"]
+
+    assert V2_MARKER_FILE not in {path.name for path in output_dir.iterdir()}
+    assert "prompt_transformation_log" not in context
+    assert not (set(context) & V2_ONLY_CONTEXT_KEYS)
+    _assert_package_omits_raw_prompt_leakage(output_dir)
 
 
 def test_safe_trace_v1_and_v2_generation_do_not_cross_contaminate(tmp_path):
