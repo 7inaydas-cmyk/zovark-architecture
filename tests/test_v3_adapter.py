@@ -208,6 +208,31 @@ def _context_visibility_v3_fixture() -> dict:
     return fixture
 
 
+def _context_values_without_existing_gate_fixture() -> dict:
+    fixture = _representative_v3_fixture()
+    fixture["execution"]["tool_names"] = ["extract_ipv4", "score_brute_force"]
+    fixture["execution"]["tool_results"] = {
+        "extract_ipv4": {
+            "iocs": ["203.0.113.50"],
+            "status": "succeeded",
+        }
+    }
+    fixture["execution"].update(
+        {
+            "asset_criticality": "high",
+            "geo_ip_data": {
+                "country_code": "ZZ",
+                "source": "static_fixture",
+            },
+            "threat_intel_ip_match": {
+                "indicator": "203.0.113.50",
+                "list": "static-fixture-ti",
+            },
+        }
+    )
+    return fixture
+
+
 def _load_json(package_dir: Path, filename: str):
     return json.loads((package_dir / filename).read_text(encoding="utf-8"))
 
@@ -510,6 +535,35 @@ def test_generated_v2_populates_context_enrichment_from_fixture_evidence(tmp_pat
     assert context_enrichment["data_unavailable_reason"] == (
         "some_context_fields_not_emitted_by_v3"
     )
+
+
+def test_generated_v2_context_enrichment_gate_uses_recorded_context_values(tmp_path):
+    output_dir = tmp_path / "context-values-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _context_values_without_existing_gate_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    evidence = _load_json(output_dir, "evidence-ledger.json")
+    verified_refs = {f"evidence:{entry['evidence_id']}" for entry in evidence}
+    context_enrichment = marker["objects"]["context_enrichment"]
+
+    assert summary["status"] == "verified"
+    assert marker["conditions"]["context_enrichment_used"] is True
+    assert context_enrichment["source_refs"]
+    assert set(context_enrichment["source_refs"]) <= verified_refs
+    assert context_enrichment["context_values"]["asset_criticality"] == "high"
+    assert context_enrichment["context_values"]["geo_ip_data"] == {
+        "country_code": "ZZ",
+        "source": "static_fixture",
+    }
+    assert context_enrichment["context_values"]["threat_intel_ip_match"] == {
+        "indicator": "203.0.113.50",
+        "list": "static-fixture-ti",
+    }
 
 
 def test_generated_v2_populates_visibility_gaps_from_fixture_evidence(tmp_path):

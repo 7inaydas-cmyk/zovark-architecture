@@ -769,6 +769,16 @@ def _v3_context_from_fixture(
                 "unobserved_integrations": execution.get("unobserved_integrations"),
             }
         )
+        context_values = _recorded_context_values(
+            {key: value for key, value in preserved.items() if value is not None}
+        )
+        if context_values and not _has_enrichment_value(
+            preserved.get("context_enrichment")
+        ):
+            preserved["context_enrichment"] = {
+                "recorded_fields": sorted(context_values),
+                "source": "recorded_v3_fixture_context",
+            }
     context = {
         key: deepcopy(value)
         for key, value in preserved.items()
