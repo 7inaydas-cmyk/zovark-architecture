@@ -94,6 +94,38 @@ _ROLLBACK_PLAN_KEYS = (
     "estimated_recovery_time",
     "escalation_if_rollback_fails",
 )
+_CONTROL_SNAPSHOT_KEYS = (
+    "mfa_status",
+    "backup_status",
+    "backup_immutability",
+    "edr_status",
+    "logging_status",
+    "central_incident_log_status",
+    "irp_adherence_evidence",
+    "data_inventory_evidence",
+    "control_snapshot_timestamp",
+    "control_time_scope",
+    "control_source",
+    "control_owner",
+    "control_refs",
+    "customer_attestation_ref",
+)
+_COMPLIANCE_ACTION_MAPPINGS = {
+    "isolate_host": {
+        "control_refs": [
+            "approval_record",
+            "blast_radius",
+            "rollback_plan",
+        ],
+        "framework_name": "Proof Package V2 practitioner requirements",
+        "framework_version": V2_PACKAGE_CONTRACT,
+        "mapping_limitations": [
+            "Mapping connects verified action evidence to V2 practitioner objects only.",
+            "Mapping is not a compliance certification or legal conclusion.",
+        ],
+        "mapping_version": "v2-adapter/0.1",
+    }
+}
 
 
 def adapt_v3_fixture_to_slice_input(fixture: dict[str, Any]) -> dict[str, Any]:
@@ -247,10 +279,10 @@ def build_v2_marker_from_tape(tape: dict[str, Any]) -> dict[str, Any]:
     conditions = _derive_v2_conditions(tape)
     objects = {
         "approval_record": _approval_record(tape, source_refs),
-        "compliance_mapping": _not_applicable_object("compliance_mapping"),
-        "controls_in_place_at_incident": _unavailable_optional_object(
-            "controls_in_place_at_incident",
-            "customer_not_supplied",
+        "compliance_mapping": _compliance_mapping(tape, source_refs),
+        "controls_in_place_at_incident": _controls_in_place_at_incident(
+            tape,
+            source_refs,
         ),
         "customer_report_v2": _customer_report_v2(tape, source_refs),
         "decision_rationale": _decision_rationale(tape, source_refs),
@@ -594,6 +626,75 @@ def _approval_record(
     )
 
 
+def _compliance_mapping(
+    tape: dict[str, Any],
+    source_refs: list[str],
+) -> dict[str, Any]:
+    action_type = tape["handoff"]["action_type"]
+    mapping = _COMPLIANCE_ACTION_MAPPINGS.get(action_type)
+    if mapping is None:
+        return _not_applicable_object("compliance_mapping")
+    content = deepcopy(mapping)
+    content["action_type"] = action_type
+    content["mapped_evidence_refs"] = deepcopy(source_refs)
+    return _base_v2_object(
+        "compliance_mapping",
+        source_refs=source_refs,
+        status="partial",
+        data_unavailable_reason="external_framework_mapping_not_supplied",
+        content=content,
+    )
+
+
+def _controls_in_place_at_incident(
+    tape: dict[str, Any],
+    source_refs: list[str],
+) -> dict[str, Any]:
+    context = _primary_v3_context(tape)
+    control_values = _recorded_values(context, _CONTROL_SNAPSHOT_KEYS)
+    if not control_values:
+        return _unavailable_optional_object(
+            "controls_in_place_at_incident",
+            "customer_not_supplied",
+        )
+    content = {
+        "control_refs": _control_refs(control_values),
+        "control_snapshot_hash": sha256_of_obj(control_values),
+        "control_source_ref": source_refs[0],
+        "control_time_scope": control_values.get("control_time_scope", "incident_time"),
+        "control_values": control_values,
+    }
+    customer_attestation_ref = control_values.get("customer_attestation_ref")
+    if isinstance(customer_attestation_ref, str) and customer_attestation_ref:
+        content["customer_attestation_ref"] = customer_attestation_ref
+    return _base_v2_object(
+        "controls_in_place_at_incident",
+        source_refs=source_refs,
+        status="partial",
+        data_unavailable_reason="customer_control_snapshot_partially_supplied",
+        content=content,
+    )
+
+
+def _control_refs(control_values: dict[str, Any]) -> list[str]:
+    refs = control_values.get("control_refs")
+    if isinstance(refs, list) and refs:
+        return deepcopy(refs)
+    return sorted(
+        key
+        for key in control_values
+        if key
+        not in {
+            "control_refs",
+            "control_snapshot_timestamp",
+            "control_time_scope",
+            "control_source",
+            "control_owner",
+            "customer_attestation_ref",
+        }
+    )
+
+
 def _customer_report_v2(
     tape: dict[str, Any],
     source_refs: list[str],
@@ -895,6 +996,24 @@ def _v3_context_from_fixture(
                 "escalation_if_rollback_fails": execution.get(
                     "escalation_if_rollback_fails"
                 ),
+                "mfa_status": execution.get("mfa_status"),
+                "backup_status": execution.get("backup_status"),
+                "backup_immutability": execution.get("backup_immutability"),
+                "edr_status": execution.get("edr_status"),
+                "logging_status": execution.get("logging_status"),
+                "central_incident_log_status": execution.get(
+                    "central_incident_log_status"
+                ),
+                "irp_adherence_evidence": execution.get("irp_adherence_evidence"),
+                "data_inventory_evidence": execution.get("data_inventory_evidence"),
+                "control_snapshot_timestamp": execution.get(
+                    "control_snapshot_timestamp"
+                ),
+                "control_time_scope": execution.get("control_time_scope"),
+                "control_source": execution.get("control_source"),
+                "control_owner": execution.get("control_owner"),
+                "control_refs": execution.get("control_refs"),
+                "customer_attestation_ref": execution.get("customer_attestation_ref"),
             }
         )
         context_values = _recorded_context_values(
