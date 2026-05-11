@@ -569,7 +569,6 @@ def _approval_record(
     approval_values = _recorded_values(context, _APPROVAL_RECORD_KEYS)
     content = {
         "approval_state": handoff["approval_mode"],
-        "approver_ref": "human_review_required",
         "governance_decision": deepcopy(governance_decision),
         "governance_decision_ref": f"handoff:{handoff['handoff_id']}",
         "handoff_ref": handoff["handoff_id"],
@@ -578,6 +577,9 @@ def _approval_record(
     }
     if approval_values:
         content["recorded_approval"] = approval_values
+        approver_identity = approval_values.get("approver_identity")
+        if isinstance(approver_identity, str) and approver_identity:
+            content["approver_ref"] = approver_identity
     else:
         content["approval_limitation"] = (
             "V3 fixture did not emit approver identity, channel, status, or "
@@ -654,7 +656,6 @@ def _rollback_plan(
     context = _primary_v3_context(tape)
     recorded_rollback = _recorded_values(context, _ROLLBACK_PLAN_KEYS)
     rollback_steps = recorded_rollback.get("restore_steps", rollback.get("manual_steps", []))
-    rollback_owner_ref = recorded_rollback.get("rollback_owner", "human_reviewer")
     verification_steps = recorded_rollback.get("validation_after_rollback", [])
     if isinstance(verification_steps, str):
         verification_steps = [verification_steps]
@@ -662,12 +663,14 @@ def _rollback_plan(
         "action_ref": tape["handoff"]["handoff_id"],
         "preconditions": recorded_rollback.get("preconditions", []),
         "risks": [rollback["recovery_notes"]],
-        "rollback_owner_ref": rollback_owner_ref,
         "rollback_steps": rollback_steps,
         "verification_steps": verification_steps,
     }
     if recorded_rollback:
         content["recorded_rollback"] = recorded_rollback
+        rollback_owner = recorded_rollback.get("rollback_owner")
+        if isinstance(rollback_owner, str) and rollback_owner:
+            content["rollback_owner_ref"] = rollback_owner
     else:
         content["rollback_limitation"] = (
             "V3 fixture did not emit backup, restore, owner, or validation evidence."

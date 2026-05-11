@@ -274,6 +274,20 @@ def _action_card_v3_fixture() -> dict:
     return fixture
 
 
+def _action_card_missing_people_v3_fixture() -> dict:
+    fixture = _action_card_v3_fixture()
+    for key in (
+        "approval_channel",
+        "approval_status",
+        "approval_timestamp",
+        "approver_identity",
+        "approver_role",
+        "rollback_owner",
+    ):
+        fixture["execution"].pop(key, None)
+    return fixture
+
+
 def _load_json(package_dir: Path, filename: str):
     return json.loads((package_dir / filename).read_text(encoding="utf-8"))
 
@@ -759,6 +773,7 @@ def test_generated_v2_populates_approval_record_from_fixture_evidence(tmp_path):
     assert set(approval_record["source_refs"]) <= verified_refs
     assert approval_record["status"] == "partial"
     assert approval_record["approval_state"] == "approval_required"
+    assert approval_record["approver_ref"] == "soc-lead-001"
     assert approval_record["recorded_approval"]["approval_status"] == "conditional"
     assert approval_record["recorded_approval"]["approver_identity"] == "soc-lead-001"
     assert approval_record["recorded_approval"]["approval_channel"] == "recorded_ticket"
@@ -821,6 +836,55 @@ def test_generated_v2_populates_rollback_plan_from_fixture_evidence(tmp_path):
     assert rollback_plan["recorded_rollback"]["backup_availability"] == "not_recorded"
 
 
+def test_generated_v2_missing_approver_does_not_emit_synthetic_ref(tmp_path):
+    output_dir = tmp_path / "missing-approver-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _action_card_missing_people_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    evidence = _load_json(output_dir, "evidence-ledger.json")
+    verified_refs = {f"evidence:{entry['evidence_id']}" for entry in evidence}
+    approval_record = marker["objects"]["approval_record"]
+
+    assert summary["status"] == "verified"
+    assert "approver_ref" not in approval_record
+    assert "approver_identity" not in approval_record
+    assert "approval_channel" not in approval_record
+    assert "approval_status" not in approval_record
+    assert "approval_timestamp" not in approval_record
+    assert "recorded_approval" in approval_record
+    assert "approval_reason" in approval_record["recorded_approval"]
+    assert approval_record["source_refs"]
+    assert set(approval_record["source_refs"]) <= verified_refs
+
+
+def test_generated_v2_missing_rollback_owner_does_not_emit_synthetic_ref(tmp_path):
+    output_dir = tmp_path / "missing-rollback-owner-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _action_card_missing_people_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    evidence = _load_json(output_dir, "evidence-ledger.json")
+    verified_refs = {f"evidence:{entry['evidence_id']}" for entry in evidence}
+    rollback_plan = marker["objects"]["rollback_plan"]
+
+    assert summary["status"] == "verified"
+    assert "rollback_owner_ref" not in rollback_plan
+    assert "rollback_owner" not in rollback_plan
+    assert "recorded_rollback" in rollback_plan
+    assert "restore_steps" in rollback_plan["recorded_rollback"]
+    assert rollback_plan["source_refs"]
+    assert set(rollback_plan["source_refs"]) <= verified_refs
+
+
 def test_generated_v2_missing_action_card_details_are_explicit(tmp_path):
     output_dir = tmp_path / "minimal-action-v2-package"
 
@@ -839,10 +903,12 @@ def test_generated_v2_missing_action_card_details_are_explicit(tmp_path):
     assert approval_record["data_unavailable_reason"] == (
         "approval_details_not_fully_emitted_by_v3"
     )
+    assert "approver_ref" not in approval_record
     assert approval_record["approval_limitation"]
     assert blast_radius["data_unavailable_reason"] == "not_emitted_by_v3"
     assert blast_radius["blast_radius_limitation"]
     assert rollback_plan["data_unavailable_reason"] == "not_emitted_by_v3"
+    assert "rollback_owner_ref" not in rollback_plan
     assert rollback_plan["rollback_limitation"]
 
 
