@@ -94,15 +94,20 @@ _ROLLBACK_PLAN_KEYS = (
     "estimated_recovery_time",
     "escalation_if_rollback_fails",
 )
-_CONTROL_SNAPSHOT_KEYS = (
+_CONTROL_EVIDENCE_KEYS = (
     "mfa_status",
     "backup_status",
     "backup_immutability",
+    "backup_verification_status",
     "edr_status",
     "logging_status",
     "central_incident_log_status",
     "irp_adherence_evidence",
     "data_inventory_evidence",
+    "control_enabled",
+    "control_disabled",
+)
+_CONTROL_METADATA_KEYS = (
     "control_snapshot_timestamp",
     "control_time_scope",
     "control_source",
@@ -110,6 +115,7 @@ _CONTROL_SNAPSHOT_KEYS = (
     "control_refs",
     "customer_attestation_ref",
 )
+_CONTROL_SNAPSHOT_KEYS = _CONTROL_EVIDENCE_KEYS + _CONTROL_METADATA_KEYS
 _COMPLIANCE_ACTION_MAPPINGS = {
     "isolate_host": {
         "control_refs": [
@@ -279,7 +285,7 @@ def build_v2_marker_from_tape(tape: dict[str, Any]) -> dict[str, Any]:
     conditions = _derive_v2_conditions(tape)
     objects = {
         "approval_record": _approval_record(tape, source_refs),
-        "compliance_mapping": _compliance_mapping(tape, source_refs),
+        "compliance_mapping": _compliance_mapping(tape),
         "controls_in_place_at_incident": _controls_in_place_at_incident(
             tape,
             source_refs,
@@ -628,12 +634,17 @@ def _approval_record(
 
 def _compliance_mapping(
     tape: dict[str, Any],
-    source_refs: list[str],
 ) -> dict[str, Any]:
     action_type = tape["handoff"]["action_type"]
     mapping = _COMPLIANCE_ACTION_MAPPINGS.get(action_type)
     if mapping is None:
         return _not_applicable_object("compliance_mapping")
+    source_refs = _action_handoff_source_refs(tape)
+    if not source_refs:
+        return _unavailable_optional_object(
+            "compliance_mapping",
+            "action_evidence_not_available",
+        )
     content = deepcopy(mapping)
     content["action_type"] = action_type
     content["mapped_evidence_refs"] = deepcopy(source_refs)
@@ -651,12 +662,16 @@ def _controls_in_place_at_incident(
     source_refs: list[str],
 ) -> dict[str, Any]:
     context = _primary_v3_context(tape)
-    control_values = _recorded_values(context, _CONTROL_SNAPSHOT_KEYS)
-    if not control_values:
+    actual_control_values = _recorded_control_evidence_values(context)
+    if not actual_control_values:
         return _unavailable_optional_object(
             "controls_in_place_at_incident",
             "customer_not_supplied",
         )
+    control_values = {
+        **actual_control_values,
+        **_recorded_values(context, _CONTROL_METADATA_KEYS),
+    }
     content = {
         "control_refs": _control_refs(control_values),
         "control_snapshot_hash": sha256_of_obj(control_values),
@@ -693,6 +708,35 @@ def _control_refs(control_values: dict[str, Any]) -> list[str]:
             "customer_attestation_ref",
         }
     )
+
+
+def _recorded_control_evidence_values(context: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: deepcopy(context[key])
+        for key in _CONTROL_EVIDENCE_KEYS
+        if key in context and _has_control_evidence_value(context[key])
+    }
+
+
+def _has_control_evidence_value(value: Any) -> bool:
+    if isinstance(value, str) and value in {
+        "not_recorded",
+        "not_supplied",
+        "unknown",
+    }:
+        return False
+    return _has_enrichment_value(value)
+
+
+def _action_handoff_source_refs(tape: dict[str, Any]) -> list[str]:
+    evidence_refs = tape["handoff"].get("evidence_refs", [])
+    if not isinstance(evidence_refs, list):
+        return []
+    return [
+        f"evidence:{evidence_ref}"
+        for evidence_ref in evidence_refs
+        if isinstance(evidence_ref, str) and evidence_ref
+    ]
 
 
 def _customer_report_v2(

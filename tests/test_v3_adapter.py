@@ -317,6 +317,50 @@ def _compliance_controls_v3_fixture() -> dict:
     return fixture
 
 
+def _compliance_controls_with_unrelated_evidence_fixture() -> dict:
+    fixture = _compliance_controls_v3_fixture()
+    fixture["process_events"].append(
+        {
+            "command_line": "notepad.exe",
+            "event_id": "v3-pe-unrelated",
+            "event_type": "process_event",
+            "parent_pid": 100,
+            "parent_process": "explorer.exe",
+            "pid": 5000,
+            "process_name": "notepad.exe",
+            "timestamp": "2026-05-01T10:00:01Z",
+            "user": "CORP\\analyst",
+        }
+    )
+    return fixture
+
+
+def _control_metadata_only_v3_fixture() -> dict:
+    fixture = _action_card_v3_fixture()
+    fixture["execution"].update(
+        {
+            "control_owner": "customer-security",
+            "control_refs": ["metadata-only-control-ref"],
+            "control_snapshot_timestamp": "2026-05-01T09:55:00Z",
+            "control_source": "customer_supplied_fixture",
+            "control_time_scope": "incident_time",
+            "customer_attestation_ref": "customer-attestation-001",
+        }
+    )
+    return fixture
+
+
+def _control_evidence_without_metadata_v3_fixture() -> dict:
+    fixture = _action_card_v3_fixture()
+    fixture["execution"].update(
+        {
+            "backup_status": "available",
+            "mfa_status": "enabled",
+        }
+    )
+    return fixture
+
+
 def _load_json(package_dir: Path, filename: str):
     return json.loads((package_dir / filename).read_text(encoding="utf-8"))
 
@@ -1014,12 +1058,15 @@ def test_generated_v2_populates_compliance_mapping_from_verified_action(tmp_path
     marker = _load_json(output_dir, V2_MARKER_FILE)
     evidence = _load_json(output_dir, "evidence-ledger.json")
     verified_refs = {f"evidence:{entry['evidence_id']}" for entry in evidence}
+    handoff = _load_json(output_dir, "edr-handoff.json")
+    handoff_refs = {f"evidence:{ref}" for ref in handoff["evidence_refs"]}
     compliance_mapping = marker["objects"]["compliance_mapping"]
 
     assert summary["status"] == "verified"
     assert compliance_mapping["status"] == "partial"
     assert compliance_mapping["source_refs"]
     assert set(compliance_mapping["source_refs"]) <= verified_refs
+    assert set(compliance_mapping["source_refs"]) == handoff_refs
     assert compliance_mapping["mapped_evidence_refs"] == compliance_mapping["source_refs"]
     assert compliance_mapping["action_type"] == "isolate_host"
     assert compliance_mapping["framework_name"] == (
@@ -1030,6 +1077,33 @@ def test_generated_v2_populates_compliance_mapping_from_verified_action(tmp_path
         "blast_radius",
         "rollback_plan",
     ]
+
+
+def test_generated_v2_compliance_mapping_excludes_unrelated_raw_evidence(tmp_path):
+    output_dir = tmp_path / "compliance-unrelated-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _compliance_controls_with_unrelated_evidence_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    evidence = _load_json(output_dir, "evidence-ledger.json")
+    handoff = _load_json(output_dir, "edr-handoff.json")
+    unrelated_refs = {
+        f"evidence:{entry['evidence_id']}"
+        for entry in evidence
+        if entry["raw_content"].get("event_id") == "v3-pe-unrelated"
+    }
+    handoff_refs = {f"evidence:{ref}" for ref in handoff["evidence_refs"]}
+    compliance_mapping = marker["objects"]["compliance_mapping"]
+
+    assert summary["status"] == "verified"
+    assert unrelated_refs
+    assert set(compliance_mapping["source_refs"]) == handoff_refs
+    assert not (set(compliance_mapping["source_refs"]) & unrelated_refs)
+    assert not (set(compliance_mapping["mapped_evidence_refs"]) & unrelated_refs)
 
 
 def test_v2_unsupported_action_gets_no_compliance_mapping():
@@ -1043,6 +1117,21 @@ def test_v2_unsupported_action_gets_no_compliance_mapping():
     assert compliance_mapping["status"] == "not_applicable"
     assert compliance_mapping["source_refs"] == []
     assert "control_refs" not in compliance_mapping
+
+
+def test_v2_supported_action_without_handoff_refs_gets_no_fabricated_mapping():
+    tape = deepcopy(build_tape_from_v3_fixture(_compliance_controls_v3_fixture()))
+    tape["handoff"]["evidence_refs"] = []
+
+    marker = build_v2_marker_from_tape(tape)
+    compliance_mapping = marker["objects"]["compliance_mapping"]
+
+    assert compliance_mapping["status"] == "unavailable"
+    assert compliance_mapping["data_unavailable_reason"] == (
+        "action_evidence_not_available"
+    )
+    assert compliance_mapping["source_refs"] == []
+    assert "mapped_evidence_refs" not in compliance_mapping
 
 
 def test_generated_v2_populates_controls_from_customer_snapshot(tmp_path):
@@ -1070,6 +1159,53 @@ def test_generated_v2_populates_controls_from_customer_snapshot(tmp_path):
     assert controls["control_values"]["backup_status"] == "available"
     assert controls["control_values"]["edr_status"] == "enabled"
     assert controls["control_snapshot_hash"]
+
+
+def test_generated_v2_control_metadata_only_is_unavailable(tmp_path):
+    output_dir = tmp_path / "metadata-only-controls-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _control_metadata_only_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    controls = marker["objects"]["controls_in_place_at_incident"]
+
+    assert summary["status"] == "verified"
+    assert controls["status"] == "unavailable"
+    assert controls["data_unavailable_reason"] == "customer_not_supplied"
+    assert controls["source_refs"] == []
+    assert "control_values" not in controls
+    rendered = json.dumps(controls, sort_keys=True)
+    assert "mfa_status" not in rendered
+    assert "backup_status" not in rendered
+    assert "edr_status" not in rendered
+    assert "logging_status" not in rendered
+
+
+def test_generated_v2_control_evidence_without_metadata_is_preserved(tmp_path):
+    output_dir = tmp_path / "controls-no-metadata-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _control_evidence_without_metadata_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    controls = marker["objects"]["controls_in_place_at_incident"]
+
+    assert summary["status"] == "verified"
+    assert controls["status"] == "partial"
+    assert controls["control_values"] == {
+        "backup_status": "available",
+        "mfa_status": "enabled",
+    }
+    assert controls["control_refs"] == ["backup_status", "mfa_status"]
+    assert controls["control_time_scope"] == "incident_time"
+    assert "control_snapshot_timestamp" not in controls["control_values"]
 
 
 def test_generated_v2_missing_control_snapshot_is_explicit(tmp_path):
