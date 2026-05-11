@@ -1465,6 +1465,26 @@ def test_generated_v2_customer_report_actions_are_supported_by_v2_objects(tmp_pa
         assert "reason" in action
 
 
+def test_generated_v2_customer_report_does_not_invent_visibility_gap_action(
+    tmp_path,
+):
+    output_dir = tmp_path / "customer-report-no-recorded-gaps-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _representative_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    report = marker["objects"]["customer_report_v2"]
+    action_names = {
+        action["action"] for action in report["customer_responsibility_actions"]
+    }
+
+    assert report["visibility_gaps"]["status"] == "unavailable"
+    assert "visibility_gap_follow_up" not in action_names
+
+
 def test_generated_v2_customer_report_prevention_uses_recorded_recommendations(
     tmp_path,
 ):

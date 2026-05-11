@@ -942,7 +942,7 @@ def _customer_responsibility_actions(
             }
         )
     visibility_gaps = objects["visibility_gaps"]
-    if visibility_gaps.get("gaps"):
+    if visibility_gaps.get("status") != "unavailable" and visibility_gaps.get("gaps"):
         actions.append(
             {
                 "action": "visibility_gap_follow_up",
