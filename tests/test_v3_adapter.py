@@ -369,6 +369,17 @@ def _control_evidence_without_metadata_v3_fixture() -> dict:
     return fixture
 
 
+def _disabled_control_v3_fixture() -> dict:
+    fixture = _action_card_v3_fixture()
+    fixture["execution"].update(
+        {
+            "backup_status": "available",
+            "mfa_status": "disabled",
+        }
+    )
+    return fixture
+
+
 def _load_json(package_dir: Path, filename: str):
     return json.loads((package_dir / filename).read_text(encoding="utf-8"))
 
@@ -1483,6 +1494,57 @@ def test_generated_v2_customer_report_does_not_invent_visibility_gap_action(
 
     assert report["visibility_gaps"]["status"] == "unavailable"
     assert "visibility_gap_follow_up" not in action_names
+    assert "controls_evidence_unavailable" not in action_names
+    assert "controls_follow_up_required" not in action_names
+
+
+def test_generated_v2_customer_report_does_not_invent_controls_action_for_metadata(
+    tmp_path,
+):
+    output_dir = tmp_path / "customer-report-metadata-only-controls-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _control_metadata_only_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    report = marker["objects"]["customer_report_v2"]
+    action_names = {
+        action["action"] for action in report["customer_responsibility_actions"]
+    }
+
+    assert marker["objects"]["controls_in_place_at_incident"]["status"] == (
+        "unavailable"
+    )
+    assert "controls_evidence_unavailable" not in action_names
+    assert "controls_follow_up_required" not in action_names
+
+
+def test_generated_v2_customer_report_flags_recorded_disabled_control(tmp_path):
+    output_dir = tmp_path / "customer-report-disabled-control-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _disabled_control_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    controls = marker["objects"]["controls_in_place_at_incident"]
+    actions = marker["objects"]["customer_report_v2"][
+        "customer_responsibility_actions"
+    ]
+    controls_actions = [
+        action for action in actions if action["action"] == "controls_follow_up_required"
+    ]
+
+    assert summary["status"] == "verified"
+    assert controls["status"] == "partial"
+    assert controls["control_values"]["mfa_status"] == "disabled"
+    assert len(controls_actions) == 1
+    assert controls_actions[0]["control_refs"] == ["mfa_status"]
+    assert controls_actions[0]["source_refs"] == controls["source_refs"]
 
 
 def test_generated_v2_customer_report_prevention_uses_recorded_recommendations(

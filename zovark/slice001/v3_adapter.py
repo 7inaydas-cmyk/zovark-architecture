@@ -933,14 +933,9 @@ def _customer_responsibility_actions(
             }
         )
     controls = objects.get("controls_in_place_at_incident")
-    if isinstance(controls, dict) and controls.get("status") == "unavailable":
-        actions.append(
-            {
-                "action": "controls_evidence_unavailable",
-                "reason": controls.get("data_unavailable_reason"),
-                "source_refs": [],
-            }
-        )
+    control_action = _customer_control_follow_up_action(controls)
+    if control_action is not None:
+        actions.append(control_action)
     visibility_gaps = objects["visibility_gaps"]
     if visibility_gaps.get("status") != "unavailable" and visibility_gaps.get("gaps"):
         actions.append(
@@ -951,6 +946,54 @@ def _customer_responsibility_actions(
             }
         )
     return actions
+
+
+def _customer_control_follow_up_action(
+    controls: Any,
+) -> dict[str, Any] | None:
+    if not isinstance(controls, dict):
+        return None
+    source_refs = controls.get("source_refs", [])
+    if not source_refs:
+        return None
+    control_values = controls.get("control_values")
+    if not isinstance(control_values, dict):
+        return None
+    control_refs = sorted(
+        key
+        for key, value in control_values.items()
+        if key not in _CONTROL_METADATA_KEYS and _control_value_needs_follow_up(value)
+    )
+    if not control_refs:
+        return None
+    return {
+        "action": "controls_follow_up_required",
+        "control_refs": control_refs,
+        "reason": "recorded control evidence indicates customer follow-up is needed",
+        "source_refs": deepcopy(source_refs),
+    }
+
+
+def _control_value_needs_follow_up(value: Any) -> bool:
+    if isinstance(value, bool):
+        return not value
+    if isinstance(value, str):
+        normalized = value.strip().lower().replace("-", "_").replace(" ", "_")
+        return normalized in {
+            "disabled",
+            "failed",
+            "incomplete",
+            "missing",
+            "not_available",
+            "not_configured",
+            "not_enabled",
+            "unavailable",
+        }
+    if isinstance(value, dict):
+        return any(_control_value_needs_follow_up(child) for child in value.values())
+    if isinstance(value, list):
+        return any(_control_value_needs_follow_up(child) for child in value)
+    return False
 
 
 def _customer_prevention_recommendations(
