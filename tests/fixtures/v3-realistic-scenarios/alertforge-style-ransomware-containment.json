@@ -1,0 +1,345 @@
+{
+  "fixture_id": "alertforge-style-ransomware-containment-001",
+  "tenant_id": "tenant-alertforge-static",
+  "alert": {
+    "alert_id": "af-ransomware-alert-001",
+    "alert_type": "alertforge_style_ransomware_containment",
+    "child_process": "powershell.exe",
+    "description": "Static AlertForge-style ransomware containment validation fixture",
+    "host": "finance-workstation-77.corp.example",
+    "host_fqdn": "finance-workstation-77.corp.example",
+    "ingested_at": "2026-05-07T14:00:00Z",
+    "severity": "critical",
+    "source_process": "winword.exe",
+    "timestamp": "2026-05-07T14:00:00Z"
+  },
+  "execution": {
+    "access_denied_paths": [
+      "saas-admin-audit-log"
+    ],
+    "affected_user_count": 42,
+    "approval_channel": "recorded_ticket",
+    "approval_reason": "Containment recommended for confirmed credential theft and blocked lateral movement.",
+    "approval_status": "conditional",
+    "approval_timestamp": "2026-05-07T14:06:00Z",
+    "approver_identity": "soc-lead-001",
+    "approver_role": "SOC lead",
+    "asset_criticality": "high",
+    "asset_owner": "finance-it",
+    "backup_availability": "recorded_customer_backup_available",
+    "backup_immutability": "enabled",
+    "backup_status": "available",
+    "backup_verification_status": "recorded_not_recently_tested",
+    "business_processes_affected": [
+      "finance close reporting",
+      "payment approval workstation access"
+    ],
+    "central_incident_log_status": "enabled",
+    "conditional_approval_constraints": [
+      "Notify finance owner before isolation",
+      "Validate rollback owner availability"
+    ],
+    "context_enrichment": {
+      "source": "recorded_static_fixture",
+      "summary": "Finance workstation with critical role and prior phishing ticket context"
+    },
+    "control_owner": "customer-security",
+    "control_refs": [
+      "mfa_status",
+      "backup_status",
+      "edr_status",
+      "central_incident_log_status"
+    ],
+    "control_snapshot_timestamp": "2026-05-07T13:55:00Z",
+    "control_source": "customer_supplied_static_fixture",
+    "control_time_scope": "incident_time",
+    "correlation_history": [
+      {
+        "correlation_count": 3,
+        "matched_indicator": "203.0.113.77"
+      }
+    ],
+    "counter_evidence_considered": [
+      {
+        "confidence": "low",
+        "content": "RAW_COUNTER_EVIDENCE_CONTENT_SENTINEL",
+        "evidence_ref": "af-lm-001",
+        "finding_id": "counter-evidence-lateral-movement",
+        "messages": [
+          {
+            "content": "RAW_MESSAGE_SENTINEL",
+            "role": "assistant"
+          }
+        ],
+        "notes": "RAW_ANALYST_NOTE_SENTINEL",
+        "rationale": "RAW_REASONING_SENTINEL",
+        "reason_code": "blocked_not_successful",
+        "status": "considered"
+      }
+    ],
+    "crown_jewel_status": true,
+    "customer_attestation_ref": "customer-attestation-af-001",
+    "customer_defined_autonomy_boundary": "approval_required",
+    "data_inventory_evidence": "not_supplied",
+    "data_leak_assessment": "not_recorded_in_fixture",
+    "direct_dependencies": [
+      "finance-workstation-access",
+      "edr-containment-control"
+    ],
+    "edr_status": "enabled",
+    "embedded_ai_in_saas_visibility_gap": "No SaaS AI usage telemetry was present in this static fixture.",
+    "emergency_flag": false,
+    "escalation_if_rollback_fails": "escalate_to_soc_manager",
+    "estimated_recovery_time": "PT2H",
+    "execution_mode": "tools",
+    "exploitability_validation": {
+      "input_hash": "sha256:af-exploitability-input",
+      "messages": [
+        {
+          "content": "RAW_USER_PROMPT_SENTINEL",
+          "role": "user"
+        }
+      ],
+      "output": "RAW_TOOL_OUTPUT_SENTINEL",
+      "output_hash": "sha256:af-exploitability-output",
+      "payload": {
+        "body": "RAW_PAYLOAD_SENTINEL"
+      },
+      "reasoning": "HIDDEN_REASONING_SENTINEL",
+      "status": "attempted",
+      "tool_name": "score_brute_force",
+      "validation_status": "attempted"
+    },
+    "geo_ip_data": {
+      "country_code": "ZZ",
+      "source": "static_fixture"
+    },
+    "governance_decision": {
+      "autonomy_level": "assist",
+      "needs_human_review": true,
+      "review_reason": "confirmed malicious verdict with containment action"
+    },
+    "incomplete_telemetry": [
+      "dns_resolver_logs"
+    ],
+    "input_provenance_tags": [
+      "static_alertforge_style_fixture",
+      "sanitized_v3_like_input"
+    ],
+    "institutional_knowledge": {
+      "asset_tier": "tier-1",
+      "business_unit": "finance"
+    },
+    "irp_adherence_evidence": "incident_record_opened",
+    "isolation_method": "edr_isolate_host",
+    "known_blind_spots": [
+      {
+        "affected_question": "Were DNS resolver logs available for the full command-and-control window?",
+        "data_unavailable_reason": "fixture_does_not_include_dns_logs",
+        "gap_id": "af-vg-dns-logs",
+        "gap_type": "missing_dns_logs",
+        "impact_on_confidence": "Domain-level command-and-control evidence could not be corroborated from this fixture."
+      }
+    ],
+    "logging_status": "centralized",
+    "model_fingerprint": "fp-alertforge-static-001",
+    "model_ref": "model:static-alertforge-selector",
+    "mfa_status": "enabled",
+    "path_taken": "A",
+    "plan_executed": "ransomware_containment_static",
+    "post_action_validation_required": true,
+    "prompt_hash": "sha256:af-prompt-hash-static",
+    "prompt_transformation_log": [
+      {
+        "messages": [
+          {
+            "content": "RAW_PROMPT_MESSAGE_SENTINEL",
+            "role": "user"
+          }
+        ],
+        "operation": "redact_prompt_body",
+        "output_prompt_hash": "sha256:af-prompt-hash-static",
+        "payload": {
+          "system_prompt": "RAW_SYSTEM_PROMPT_SENTINEL"
+        },
+        "raw_user_prompt": "RAW_USER_PROMPT_TEXT_SENTINEL",
+        "redaction_applied": true,
+        "redaction_policy_ref": "prompt-redaction-policy-v1",
+        "transformation_id": "af-prompt-transform-001"
+      }
+    ],
+    "prompt_version": "alertforge-static-prompt-v1",
+    "recent_ticket_history": [
+      {
+        "summary": "Prior phishing triage on same host",
+        "ticket_id": "INC-1001"
+      }
+    ],
+    "restore_steps": [
+      "Keep endpoint isolated until credential reset is confirmed",
+      "Release host isolation after finance owner and SOC lead approval"
+    ],
+    "rollback_owner": "soc-lead-001",
+    "rollforward_steps": [
+      "Continue containment if command-and-control attempts persist"
+    ],
+    "rpo_target": "not_recorded",
+    "rto_target": "PT4H",
+    "separation_of_reasoning_execution_flag": true,
+    "shadow_it_unknown": true,
+    "single_points_of_failure": [
+      "finance close workstation availability"
+    ],
+    "source": "saved_plan",
+    "telemetry_missing": [
+      "dns_resolver_logs"
+    ],
+    "third_party_dependencies": [
+      "EDR containment control"
+    ],
+    "third_party_feed_identifiers": [
+      "static-fixture-ti-feed"
+    ],
+    "threat_intel_ip_match": {
+      "indicator": "203.0.113.77",
+      "list": "static-fixture-ti"
+    },
+    "tool_call_chain_summary": [
+      {
+        "args": {
+          "query": "RAW_TOOL_ARGUMENT_SENTINEL"
+        },
+        "call_id": "af-tool-call-001",
+        "input_hash": "sha256:af-tool-input",
+        "messages": [
+          {
+            "content": "RAW_TOOL_MESSAGE_SENTINEL",
+            "role": "user"
+          }
+        ],
+        "output": {
+          "body": "RAW_TOOL_OUTPUT_BODY_SENTINEL"
+        },
+        "output_hash": "sha256:af-tool-output",
+        "payload": {
+          "body": "RAW_TOOL_PAYLOAD_SENTINEL"
+        },
+        "reasoning": "RAW_TOOL_REASONING_SENTINEL",
+        "status": "succeeded",
+        "tool_name": "extract_ipv4"
+      }
+    ],
+    "tool_names": [
+      "extract_ipv4",
+      "score_brute_force",
+      "correlate_with_history",
+      "lookup_institutional_knowledge"
+    ],
+    "tool_results": {
+      "correlate_with_history": {
+        "correlation_count": 3,
+        "status": "succeeded"
+      },
+      "extract_ipv4": {
+        "iocs": [
+          "203.0.113.77"
+        ],
+        "status": "succeeded"
+      },
+      "lookup_institutional_knowledge": {
+        "asset_tier": "tier-1",
+        "status": "succeeded"
+      },
+      "score_brute_force": {
+        "score": 93,
+        "status": "succeeded"
+      }
+    },
+    "user_department": "finance",
+    "user_job_title": "senior analyst",
+    "user_role": "finance analyst",
+    "user_typical_behavior": {
+      "powershell_usage": "rare"
+    },
+    "validation_after_rollback": [
+      "Confirm endpoint network connectivity",
+      "Rerun malware triage checks"
+    ]
+  },
+  "findings": [
+    {
+      "severity": "critical",
+      "title": "Credential access via LSASS memory read"
+    }
+  ],
+  "verdict": {
+    "value": "confirmed_malicious"
+  },
+  "process_events": [
+    {
+      "command_line": "powershell.exe -EncodedCommand <redacted>",
+      "event_id": "af-pe-001",
+      "event_type": "process_event",
+      "parent_pid": 1024,
+      "parent_process": "winword.exe",
+      "pid": 4812,
+      "process_name": "powershell.exe",
+      "timestamp": "2026-05-07T14:00:01Z",
+      "user": "CORP\\finance-user"
+    },
+    {
+      "command_line": "rundll32.exe C:\\\\Windows\\\\Temp\\\\invoice.dat,Start",
+      "event_id": "af-pe-002",
+      "event_type": "process_event",
+      "parent_pid": 4812,
+      "parent_process": "powershell.exe",
+      "pid": 5300,
+      "process_name": "rundll32.exe",
+      "timestamp": "2026-05-07T14:00:02Z",
+      "user": "CORP\\finance-user"
+    }
+  ],
+  "network_events": [
+    {
+      "bytes_received": 245760,
+      "destination_ip": "203.0.113.77",
+      "destination_port": 443,
+      "event_id": "af-ne-001",
+      "event_type": "network_event",
+      "pid": 4812,
+      "process": "powershell.exe",
+      "process_name": "powershell.exe",
+      "protocol": "HTTPS",
+      "source_host": "finance-workstation-77",
+      "timestamp": "2026-05-07T14:00:03Z"
+    }
+  ],
+  "credential_access_events": [
+    {
+      "event_id": "af-ca-001",
+      "event_type": "credential_access",
+      "host": "finance-workstation-77",
+      "pid": 5300,
+      "process": "rundll32.exe",
+      "target_process": "lsass.exe",
+      "technique": "T1003.001",
+      "technique_name": "LSASS Memory",
+      "timestamp": "2026-05-07T14:00:04Z"
+    }
+  ],
+  "lateral_movement_events": [
+    {
+      "destination_host": "PAYROLL-DB-03",
+      "destination_ip": "198.51.100.13",
+      "event_id": "af-lm-001",
+      "event_type": "lateral_movement_attempt",
+      "pid": 5300,
+      "process": "rundll32.exe",
+      "source_host": "finance-workstation-77",
+      "status": "blocked_by_firewall",
+      "technique": "T1021.002",
+      "technique_name": "SMB/Windows Admin Shares",
+      "timestamp": "2026-05-07T14:00:05Z"
+    }
+  ]
+}
