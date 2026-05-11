@@ -12,11 +12,8 @@ was not found during local ADR discovery. Candidate predecessor baseline materia
 was found in older `v3.2.3`, `v3.2.3.2`, and `v3.2.1` bootstrap zips.
 
 Candidate split ADR files were found for `ADR-0001` through `ADR-0035`.
-`ADR-0036` and `ADR-0037` were not found and remain source-missing. Current
-visible patch ADRs are `ADR-0038` through `ADR-0043` under the
-`zovark-v3.2.4.6` patch tree. No ADR files were found for `ADR-0044` through
-`ADR-0051`; those IDs are not current source of truth unless separately provided
-and reconciled.
+Current visible patch ADRs are `ADR-0038` through `ADR-0043` under the
+`zovark-v3.2.4.6` patch tree.
 
 Representative candidate predecessor source path used in this review:
 
@@ -30,9 +27,79 @@ Current visible ADR source path:
 zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/architecture/adr/
 ```
 
+## Post-PR #45 ADR Recovery Update
+
+PR #45's discovery conclusion was correct for the visible repo and local-disk
+search available at the time. Newer recovery from older uploaded/session
+architecture material changes the ADR inventory, but does not silently merge the
+recovered material into the current implementation or make it automatically
+current repo source of truth.
+
+Corrected ADR source classification:
+
+- `ADR-0001` through `ADR-0035`: candidate predecessor baseline material.
+- `ADR-0036` through `ADR-0037`: recovered predecessor baseline material from
+  older uploaded/session architecture material.
+- `ADR-0038` through `ADR-0043`: visible current repo/patch ADRs.
+- `ADR-0044` through `ADR-0051`: recovered older `v3.2.4.3` patch material; not
+  automatically current active source of truth.
+
+Source/provenance notes:
+
+- The current repo visibly carried only `ADR-0038` through `ADR-0043` during the
+  earlier discovery pass.
+- Older uploaded/session architecture material carried `ADR-0036`, `ADR-0037`,
+  and `ADR-0044` through `ADR-0051`.
+- The Zovark Architecture v4.1 technical architecture spec reflects many later
+  ADR themes, but is not itself an ADR index or ADR source file.
+- Exact durable file paths for the recovered uploaded/session material are not
+  recorded in this repo. The recovered material should be imported or attached in
+  a future source-of-truth PR before being treated as canonical.
+
+Recovered predecessor baseline ADRs:
+
+- `ADR-0036` — Open-source schema boundary. Status: accepted. Date:
+  2026-04-29. Version context: `v3.2.3.5`. Source classification: recovered
+  predecessor baseline material from older uploaded/session architecture
+  material.
+  Key implication: canonical Zovark schemas must be Apache-2.0/source-available;
+  vendor or proprietary schemas are export mappings only; vendor schemas must
+  not be canonical dependencies for replay, audit, storage, verdict, or customer
+  evidence.
+  Build impact: constrains OCSF normalization, schema registry work,
+  proof-package evidence schema decisions, Replay compatibility, customer
+  evidence exports, and future SIEM/EDR mapping work.
+- `ADR-0037` — Feature lifecycle and dead-code housekeeping. Status: accepted.
+  Date: 2026-04-29. Version context: `v3.2.3.5`. Source classification:
+  recovered predecessor baseline material from older uploaded/session
+  architecture material.
+  Key implication: every product feature must have a durable `F-NNN` feature ID
+  and lifecycle state; no orphan schemas; no hidden flags; no future plugin
+  skeletons; no unused services; no docs referencing missing scripts/tests; and
+  the first 37 ADRs are locked v1.0 architectural memory.
+  Build impact: no new local testbed CLI, AlertForge ingest path, benchmark
+  harness, product component, feature flag, service, or schema should be added
+  without checking feature-registry/lifecycle alignment.
+
+Recovered older `v3.2.4.3` patch material:
+
+- `ADR-0044` — Disaster Recovery & Business Continuity
+- `ADR-0045` — Customer Offboarding, GDPR Article 17, and Legal Hold
+- `ADR-0046` — Deterministic Verdict Canonicalization
+- `ADR-0047` — Replay Compatibility Matrix and Failure Modes
+- `ADR-0048` — Healer Runtime Defense-in-Depth
+- `ADR-0049` — Sigma Alert-Budget Governance
+- `ADR-0050` — On-Call, Paging, and Vendor-Compromise Incident Response
+- `ADR-0051` — Calendar Reconciliation
+
+Older `v3.2.4.3` material says `ADR-0012` and `ADR-0032` are superseded by
+`ADR-0051`. Do not apply that supersession silently to current repo behavior
+until the recovered later ADRs are reconciled.
+
 This review does not claim the architecture is fully ADR-synced. That claim is
-forbidden until `ADR-0036` and `ADR-0037` are resolved or explicitly accepted as
-source-missing.
+forbidden until recovered `ADR-0036` through `ADR-0051` material is reconciled
+against current repo direction or explicitly classified as historical,
+deferred, superseded, stale, or non-authoritative.
 
 ## Current Architecture Baseline Used For Reconciliation
 
@@ -93,22 +160,22 @@ or `unknown`. Conflict risk values are limited to `none`, `possible`,
 | ADR-0033 | Open standards and schema registry | accepted | candidate zip `0033-open-standards-and-schema-registry.md` | candidate predecessor baseline | deferred | possible | Tension area. Current V2 contract exists, but broader schema registry behavior is not implemented. |
 | ADR-0034 | Tenant DEK rotation policy | accepted | candidate zip `0034-tenant-dek-rotation-policy.md` | candidate predecessor baseline | deferred | possible | Relevant to future key/customer-instance work, not current local proof-package build. |
 | ADR-0035 | Open-source on-call and paging stack | accepted | candidate zip `0035-open-source-on-call-and-paging-stack.md` | candidate predecessor baseline | deferred | possible | Tension area. No on-call/paging stack should be added before product runtime exists. |
-| ADR-0036 | Unknown | source missing | not found | missing | unknown | blocking | Source unresolved. Do not infer contents. Blocks full ADR-sync claim and any implementation that depends on this ADR. |
-| ADR-0037 | Unknown | source missing | not found | missing | unknown | blocking | Source unresolved. Do not infer contents. Blocks full ADR-sync claim and any implementation that depends on this ADR. |
+| ADR-0036 | Open-source schema boundary | accepted | recovered older uploaded/session architecture material | recovered predecessor baseline material | active | possible | Not imported as current repo ADR source of truth. Constrains canonical schema licensing, OCSF normalization, schema registry work, proof-package evidence schemas, Replay compatibility, customer evidence exports, and future SIEM/EDR mappings. |
+| ADR-0037 | Feature lifecycle and dead-code housekeeping | accepted | recovered older uploaded/session architecture material | recovered predecessor baseline material | active | possible | Not imported as current repo ADR source of truth. Requires durable `F-NNN` feature IDs and lifecycle state before new local testbed CLI, AlertForge ingest, benchmark harness, product component, feature flag, service, or schema work. |
 | ADR-0038 | Control Plane and Customer-Instance Authority Boundary | proposed | current visible ADR `0038-control-plane-and-customer-instance-authority-boundary.md` | current visible ADR | deferred | possible | Boundary is relevant before live control-plane work. Local proof/replay build should keep customer-data authority local. |
 | ADR-0039 | Update Factory and Signed Bundle Distribution | proposed | current visible ADR `0039-update-factory-and-signed-bundle-distribution.md` | current visible ADR | deferred | possible | Signing, bundles, SLSA, and in-toto remain out of scope for the local proof build. |
 | ADR-0040 | Research Pipeline and Gated Candidate Promotion | proposed | current visible ADR `0040-research-pipeline-and-gated-candidate-promotion.md` | current visible ADR | deferred | possible | Supports the rule that AlertForge outputs and candidate artifacts are not automatically architecture or runtime truth. |
 | ADR-0041 | Telemetry Boundary | proposed | current visible ADR `0041-telemetry-boundary.md` | current visible ADR | deferred | possible | Do not add telemetry or outbound reporting during local build without a scoped decision. |
 | ADR-0042 | Cryptographic Key Management | proposed | current visible ADR `0042-cryptographic-key-management.md` | current visible ADR | deferred | possible | Blocks key-management/signing claims, not offline proof-package generation. |
 | ADR-0043 | Open-Source Release Strategy | proposed strategic pivot | current visible ADR `0043-open-source-release-strategy.md` | current visible ADR | deferred | possible | Requires founder/counsel sign-off before release-positioning decisions. Not a local-build blocker. |
-| ADR-0044 | Unknown | not found | not found | not found | unknown | unknown | No ADR file found. Not current source of truth unless separately provided and reconciled. |
-| ADR-0045 | Unknown | not found | not found | not found | unknown | unknown | No ADR file found. Not current source of truth unless separately provided and reconciled. |
-| ADR-0046 | Unknown | not found | not found | not found | unknown | unknown | No ADR file found. Not current source of truth unless separately provided and reconciled. |
-| ADR-0047 | Unknown | not found | not found | not found | unknown | unknown | No ADR file found. Not current source of truth unless separately provided and reconciled. |
-| ADR-0048 | Unknown | not found | not found | not found | unknown | unknown | No ADR file found. Not current source of truth unless separately provided and reconciled. |
-| ADR-0049 | Unknown | not found | not found | not found | unknown | unknown | No ADR file found. Not current source of truth unless separately provided and reconciled. |
-| ADR-0050 | Unknown | not found | not found | not found | unknown | unknown | No ADR file found. Not current source of truth unless separately provided and reconciled. |
-| ADR-0051 | Unknown | not found | not found | not found | unknown | unknown | No ADR file found. Not current source of truth unless separately provided and reconciled. |
+| ADR-0044 | Disaster Recovery & Business Continuity | recovered | older `v3.2.4.3` architecture material | recovered older patch material | unknown | unknown | Not part of the current visible repo ADR set. Must be reconciled before use as active architecture. |
+| ADR-0045 | Customer Offboarding, GDPR Article 17, and Legal Hold | recovered | older `v3.2.4.3` architecture material | recovered older patch material | unknown | unknown | Not part of the current visible repo ADR set. Must be reconciled before use as active architecture. |
+| ADR-0046 | Deterministic Verdict Canonicalization | recovered | older `v3.2.4.3` architecture material | recovered older patch material | unknown | possible | Likely overlaps current deterministic verdict and Replay direction, but must be reconciled before claiming compliance. |
+| ADR-0047 | Replay Compatibility Matrix and Failure Modes | recovered | older `v3.2.4.3` architecture material | recovered older patch material | unknown | possible | Likely overlaps V1/V2 verifier compatibility work, but must be reconciled before being treated as active source of truth. |
+| ADR-0048 | Healer Runtime Defense-in-Depth | recovered | older `v3.2.4.3` architecture material | recovered older patch material | unknown | possible | Runtime healer work is not implemented in the current proof-package path; reconcile before runtime claims. |
+| ADR-0049 | Sigma Alert-Budget Governance | recovered | older `v3.2.4.3` architecture material | recovered older patch material | unknown | possible | Sigma generation and alert-budget governance remain outside the current local proof/Replay path. |
+| ADR-0050 | On-Call, Paging, and Vendor-Compromise Incident Response | recovered | older `v3.2.4.3` architecture material | recovered older patch material | unknown | possible | Operational on-call, paging, and vendor-compromise incident response are not current local-build work. |
+| ADR-0051 | Calendar Reconciliation | recovered | older `v3.2.4.3` architecture material | recovered older patch material | unknown | possible | Older material says this supersedes `ADR-0012` and `ADR-0032`; do not apply that supersession until reconciled. |
 
 ## Likely Tension Areas
 
@@ -140,11 +207,21 @@ local product/testbed work:
   implemented.
 - `ADR-0035` Open-source on-call and paging stack: operational paging is not part
   of the current local build path.
+- `ADR-0036` Open-source schema boundary: local build, schema registry,
+  proof-package evidence, Replay compatibility, customer export, OCSF, and
+  SIEM/EDR mapping work must not make vendor/proprietary schemas canonical.
+- `ADR-0037` Feature lifecycle and dead-code housekeeping: any new CLI, service,
+  feature flag, schema, benchmark harness, AlertForge ingest path, or product
+  component needs feature-registry/lifecycle alignment before implementation.
+- `ADR-0044` through `ADR-0051`: recovered older `v3.2.4.3` material may contain
+  relevant later decisions, but none are current active source of truth until
+  reconciled.
 
 ## Build-Readiness Verdict
 
-Narrow local testbed work can proceed with known ADR gaps only if it stays inside
-the current implemented proof-package boundary:
+Local testbed build should not start until this ADR recovery correction is
+reviewed and merged. After this correction, narrow local testbed work can proceed
+only if it stays inside the current implemented proof-package boundary:
 
 - generate V1 or explicit V2 proof packages from static or sanitized V3-like
   inputs
@@ -153,11 +230,18 @@ the current implemented proof-package boundary:
 - prevent raw prompt, tool argument, tool output, payload, message, note, and
   hidden-reasoning leakage
 - keep AlertForge as an upstream synthetic scenario generator, not architecture
+- respect `ADR-0036` schema-boundary constraints
+- respect `ADR-0037` feature-lifecycle discipline
+- make no claim of full compliance with recovered `ADR-0044` through `ADR-0051`
+- make no live control plane, telemetry, Vault, signing, legal, compliance,
+  customer, or benchmark claims
 
-Blocking ADRs for full architecture sync:
+Recovered ADRs that block full architecture sync until reconciled:
 
-- `ADR-0036`: source missing
-- `ADR-0037`: source missing
+- `ADR-0036`: recovered, not imported/reconciled as current source of truth
+- `ADR-0037`: recovered, not imported/reconciled as current source of truth
+- `ADR-0044` through `ADR-0051`: recovered older patch material, not active
+  current source of truth until classified against current repo direction
 
 Blocking or deferred for specific future work:
 
@@ -193,6 +277,32 @@ Forbidden claims until benchmark evidence exists:
 - signed/anchored provenance
 - forensic completeness
 
+## Future Reconciliation Work
+
+Before implementation touching schemas, external mappings, feature flags, CLIs,
+services, adapters, AlertForge ingest, benchmark harnesses, or customer
+artifacts:
+
+- check `ADR-0036` schema boundary
+- check `ADR-0037` feature lifecycle
+- classify `ADR-0044` through `ADR-0051` as `active`, `deferred`,
+  `superseded`, `stale`, or `unknown` against current v4.1/current repo
+  direction
+- decide whether recovered ADR files should be imported into the repo as
+  historical ADRs, current ADRs, or appendix/source material
+
 The architecture must continue to state that it is not fully ADR-synced until
-`ADR-0036` and `ADR-0037` are located and reconciled, or explicitly accepted as
-source-missing through a later decision.
+the recovered `ADR-0036` through `ADR-0051` material is imported/reconciled or
+explicitly classified as historical, deferred, superseded, stale, or
+non-authoritative.
+
+The current safety constraints remain unchanged:
+
+- V1 default remains V1-only
+- V2 generation remains explicit
+- Replay verification remains offline
+- raw prompts, tool arguments, tool outputs, payloads, messages, notes, and
+  hidden reasoning must not be emitted
+- evidence must not be invented
+- unsupported benchmark, customer, legal, compliance, or signing claims remain
+  forbidden
