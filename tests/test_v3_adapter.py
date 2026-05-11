@@ -144,30 +144,143 @@ def _false_positive_context_v3_fixture() -> dict:
     return fixture
 
 
+def _context_visibility_v3_fixture() -> dict:
+    fixture = _representative_v3_fixture()
+    fixture["execution"].update(
+        {
+            "access_denied_paths": ["saas-admin-audit-log"],
+            "asset_criticality": "high",
+            "asset_owner": "finance-it",
+            "context_enrichment": {
+                "source": "recorded_fixture",
+                "summary": "Finance workstation with prior phishing ticket history",
+            },
+            "correlation_history": [
+                {
+                    "correlation_count": 1,
+                    "matched_indicator": "203.0.113.50",
+                }
+            ],
+            "crown_jewel_status": True,
+            "embedded_ai_in_saas_visibility_gap": (
+                "No SaaS AI usage telemetry was present in the fixture"
+            ),
+            "geo_ip_data": {
+                "country_code": "ZZ",
+                "source": "static_fixture",
+            },
+            "institutional_knowledge": {
+                "asset_tier": "tier-1",
+                "business_unit": "finance",
+            },
+            "known_blind_spots": [
+                {
+                    "affected_question": "Were DNS resolver logs available?",
+                    "gap_id": "vg-dns-logs",
+                    "gap_type": "missing_dns_logs",
+                    "impact_on_confidence": (
+                        "Domain-level command-and-control evidence could not be "
+                        "corroborated from this fixture."
+                    ),
+                    "data_unavailable_reason": "fixture_does_not_include_dns_logs",
+                }
+            ],
+            "recent_ticket_history": [
+                {
+                    "ticket_id": "INC-1001",
+                    "summary": "Prior phishing triage on same host",
+                }
+            ],
+            "shadow_it_unknown": True,
+            "telemetry_missing": ["dns_resolver_logs"],
+            "threat_intel_ip_match": {
+                "indicator": "203.0.113.50",
+                "list": "static-fixture-ti",
+            },
+            "user_department": "finance",
+            "user_job_title": "senior analyst",
+            "user_role": "finance analyst",
+            "user_typical_behavior": {
+                "powershell_usage": "rare",
+            },
+        }
+    )
+    return fixture
+
+
+def _context_values_without_existing_gate_fixture() -> dict:
+    fixture = _representative_v3_fixture()
+    fixture["execution"]["tool_names"] = ["extract_ipv4", "score_brute_force"]
+    fixture["execution"]["tool_results"] = {
+        "extract_ipv4": {
+            "iocs": ["203.0.113.50"],
+            "status": "succeeded",
+        }
+    }
+    fixture["execution"].update(
+        {
+            "asset_criticality": "high",
+            "geo_ip_data": {
+                "country_code": "ZZ",
+                "source": "static_fixture",
+            },
+            "threat_intel_ip_match": {
+                "indicator": "203.0.113.50",
+                "list": "static-fixture-ti",
+            },
+        }
+    )
+    return fixture
+
+
 def _load_json(package_dir: Path, filename: str):
     return json.loads((package_dir / filename).read_text(encoding="utf-8"))
 
 
 V2_ONLY_CONTEXT_KEYS = {
     "analyst_override",
+    "access_denied_paths",
+    "asset_criticality",
+    "asset_owner",
     "baseline_match_evidence",
     "benign_explanation_chosen",
     "benign_explanations_considered",
     "benign_indicators",
     "confirmation_records",
     "contacted_parties",
+    "context_enrichment",
+    "correlation_history",
     "contradicting_evidence_refs",
+    "crown_jewel_status",
     "decision_rationale",
     "detection_tuning_recommendation",
+    "embedded_ai_in_saas_visibility_gap",
     "enrichment_results",
     "false_positive_reasoning",
+    "geo_ip_data",
+    "incomplete_telemetry",
+    "institutional_knowledge",
+    "known_blind_spots",
     "match_telemetry",
     "normal_schedule_match",
+    "recent_ticket_history",
     "rejected_finding_refs",
     "rejected_findings",
     "source_refs",
     "suppression_rule_id",
+    "telemetry_missing",
+    "third_party_integration_gaps",
+    "threat_intel_hash_match",
+    "threat_intel_ip_match",
+    "unavailable_logs",
+    "unobserved_integrations",
+    "unsupported_integrations",
+    "user_department",
+    "user_job_title",
+    "user_role",
+    "user_typical_behavior",
     "v2_conditions",
+    "visibility_gaps",
     "whitelist_match_evidence",
 }
 
@@ -389,6 +502,171 @@ def test_generated_v2_rejected_finding_emits_false_positive_reasoning(tmp_path):
         "candidate-benign-office-macro"
     ]
     assert false_positive["reasoning_summary"]
+
+
+def test_generated_v2_populates_context_enrichment_from_fixture_evidence(tmp_path):
+    output_dir = tmp_path / "context-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _context_visibility_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    evidence = _load_json(output_dir, "evidence-ledger.json")
+    verified_refs = {f"evidence:{entry['evidence_id']}" for entry in evidence}
+    context_enrichment = marker["objects"]["context_enrichment"]
+
+    assert summary["status"] == "verified"
+    assert marker["conditions"]["context_enrichment_used"] is True
+    assert context_enrichment["status"] == "partial"
+    assert context_enrichment["source_refs"]
+    assert set(context_enrichment["source_refs"]) <= verified_refs
+    assert context_enrichment["evidence_refs"] == context_enrichment["source_refs"]
+    assert context_enrichment["context_type"] == "v3_context_enrichment"
+    assert context_enrichment["context_hash"]
+    assert context_enrichment["context_values"]["asset_criticality"] == "high"
+    assert context_enrichment["context_values"]["asset_owner"] == "finance-it"
+    assert context_enrichment["context_values"]["threat_intel_ip_match"] == {
+        "indicator": "203.0.113.50",
+        "list": "static-fixture-ti",
+    }
+    assert context_enrichment["data_unavailable_reason"] == (
+        "some_context_fields_not_emitted_by_v3"
+    )
+
+
+def test_generated_v2_context_enrichment_gate_uses_recorded_context_values(tmp_path):
+    output_dir = tmp_path / "context-values-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _context_values_without_existing_gate_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    evidence = _load_json(output_dir, "evidence-ledger.json")
+    verified_refs = {f"evidence:{entry['evidence_id']}" for entry in evidence}
+    context_enrichment = marker["objects"]["context_enrichment"]
+
+    assert summary["status"] == "verified"
+    assert marker["conditions"]["context_enrichment_used"] is True
+    assert context_enrichment["source_refs"]
+    assert set(context_enrichment["source_refs"]) <= verified_refs
+    assert context_enrichment["context_values"]["asset_criticality"] == "high"
+    assert context_enrichment["context_values"]["geo_ip_data"] == {
+        "country_code": "ZZ",
+        "source": "static_fixture",
+    }
+    assert context_enrichment["context_values"]["threat_intel_ip_match"] == {
+        "indicator": "203.0.113.50",
+        "list": "static-fixture-ti",
+    }
+
+
+def test_generated_v2_populates_visibility_gaps_from_fixture_evidence(tmp_path):
+    output_dir = tmp_path / "visibility-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _context_visibility_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    evidence = _load_json(output_dir, "evidence-ledger.json")
+    verified_refs = {f"evidence:{entry['evidence_id']}" for entry in evidence}
+    visibility_gaps = marker["objects"]["visibility_gaps"]
+
+    assert summary["status"] == "verified"
+    assert visibility_gaps["status"] == "partial"
+    assert visibility_gaps["source_refs"]
+    assert set(visibility_gaps["source_refs"]) <= verified_refs
+    assert visibility_gaps["data_unavailable_reason"] == (
+        "some_visibility_fields_not_emitted_by_v3"
+    )
+    assert {
+        "missing_dns_logs",
+        "telemetry_missing",
+        "access_denied_paths",
+        "shadow_it_unknown",
+        "embedded_ai_in_saas_visibility_gap",
+    } <= {gap["gap_type"] for gap in visibility_gaps["gaps"]}
+    assert any(gap.get("detail") == "dns_resolver_logs" for gap in visibility_gaps["gaps"])
+
+
+def test_generated_v2_missing_context_and_gap_data_is_explicit(tmp_path):
+    output_dir = tmp_path / "minimal-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _representative_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+
+    assert summary["status"] == "verified"
+    context_enrichment = marker["objects"]["context_enrichment"]
+    visibility_gaps = marker["objects"]["visibility_gaps"]
+    assert context_enrichment["status"] == "unavailable"
+    assert context_enrichment["data_unavailable_reason"] == (
+        "recorded_context_summary_not_emitted_by_v3"
+    )
+    assert context_enrichment["source_refs"]
+    assert visibility_gaps["status"] == "unavailable"
+    assert visibility_gaps["data_unavailable_reason"] == "not_emitted_by_v3"
+    assert visibility_gaps["source_refs"]
+
+
+def test_default_v1_generation_excludes_context_and_visibility_fields(tmp_path):
+    output_dir = tmp_path / "v1-context-package"
+
+    write_proof_package_from_v3_fixture(
+        _context_visibility_v3_fixture(),
+        output_dir,
+    )
+    context = _load_json(output_dir, "investigation-tape.json")["raw_evidence"][0][
+        "raw_content"
+    ]["v3_trace_context"]
+
+    assert sorted(path.name for path in output_dir.iterdir()) == sorted(
+        EXPECTED_OUTPUT_FILES
+    )
+    assert not (set(context) & V2_ONLY_CONTEXT_KEYS)
+    assert verify_proof_package(output_dir)["package_contract"] == (
+        "slice-001-proof-package/1.0"
+    )
+
+
+def test_context_visibility_v1_and_v2_generation_do_not_cross_contaminate(tmp_path):
+    fixture = _context_visibility_v3_fixture()
+    v2_dir = tmp_path / "v2-first"
+    v1_dir = tmp_path / "v1-second"
+
+    write_proof_package_from_v3_fixture(
+        fixture,
+        v2_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    write_proof_package_from_v3_fixture(fixture, v1_dir)
+    v2_marker = _load_json(v2_dir, V2_MARKER_FILE)
+    v1_context = _load_json(v1_dir, "investigation-tape.json")["raw_evidence"][0][
+        "raw_content"
+    ]["v3_trace_context"]
+
+    assert "context_enrichment" in v2_marker["objects"]
+    assert "visibility_gaps" in v2_marker["objects"]
+    assert sorted(path.name for path in v1_dir.iterdir()) == sorted(
+        EXPECTED_OUTPUT_FILES
+    )
+    assert not (set(v1_context) & V2_ONLY_CONTEXT_KEYS)
+    assert verify_proof_package(v2_dir)["package_contract"] == V2_PACKAGE_CONTRACT
+    assert verify_proof_package(v1_dir)["package_contract"] == (
+        "slice-001-proof-package/1.0"
+    )
 
 
 def test_generated_v2_marker_does_not_export_hidden_reasoning_or_raw_prompts(tmp_path):
