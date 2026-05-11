@@ -386,11 +386,20 @@ def _safe_trace_metadata_v3_fixture() -> dict:
         {
             "chain_of_thought": "never export hidden reasoning",
             "counter_evidence_considered": [
-                "No lateral movement success event was recorded"
+                {
+                    "confidence": "medium",
+                    "evidence_ref": "v3-lm-001",
+                    "finding_id": "counter-evidence-lateral-movement",
+                    "reason_code": "no_success_event",
+                    "status": "considered",
+                }
             ],
             "exploitability_validation": {
-                "method": "recorded_tool_output",
-                "result": "not_exercised_by_adapter",
+                "input_hash": "sha256:exploitability-input",
+                "output_hash": "sha256:exploitability-output",
+                "status": "recorded",
+                "tool_name": "score_brute_force",
+                "validation_status": "not_executed",
             },
             "hidden_reasoning": "never export hidden reasoning",
             "input_provenance_tags": [
@@ -487,6 +496,75 @@ def _unsafe_tool_call_summary_v3_fixture() -> dict:
     return fixture
 
 
+def _unsafe_v2_trace_values_v3_fixture() -> dict:
+    fixture = _safe_trace_metadata_v3_fixture()
+    fixture["execution"].update(
+        {
+            "counter_evidence_considered": [
+                {
+                    "confidence": "low",
+                    "content": "RAW_COUNTER_EVIDENCE_CONTENT_SENTINEL",
+                    "evidence_ref": "v3-lm-001",
+                    "finding_id": "counter-evidence-001",
+                    "messages": [
+                        {
+                            "content": "RAW_MESSAGE_SENTINEL",
+                            "role": "assistant",
+                        }
+                    ],
+                    "notes": "RAW_ANALYST_NOTE_SENTINEL",
+                    "rationale": "RAW_REASONING_SENTINEL",
+                    "status": "considered",
+                },
+                {
+                    "unknown_nested": {
+                        "unexpected": "RAW_UNEXPECTED_NESTED_SENTINEL"
+                    }
+                },
+            ],
+            "exploitability_validation": {
+                "input_hash": "sha256:exploitability-input",
+                "messages": [
+                    {
+                        "content": "RAW_USER_PROMPT_SENTINEL",
+                        "role": "user",
+                    }
+                ],
+                "output": "RAW_TOOL_OUTPUT_SENTINEL",
+                "output_hash": "sha256:exploitability-output",
+                "payload": {"body": "RAW_PAYLOAD_SENTINEL"},
+                "reasoning": "HIDDEN_REASONING_SENTINEL",
+                "status": "attempted",
+                "tool_name": "score_brute_force",
+                "validation_status": "attempted",
+            },
+            "input_provenance_tags": [
+                "static_fixture",
+                {
+                    "content": "RAW_INPUT_PROVENANCE_SENTINEL",
+                    "tag_id": "input-provenance-safe-tag",
+                },
+            ],
+            "model_fingerprint": ["RAW_MODEL_FINGERPRINT_SENTINEL"],
+            "model_ref": {"content": "RAW_MODEL_REF_SENTINEL"},
+            "prompt_hash": {"prompt": "RAW_PROMPT_HASH_SENTINEL"},
+            "third_party_feed_identifiers": [
+                "static-fixture-ti-feed",
+                {
+                    "feed_id": "safe-feed-id",
+                    "messages": [
+                        {
+                            "content": "RAW_FEED_MESSAGE_SENTINEL",
+                            "role": "user",
+                        }
+                    ],
+                },
+            ],
+        }
+    )
+    return fixture
+
+
 def _load_json(package_dir: Path, filename: str):
     return json.loads((package_dir / filename).read_text(encoding="utf-8"))
 
@@ -532,6 +610,56 @@ def _assert_package_omits_raw_tool_summary_leakage(package_dir: Path) -> None:
         "raw tool hidden reasoning secret",
         "raw tool chain of thought secret",
         "raw analyst note secret",
+    ]
+    for token in forbidden:
+        assert token not in rendered
+
+
+def _assert_package_omits_unsafe_v2_trace_sentinels(package_dir: Path) -> None:
+    rendered = _render_package_dir(package_dir)
+    forbidden = [
+        "raw_user_prompt_sentinel",
+        "raw_payload_sentinel",
+        "raw_tool_output_sentinel",
+        "hidden_reasoning_sentinel",
+        "raw_counter_evidence_content_sentinel",
+        "raw_analyst_note_sentinel",
+        "raw_reasoning_sentinel",
+        "raw_message_sentinel",
+        "raw_unexpected_nested_sentinel",
+        "raw_input_provenance_sentinel",
+        "raw_model_fingerprint_sentinel",
+        "raw_model_ref_sentinel",
+        "raw_prompt_hash_sentinel",
+        "raw_feed_message_sentinel",
+    ]
+    for token in forbidden:
+        assert token not in rendered
+
+
+def _assert_v2_trace_object_omits_unsafe_keys(value: object) -> None:
+    rendered = json.dumps(value, sort_keys=True).lower()
+    forbidden = [
+        '"args"',
+        '"arguments"',
+        '"analysis"',
+        '"body"',
+        '"chain_of_thought"',
+        '"content"',
+        '"hidden_reasoning"',
+        '"input"',
+        '"message"',
+        '"messages"',
+        '"notes"',
+        '"output"',
+        '"params"',
+        '"payload"',
+        '"prompt"',
+        '"query"',
+        '"rationale"',
+        '"reasoning"',
+        '"response"',
+        '"result"',
     ]
     for token in forbidden:
         assert token not in rendered
@@ -1908,11 +2036,20 @@ def test_generated_v2_preserves_safe_trace_metadata_when_recorded(tmp_path):
         "static-fixture-ti-feed"
     ]
     assert context["counter_evidence_considered"] == [
-        "No lateral movement success event was recorded"
+        {
+            "confidence": "medium",
+            "evidence_ref": "v3-lm-001",
+            "finding_id": "counter-evidence-lateral-movement",
+            "reason_code": "no_success_event",
+            "status": "considered",
+        }
     ]
     assert context["exploitability_validation"] == {
-        "method": "recorded_tool_output",
-        "result": "not_exercised_by_adapter",
+        "input_hash": "sha256:exploitability-input",
+        "output_hash": "sha256:exploitability-output",
+        "status": "recorded",
+        "tool_name": "score_brute_force",
+        "validation_status": "not_executed",
     }
     assert context["separation_of_reasoning_execution_flag"] is True
     assert context["tool_call_chain_summary"]
@@ -1922,6 +2059,109 @@ def test_generated_v2_preserves_safe_trace_metadata_when_recorded(tmp_path):
         "tool_result_hash",
         "tool_status",
     } <= set(context["tool_call_chain_summary"][0])
+
+
+def test_generated_v2_sanitizes_exploitability_validation_values(tmp_path):
+    output_dir = tmp_path / "unsafe-exploitability-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _unsafe_v2_trace_values_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    context = _load_json(output_dir, "investigation-tape.json")["raw_evidence"][0][
+        "raw_content"
+    ]["v3_trace_context"]
+
+    assert summary["status"] == "verified"
+    assert context["exploitability_validation"] == {
+        "input_hash": "sha256:exploitability-input",
+        "output_hash": "sha256:exploitability-output",
+        "status": "attempted",
+        "tool_name": "score_brute_force",
+        "validation_status": "attempted",
+    }
+    _assert_v2_trace_object_omits_unsafe_keys(
+        context["exploitability_validation"]
+    )
+    _assert_package_omits_unsafe_v2_trace_sentinels(output_dir)
+
+
+def test_generated_v2_sanitizes_counter_evidence_values(tmp_path):
+    output_dir = tmp_path / "unsafe-counter-evidence-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _unsafe_v2_trace_values_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    context = _load_json(output_dir, "investigation-tape.json")["raw_evidence"][0][
+        "raw_content"
+    ]["v3_trace_context"]
+
+    assert context["counter_evidence_considered"] == [
+        {
+            "confidence": "low",
+            "evidence_ref": "v3-lm-001",
+            "finding_id": "counter-evidence-001",
+            "status": "considered",
+        }
+    ]
+    _assert_v2_trace_object_omits_unsafe_keys(
+        context["counter_evidence_considered"]
+    )
+    _assert_package_omits_unsafe_v2_trace_sentinels(output_dir)
+
+
+def test_generated_v2_drops_unknown_nested_safe_trace_values(tmp_path):
+    output_dir = tmp_path / "unsafe-nested-trace-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _unsafe_v2_trace_values_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    context = _load_json(output_dir, "investigation-tape.json")["raw_evidence"][0][
+        "raw_content"
+    ]["v3_trace_context"]
+
+    assert "unknown_nested" not in json.dumps(
+        context["counter_evidence_considered"],
+        sort_keys=True,
+    )
+    assert context["input_provenance_tags"] == [
+        "static_fixture",
+        {
+            "tag_id": "input-provenance-safe-tag",
+        },
+    ]
+    assert context["third_party_feed_identifiers"] == [
+        "static-fixture-ti-feed",
+        {
+            "feed_id": "safe-feed-id",
+        },
+    ]
+    _assert_package_omits_unsafe_v2_trace_sentinels(output_dir)
+
+
+def test_generated_v2_safe_scalar_trace_fields_reject_nested_containers(tmp_path):
+    output_dir = tmp_path / "unsafe-scalar-trace-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _unsafe_v2_trace_values_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    context = _load_json(output_dir, "investigation-tape.json")["raw_evidence"][0][
+        "raw_content"
+    ]["v3_trace_context"]
+
+    assert "model_ref" not in context
+    assert "model_fingerprint" not in context
+    assert "prompt_hash" not in context
+    assert context["prompt_version"] == "prompt-v3-fixture-001"
+    _assert_package_omits_unsafe_v2_trace_sentinels(output_dir)
 
 
 def test_generated_v2_sanitizes_prompt_transformation_log_prompt_texts(tmp_path):
@@ -2141,6 +2381,25 @@ def test_default_v1_generation_excludes_unsafe_tool_call_chain_summary(tmp_path)
     assert "tool_call_chain_summary" not in context
     assert not (set(context) & V2_ONLY_CONTEXT_KEYS)
     _assert_package_omits_raw_tool_summary_leakage(output_dir)
+
+
+def test_default_v1_generation_excludes_unsafe_v2_trace_values(tmp_path):
+    output_dir = tmp_path / "unsafe-v2-trace-v1-package"
+
+    write_proof_package_from_v3_fixture(
+        _unsafe_v2_trace_values_v3_fixture(),
+        output_dir,
+    )
+    context = _load_json(output_dir, "investigation-tape.json")["raw_evidence"][0][
+        "raw_content"
+    ]["v3_trace_context"]
+
+    assert V2_MARKER_FILE not in {path.name for path in output_dir.iterdir()}
+    assert "counter_evidence_considered" not in context
+    assert "exploitability_validation" not in context
+    assert "tool_call_chain_summary" not in context
+    assert not (set(context) & V2_ONLY_CONTEXT_KEYS)
+    _assert_package_omits_unsafe_v2_trace_sentinels(output_dir)
 
 
 def test_safe_trace_v1_and_v2_generation_do_not_cross_contaminate(tmp_path):

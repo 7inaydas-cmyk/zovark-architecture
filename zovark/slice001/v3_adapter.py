@@ -165,6 +165,70 @@ _SAFE_TOOL_CALL_SUMMARY_KEYS = frozenset(
         "redacted_reason",
     }
 )
+_SAFE_COUNTER_EVIDENCE_KEYS = frozenset(
+    {
+        "evidence_ref",
+        "evidence_refs",
+        "source_ref",
+        "source_refs",
+        "finding_id",
+        "artifact_ref",
+        "artifact_hash",
+        "signal_id",
+        "signal_hash",
+        "status",
+        "disposition",
+        "confidence",
+        "reason_code",
+        "validation_status",
+        "timestamp",
+    }
+)
+_SAFE_EXPLOITABILITY_VALIDATION_KEYS = frozenset(
+    {
+        "validation_status",
+        "exploitability_status",
+        "technique_id",
+        "cve_id",
+        "cwe_id",
+        "rule_id",
+        "tool_name",
+        "tool_id",
+        "capability_id",
+        "call_id",
+        "input_hash",
+        "output_hash",
+        "artifact_hash",
+        "source_ref",
+        "source_refs",
+        "evidence_ref",
+        "evidence_refs",
+        "status",
+        "error_code",
+        "error_type",
+        "confidence",
+    }
+)
+_SAFE_TRACE_TAG_OBJECT_KEYS = frozenset(
+    {
+        "tag",
+        "tag_id",
+        "feed_id",
+        "feed_name",
+        "feed_version",
+        "provider_ref",
+        "source_ref",
+        "source_refs",
+        "artifact_ref",
+        "artifact_hash",
+        "indicator_ref",
+        "indicator_hash",
+        "status",
+        "confidence",
+        "timestamp",
+        "data_unavailable_reason",
+    }
+)
 _COMPLIANCE_ACTION_MAPPINGS = {
     "isolate_host": {
         "control_refs": [
@@ -1248,8 +1312,8 @@ def _v3_context_from_fixture(
         "plan_executed": execution.get("plan_executed"),
         "tool_names": execution.get("tool_names"),
         "tool_results": execution.get("tool_results"),
-        "prompt_hash": execution.get("prompt_hash"),
-        "prompt_version": execution.get("prompt_version"),
+        "prompt_hash": _safe_trace_scalar(execution.get("prompt_hash")),
+        "prompt_version": _safe_trace_scalar(execution.get("prompt_version")),
         "generated_code_hash": execution.get("generated_code_hash"),
         "scrubbed_code_hash": execution.get("scrubbed_code_hash"),
         "ast_validation_result": execution.get("ast_validation_result"),
@@ -1377,10 +1441,7 @@ def _v3_context_from_fixture(
                 "control_owner": execution.get("control_owner"),
                 "control_refs": execution.get("control_refs"),
                 "customer_attestation_ref": execution.get("customer_attestation_ref"),
-                **{
-                    key: execution.get(key)
-                    for key in _SAFE_V2_TRACE_CONTEXT_KEYS
-                },
+                **_sanitize_v2_trace_context(execution),
                 "prompt_transformation_log": _sanitize_prompt_transformation_log(
                     execution.get("prompt_transformation_log")
                 ),
@@ -1404,6 +1465,104 @@ def _v3_context_from_fixture(
     }
     context["execution_path"] = _execution_path(execution)
     return context
+
+
+def _sanitize_v2_trace_context(execution: dict[str, Any]) -> dict[str, Any]:
+    sanitized: dict[str, Any] = {}
+    for field_name in _SAFE_V2_TRACE_CONTEXT_KEYS:
+        value = _sanitize_v2_trace_field(field_name, execution.get(field_name))
+        if value is not None:
+            sanitized[field_name] = value
+    return sanitized
+
+
+def _sanitize_v2_trace_field(field_name: str, value: Any) -> Any:
+    if field_name in {
+        "model_ref",
+        "model_fingerprint",
+        "prompt_hash",
+        "prompt_version",
+    }:
+        return _safe_trace_scalar(value)
+    if field_name == "separation_of_reasoning_execution_flag":
+        return value if isinstance(value, bool) else None
+    if field_name in {"input_provenance_tags", "third_party_feed_identifiers"}:
+        return _sanitize_v2_trace_list(field_name, value)
+    if field_name == "counter_evidence_considered":
+        return _sanitize_metadata_collection(value, _SAFE_COUNTER_EVIDENCE_KEYS)
+    if field_name == "exploitability_validation":
+        return _sanitize_metadata_collection(
+            value,
+            _SAFE_EXPLOITABILITY_VALIDATION_KEYS,
+        )
+    return None
+
+
+def _safe_trace_scalar(value: Any) -> str | None:
+    if isinstance(value, str) and value:
+        return value
+    return None
+
+
+def _sanitize_v2_trace_list(field_name: str, value: Any) -> list[Any] | None:
+    items = value if isinstance(value, list) else [value]
+    sanitized_items = [
+        sanitized
+        for item in items
+        if (sanitized := _sanitize_v2_trace_list_item(field_name, item)) is not None
+    ]
+    return sanitized_items or None
+
+
+def _sanitize_v2_trace_list_item(field_name: str, value: Any) -> Any:
+    if isinstance(value, str) and value:
+        return value
+    if isinstance(value, dict):
+        return _sanitize_metadata_object(value, _SAFE_TRACE_TAG_OBJECT_KEYS)
+    return None
+
+
+def _sanitize_metadata_collection(
+    value: Any,
+    allowed_keys: frozenset[str],
+) -> Any:
+    if isinstance(value, dict):
+        return _sanitize_metadata_object(value, allowed_keys)
+    if isinstance(value, list):
+        sanitized_items = [
+            sanitized
+            for item in value
+            if isinstance(item, dict)
+            and (sanitized := _sanitize_metadata_object(item, allowed_keys))
+        ]
+        return sanitized_items or None
+    return None
+
+
+def _sanitize_metadata_object(
+    value: dict[str, Any],
+    allowed_keys: frozenset[str],
+) -> dict[str, Any] | None:
+    sanitized = {
+        key: deepcopy(value[key])
+        for key in sorted(allowed_keys)
+        if key in value and _is_safe_metadata_value(value[key])
+    }
+    return sanitized or None
+
+
+def _is_safe_metadata_value(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, bool):
+        return True
+    if isinstance(value, (int, float)):
+        return not isinstance(value, bool)
+    if isinstance(value, str):
+        return bool(value)
+    if isinstance(value, list):
+        return all(isinstance(item, str) and item for item in value)
+    return False
 
 
 def _sanitize_prompt_transformation_log(value: Any) -> list[dict[str, Any]] | None:
