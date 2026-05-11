@@ -1,0 +1,60 @@
+{
+  "action_type": "isolate_host",
+  "approval_mode": "approval_required",
+  "audit_ref": "audit-entry-1",
+  "authorization_record_ref": "vault://placeholder/bootstrap",
+  "blast_radius": {
+    "directly_affected": [
+      "HOST-12"
+    ],
+    "estimated_business_impact": "Single workstation isolation. No shared infrastructure dependency identified in evidence.",
+    "lateral_movement_blocked": [
+      "HOST-13 (SMB attempt was already blocked by firewall)"
+    ],
+    "services_at_risk": [
+      "Any user sessions active on HOST-12 will be terminated",
+      "Any processes running on HOST-12 will lose network access",
+      "Shared drives mounted from HOST-12 will become unavailable"
+    ]
+  },
+  "evidence_refs": [
+    "ev-8b68a8878b13f63d979e5ce3ce398845b53933130ffeb9951efc07b8b5a8db17",
+    "ev-3908f2ebbbe82687e8448b79a3d1ee4becc55a4da8f9bd6388825d0002062e9e",
+    "ev-07b610876d393b2cebdf64f78cc3ad4e05d172e5762400cc804d4be176c3bc26",
+    "ev-dd7a977483dead2ce516cd43e83da08f5157dd4028691e97d71a46d07227f65d",
+    "ev-81ff493a029944ceb5bb6f8dd81fd26bd5f7cc12b28923a3ad6b1150083964d0"
+  ],
+  "execution_result": {
+    "completed_at": null,
+    "error": null,
+    "reason": "recommendation_only_no_dispatcher_in_slice_001",
+    "started_at": null,
+    "status": "pending",
+    "vendor_response_ref": null
+  },
+  "handoff_id": "handoff-9f71c494eb9924ec",
+  "idempotency_key": "9f71c494eb9924ec832e347350f7643e71cdbcda7bcb7d568c2350ebf853271c",
+  "policy_snapshot": "c78a332f21fbcd4493f9ac51e76255569623ac66793afb6e932c8ac73567e3cb",
+  "policy_snapshot_version": "0.0.1-bootstrap",
+  "replay_linkage": [],
+  "rollback_plan": {
+    "idempotency_key": "6b65e734c22367d9293905cb552b86de97be940a263edc2dc0c21fae21625304",
+    "manual_steps": [],
+    "recovery_notes": "In a live EDR integration, the expected reversal action would be release_isolation. In Slice 001, this is a recommendation only; no EDR action is dispatched. Credential rotation for CORP\\jsmith is recommended regardless of isolation outcome given the LSASS access event.",
+    "reversibility_class": "automatic",
+    "reversal_window": "PT4H",
+    "vendor_reversal_action": "release_isolation",
+    "vendor_reversal_target": {
+      "identifier": "HOST-12",
+      "kind": "host"
+    }
+  },
+  "tape_ref": "tape-001",
+  "target": {
+    "fqdn": "HOST-12.corp.example",
+    "identifier": "HOST-12",
+    "kind": "host",
+    "validated_at": "2026-05-02T09:14:00Z"
+  },
+  "tenant_id": "tenant-demo"
+}

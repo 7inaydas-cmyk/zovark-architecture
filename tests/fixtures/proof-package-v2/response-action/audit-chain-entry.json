@@ -1,0 +1,15 @@
+{
+  "created_at": "2026-05-02T09:14:25Z",
+  "entry_id": "audit-entry-1",
+  "event_type": "tape_recording_closed",
+  "payload": {
+    "fields_hash": "8aea1109fb72355c704811ebacfa0cd9a6ebc093bd809fc957991e0cd9af3231",
+    "tape_id": "tape-001",
+    "verdict_value": "confirmed_malicious"
+  },
+  "prev_entry_hash": "aeebad4a796fcc2e15dc4c6061b45ed9b373f26adfc798ca7d2d8cc58182718e",
+  "sequence": 1,
+  "signed_root": null,
+  "tenant_id": "tenant-demo",
+  "this_entry_hash": "4acfa348232980cb5210431eff827ece4c3b2af80fa4461670a79cc34ef6d238"
+}
