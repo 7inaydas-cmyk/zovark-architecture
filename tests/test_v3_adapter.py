@@ -233,6 +233,61 @@ def _context_values_without_existing_gate_fixture() -> dict:
     return fixture
 
 
+def _action_card_v3_fixture() -> dict:
+    fixture = _context_visibility_v3_fixture()
+    fixture["execution"].update(
+        {
+            "affected_user_count": 42,
+            "approval_channel": "recorded_ticket",
+            "approval_reason": "containment recommended for confirmed malicious host",
+            "approval_status": "conditional",
+            "approval_timestamp": "2026-05-01T10:05:00Z",
+            "approver_identity": "soc-lead-001",
+            "approver_role": "SOC lead",
+            "backup_availability": "not_recorded",
+            "backup_verification_status": "not_recorded",
+            "business_processes_affected": ["finance reporting"],
+            "conditional_approval_constraints": [
+                "Validate business owner notification before isolation"
+            ],
+            "customer_defined_autonomy_boundary": "approval_required",
+            "data_leak_assessment": "not_recorded_in_fixture",
+            "direct_dependencies": ["finance-workstation-access"],
+            "emergency_flag": False,
+            "estimated_recovery_time": "PT2H",
+            "escalation_if_rollback_fails": "escalate_to_soc_manager",
+            "isolation_method": "edr_isolate_host",
+            "post_action_validation_required": True,
+            "restore_steps": ["release host isolation after human approval"],
+            "rollback_owner": "soc-lead-001",
+            "rollforward_steps": ["continue containment if C2 persists"],
+            "rpo_target": "not_recorded",
+            "rto_target": "PT4H",
+            "single_points_of_failure": ["workstation-42 user access"],
+            "third_party_dependencies": ["EDR containment control"],
+            "validation_after_rollback": [
+                "confirm endpoint network connectivity",
+                "rerun malware triage checks",
+            ],
+        }
+    )
+    return fixture
+
+
+def _action_card_missing_people_v3_fixture() -> dict:
+    fixture = _action_card_v3_fixture()
+    for key in (
+        "approval_channel",
+        "approval_status",
+        "approval_timestamp",
+        "approver_identity",
+        "approver_role",
+        "rollback_owner",
+    ):
+        fixture["execution"].pop(key, None)
+    return fixture
+
+
 def _load_json(package_dir: Path, filename: str):
     return json.loads((package_dir / filename).read_text(encoding="utf-8"))
 
@@ -240,36 +295,65 @@ def _load_json(package_dir: Path, filename: str):
 V2_ONLY_CONTEXT_KEYS = {
     "analyst_override",
     "access_denied_paths",
+    "affected_user_count",
+    "approval_channel",
+    "approval_reason",
+    "approval_status",
+    "approval_timestamp",
+    "approver_identity",
+    "approver_role",
     "asset_criticality",
     "asset_owner",
+    "authentication_path",
+    "backup_availability",
+    "backup_verification_status",
     "baseline_match_evidence",
     "benign_explanation_chosen",
     "benign_explanations_considered",
     "benign_indicators",
+    "business_processes_affected",
     "confirmation_records",
     "contacted_parties",
     "context_enrichment",
     "correlation_history",
     "contradicting_evidence_refs",
+    "conditional_approval_constraints",
     "crown_jewel_status",
+    "customer_defined_autonomy_boundary",
+    "data_leak_assessment",
     "decision_rationale",
+    "denial_reason",
     "detection_tuning_recommendation",
+    "direct_dependencies",
     "embedded_ai_in_saas_visibility_gap",
+    "emergency_flag",
     "enrichment_results",
+    "escalation_if_rollback_fails",
+    "estimated_recovery_time",
     "false_positive_reasoning",
     "geo_ip_data",
     "incomplete_telemetry",
     "institutional_knowledge",
+    "isolation_method",
     "known_blind_spots",
     "match_telemetry",
     "normal_schedule_match",
+    "post_action_validation_required",
     "recent_ticket_history",
     "rejected_finding_refs",
     "rejected_findings",
+    "restore_steps",
+    "revenue_streams_affected",
+    "rollback_owner",
+    "rollforward_steps",
+    "rpo_target",
+    "rto_target",
     "source_refs",
+    "single_points_of_failure",
     "suppression_rule_id",
     "telemetry_missing",
     "third_party_integration_gaps",
+    "third_party_dependencies",
     "threat_intel_hash_match",
     "threat_intel_ip_match",
     "unavailable_logs",
@@ -279,6 +363,7 @@ V2_ONLY_CONTEXT_KEYS = {
     "user_job_title",
     "user_role",
     "user_typical_behavior",
+    "validation_after_rollback",
     "v2_conditions",
     "visibility_gaps",
     "whitelist_match_evidence",
@@ -667,6 +752,213 @@ def test_context_visibility_v1_and_v2_generation_do_not_cross_contaminate(tmp_pa
     assert verify_proof_package(v1_dir)["package_contract"] == (
         "slice-001-proof-package/1.0"
     )
+
+
+def test_generated_v2_populates_approval_record_from_fixture_evidence(tmp_path):
+    output_dir = tmp_path / "action-card-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _action_card_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    evidence = _load_json(output_dir, "evidence-ledger.json")
+    verified_refs = {f"evidence:{entry['evidence_id']}" for entry in evidence}
+    approval_record = marker["objects"]["approval_record"]
+
+    assert summary["status"] == "verified"
+    assert approval_record["source_refs"]
+    assert set(approval_record["source_refs"]) <= verified_refs
+    assert approval_record["status"] == "partial"
+    assert approval_record["approval_state"] == "approval_required"
+    assert approval_record["approver_ref"] == "soc-lead-001"
+    assert approval_record["recorded_approval"]["approval_status"] == "conditional"
+    assert approval_record["recorded_approval"]["approver_identity"] == "soc-lead-001"
+    assert approval_record["recorded_approval"]["approval_channel"] == "recorded_ticket"
+
+
+def test_generated_v2_populates_blast_radius_from_fixture_evidence(tmp_path):
+    output_dir = tmp_path / "blast-radius-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _action_card_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    evidence = _load_json(output_dir, "evidence-ledger.json")
+    verified_refs = {f"evidence:{entry['evidence_id']}" for entry in evidence}
+    blast_radius = marker["objects"]["blast_radius"]
+
+    assert summary["status"] == "verified"
+    assert marker["conditions"]["response_action_present"] is True
+    assert blast_radius["source_refs"]
+    assert set(blast_radius["source_refs"]) <= verified_refs
+    assert blast_radius["status"] == "partial"
+    assert blast_radius["recorded_blast_radius"]["direct_dependencies"] == [
+        "finance-workstation-access"
+    ]
+    assert blast_radius["recorded_blast_radius"]["isolation_method"] == (
+        "edr_isolate_host"
+    )
+    assert blast_radius["recorded_blast_radius"]["affected_user_count"] == 42
+
+
+def test_generated_v2_populates_rollback_plan_from_fixture_evidence(tmp_path):
+    output_dir = tmp_path / "rollback-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _action_card_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    evidence = _load_json(output_dir, "evidence-ledger.json")
+    verified_refs = {f"evidence:{entry['evidence_id']}" for entry in evidence}
+    rollback_plan = marker["objects"]["rollback_plan"]
+
+    assert summary["status"] == "verified"
+    assert rollback_plan["source_refs"]
+    assert set(rollback_plan["source_refs"]) <= verified_refs
+    assert rollback_plan["status"] == "partial"
+    assert rollback_plan["rollback_owner_ref"] == "soc-lead-001"
+    assert rollback_plan["rollback_steps"] == [
+        "release host isolation after human approval"
+    ]
+    assert rollback_plan["verification_steps"] == [
+        "confirm endpoint network connectivity",
+        "rerun malware triage checks",
+    ]
+    assert rollback_plan["recorded_rollback"]["backup_availability"] == "not_recorded"
+
+
+def test_generated_v2_missing_approver_does_not_emit_synthetic_ref(tmp_path):
+    output_dir = tmp_path / "missing-approver-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _action_card_missing_people_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    evidence = _load_json(output_dir, "evidence-ledger.json")
+    verified_refs = {f"evidence:{entry['evidence_id']}" for entry in evidence}
+    approval_record = marker["objects"]["approval_record"]
+
+    assert summary["status"] == "verified"
+    assert "approver_ref" not in approval_record
+    assert "approver_identity" not in approval_record
+    assert "approval_channel" not in approval_record
+    assert "approval_status" not in approval_record
+    assert "approval_timestamp" not in approval_record
+    assert "recorded_approval" in approval_record
+    assert "approval_reason" in approval_record["recorded_approval"]
+    assert approval_record["source_refs"]
+    assert set(approval_record["source_refs"]) <= verified_refs
+
+
+def test_generated_v2_missing_rollback_owner_does_not_emit_synthetic_ref(tmp_path):
+    output_dir = tmp_path / "missing-rollback-owner-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _action_card_missing_people_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    evidence = _load_json(output_dir, "evidence-ledger.json")
+    verified_refs = {f"evidence:{entry['evidence_id']}" for entry in evidence}
+    rollback_plan = marker["objects"]["rollback_plan"]
+
+    assert summary["status"] == "verified"
+    assert "rollback_owner_ref" not in rollback_plan
+    assert "rollback_owner" not in rollback_plan
+    assert "recorded_rollback" in rollback_plan
+    assert "restore_steps" in rollback_plan["recorded_rollback"]
+    assert rollback_plan["source_refs"]
+    assert set(rollback_plan["source_refs"]) <= verified_refs
+
+
+def test_generated_v2_missing_action_card_details_are_explicit(tmp_path):
+    output_dir = tmp_path / "minimal-action-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _representative_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+
+    assert summary["status"] == "verified"
+    approval_record = marker["objects"]["approval_record"]
+    blast_radius = marker["objects"]["blast_radius"]
+    rollback_plan = marker["objects"]["rollback_plan"]
+    assert approval_record["data_unavailable_reason"] == (
+        "approval_details_not_fully_emitted_by_v3"
+    )
+    assert "approver_ref" not in approval_record
+    assert approval_record["approval_limitation"]
+    assert blast_radius["data_unavailable_reason"] == "not_emitted_by_v3"
+    assert blast_radius["blast_radius_limitation"]
+    assert rollback_plan["data_unavailable_reason"] == "not_emitted_by_v3"
+    assert "rollback_owner_ref" not in rollback_plan
+    assert rollback_plan["rollback_limitation"]
+
+
+def test_default_v1_generation_excludes_action_card_fields(tmp_path):
+    output_dir = tmp_path / "v1-action-card-package"
+
+    write_proof_package_from_v3_fixture(
+        _action_card_v3_fixture(),
+        output_dir,
+    )
+    context = _load_json(output_dir, "investigation-tape.json")["raw_evidence"][0][
+        "raw_content"
+    ]["v3_trace_context"]
+
+    assert sorted(path.name for path in output_dir.iterdir()) == sorted(
+        EXPECTED_OUTPUT_FILES
+    )
+    assert not (set(context) & V2_ONLY_CONTEXT_KEYS)
+    assert verify_proof_package(output_dir)["package_contract"] == (
+        "slice-001-proof-package/1.0"
+    )
+
+
+def test_action_card_v1_and_v2_generation_do_not_cross_contaminate(tmp_path):
+    fixture = _action_card_v3_fixture()
+    v1_dir = tmp_path / "v1-first"
+    v2_dir = tmp_path / "v2-second"
+
+    write_proof_package_from_v3_fixture(fixture, v1_dir)
+    v1_before = {
+        path.name: path.read_text(encoding="utf-8") for path in v1_dir.iterdir()
+    }
+    write_proof_package_from_v3_fixture(
+        fixture,
+        v2_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    v1_after = {
+        path.name: path.read_text(encoding="utf-8") for path in v1_dir.iterdir()
+    }
+    v2_marker = _load_json(v2_dir, V2_MARKER_FILE)
+
+    assert v1_before == v1_after
+    assert "approval_record" in v2_marker["objects"]
+    assert "blast_radius" in v2_marker["objects"]
+    assert "rollback_plan" in v2_marker["objects"]
+    assert verify_proof_package(v1_dir)["package_contract"] == (
+        "slice-001-proof-package/1.0"
+    )
+    assert verify_proof_package(v2_dir)["package_contract"] == V2_PACKAGE_CONTRACT
 
 
 def test_generated_v2_marker_does_not_export_hidden_reasoning_or_raw_prompts(tmp_path):
