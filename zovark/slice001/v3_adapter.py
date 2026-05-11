@@ -14,6 +14,7 @@ from zovark.slice001.package_verifier import (
     V2_PACKAGE_CONTRACT,
     _derive_v2_conditions,
 )
+from zovark.slice001.hashing import sha256_of_obj
 from zovark.slice001.writer import build_proof_package, write_proof_package
 
 
@@ -27,6 +28,35 @@ _EVENT_ARRAY_KEYS = (
 _EXECUTION_MODES = {"tools", "sandbox", "sandbox_fallback"}
 _LLM_SELECTED_SOURCES = {"llm_selected", "llm_tool_call"}
 _DETERMINISTIC_SOURCES = {"builtin", "db_saved", "saved_plan", "template"}
+_CONTEXT_ENRICHMENT_KEYS = (
+    "asset_criticality",
+    "asset_owner",
+    "crown_jewel_status",
+    "threat_intel_hash_match",
+    "threat_intel_ip_match",
+    "geo_ip_data",
+    "recent_ticket_history",
+    "user_role",
+    "user_job_title",
+    "user_department",
+    "user_typical_behavior",
+    "baseline_match_evidence",
+    "context_enrichment",
+    "institutional_knowledge",
+    "correlation_history",
+)
+_VISIBILITY_GAP_KEYS = (
+    "known_blind_spots",
+    "telemetry_missing",
+    "access_denied_paths",
+    "shadow_it_unknown",
+    "third_party_integration_gaps",
+    "embedded_ai_in_saas_visibility_gap",
+    "unavailable_logs",
+    "incomplete_telemetry",
+    "unsupported_integrations",
+    "unobserved_integrations",
+)
 
 
 def adapt_v3_fixture_to_slice_input(fixture: dict[str, Any]) -> dict[str, Any]:
@@ -187,7 +217,7 @@ def build_v2_marker_from_tape(tape: dict[str, Any]) -> dict[str, Any]:
         ),
         "customer_report_v2": _customer_report_v2(tape, source_refs),
         "decision_rationale": _decision_rationale(tape, source_refs),
-        "visibility_gaps": _visibility_gaps(source_refs),
+        "visibility_gaps": _visibility_gaps(tape, source_refs),
     }
     if conditions["benign_verdict"] or conditions["rejected_findings_present"] or conditions[
         "analyst_override_present"
@@ -201,11 +231,7 @@ def build_v2_marker_from_tape(tape: dict[str, Any]) -> dict[str, Any]:
             "false_positive_reasoning"
         )
     if conditions["context_enrichment_used"]:
-        objects["context_enrichment"] = _minimal_required_placeholder(
-            "context_enrichment",
-            source_refs,
-            "recorded_context_summary_not_emitted_by_v3",
-        )
+        objects["context_enrichment"] = _context_enrichment(tape, source_refs)
     if (
         conditions["response_action_present"]
         or conditions["containment_recommended"]
@@ -368,7 +394,48 @@ def _false_positive_reasoning(
     )
 
 
-def _visibility_gaps(source_refs: list[str]) -> dict[str, Any]:
+def _context_enrichment(
+    tape: dict[str, Any],
+    source_refs: list[str],
+) -> dict[str, Any]:
+    context = _primary_v3_context(tape)
+    context_values = _recorded_context_values(context)
+    if not context_values:
+        return _minimal_required_placeholder(
+            "context_enrichment",
+            source_refs,
+            "recorded_context_summary_not_emitted_by_v3",
+        )
+    content = {
+        "context_hash": sha256_of_obj(context_values),
+        "context_source": "recorded_v3_fixture_context",
+        "context_type": "v3_context_enrichment",
+        "context_values": context_values,
+        "evidence_refs": deepcopy(source_refs),
+        "trace_record_refs": [],
+    }
+    return _base_v2_object(
+        "context_enrichment",
+        source_refs=source_refs,
+        status="partial",
+        data_unavailable_reason="some_context_fields_not_emitted_by_v3",
+        content=content,
+    )
+
+
+def _visibility_gaps(
+    tape: dict[str, Any],
+    source_refs: list[str],
+) -> dict[str, Any]:
+    gap_records = _visibility_gap_records(_primary_v3_context(tape))
+    if gap_records:
+        return _base_v2_object(
+            "visibility_gaps",
+            source_refs=source_refs,
+            status="partial",
+            data_unavailable_reason="some_visibility_fields_not_emitted_by_v3",
+            content={"gaps": gap_records},
+        )
     return _base_v2_object(
         "visibility_gaps",
         source_refs=source_refs,
@@ -388,6 +455,66 @@ def _visibility_gaps(source_refs: list[str]) -> dict[str, Any]:
             ]
         },
     )
+
+
+def _recorded_context_values(context: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: deepcopy(context[key])
+        for key in _CONTEXT_ENRICHMENT_KEYS
+        if key in context and _has_enrichment_value(context[key])
+    }
+
+
+def _visibility_gap_records(context: dict[str, Any]) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for key in _VISIBILITY_GAP_KEYS:
+        if key not in context or not _has_gap_value(context[key]):
+            continue
+        value = context[key]
+        items = value if isinstance(value, list) else [value]
+        for index, item in enumerate(items, start=1):
+            records.append(_visibility_gap_record(key, item, index))
+    return records
+
+
+def _visibility_gap_record(key: str, item: Any, index: int) -> dict[str, Any]:
+    if isinstance(item, dict):
+        record = deepcopy(item)
+        record.setdefault("gap_id", f"vg-{key.replace('_', '-')}-{index}")
+        record.setdefault("gap_type", key)
+        record.setdefault("affected_question", f"Recorded V3 visibility gap: {key}")
+        record.setdefault(
+            "impact_on_confidence",
+            "Recorded V3 fixture identified this visibility limitation.",
+        )
+        record.setdefault("data_unavailable_reason", "recorded_visibility_gap")
+        return record
+    return {
+        "affected_question": f"Recorded V3 visibility gap: {key}",
+        "data_unavailable_reason": "recorded_visibility_gap",
+        "detail": deepcopy(item),
+        "gap_id": f"vg-{key.replace('_', '-')}-{index}",
+        "gap_type": key,
+        "impact_on_confidence": (
+            "Recorded V3 fixture identified this visibility limitation."
+        ),
+    }
+
+
+def _has_enrichment_value(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(value)
+    if isinstance(value, (list, dict)):
+        return bool(value)
+    return True
+
+
+def _has_gap_value(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    return _has_enrichment_value(value)
 
 
 def _approval_record(
@@ -612,6 +739,34 @@ def _v3_context_from_fixture(
                 "detection_tuning_recommendation": execution.get(
                     "detection_tuning_recommendation"
                 ),
+                "asset_criticality": execution.get("asset_criticality"),
+                "asset_owner": execution.get("asset_owner"),
+                "crown_jewel_status": execution.get("crown_jewel_status"),
+                "threat_intel_hash_match": execution.get("threat_intel_hash_match"),
+                "threat_intel_ip_match": execution.get("threat_intel_ip_match"),
+                "geo_ip_data": execution.get("geo_ip_data"),
+                "recent_ticket_history": execution.get("recent_ticket_history"),
+                "user_role": execution.get("user_role"),
+                "user_job_title": execution.get("user_job_title"),
+                "user_department": execution.get("user_department"),
+                "user_typical_behavior": execution.get("user_typical_behavior"),
+                "context_enrichment": execution.get("context_enrichment"),
+                "institutional_knowledge": execution.get("institutional_knowledge"),
+                "correlation_history": execution.get("correlation_history"),
+                "known_blind_spots": execution.get("known_blind_spots"),
+                "telemetry_missing": execution.get("telemetry_missing"),
+                "access_denied_paths": execution.get("access_denied_paths"),
+                "shadow_it_unknown": execution.get("shadow_it_unknown"),
+                "third_party_integration_gaps": execution.get(
+                    "third_party_integration_gaps"
+                ),
+                "embedded_ai_in_saas_visibility_gap": execution.get(
+                    "embedded_ai_in_saas_visibility_gap"
+                ),
+                "unavailable_logs": execution.get("unavailable_logs"),
+                "incomplete_telemetry": execution.get("incomplete_telemetry"),
+                "unsupported_integrations": execution.get("unsupported_integrations"),
+                "unobserved_integrations": execution.get("unobserved_integrations"),
             }
         )
     context = {
