@@ -287,7 +287,6 @@ def build_v2_marker_from_tape(tape: dict[str, Any]) -> dict[str, Any]:
         "approval_record": _approval_record(tape, source_refs),
         "compliance_mapping": _compliance_mapping(tape),
         "controls_in_place_at_incident": _controls_in_place_at_incident(tape),
-        "customer_report_v2": _customer_report_v2(tape, source_refs),
         "decision_rationale": _decision_rationale(tape, source_refs),
         "visibility_gaps": _visibility_gaps(tape, source_refs),
     }
@@ -312,6 +311,7 @@ def build_v2_marker_from_tape(tape: dict[str, Any]) -> dict[str, Any]:
         objects["blast_radius"] = _blast_radius(tape, source_refs)
     if conditions["response_action_present"] or conditions["containment_recommended"]:
         objects["rollback_plan"] = _rollback_plan(tape, source_refs)
+    objects["customer_report_v2"] = _customer_report_v2(tape, objects)
     return {
         "base_package_contract": V1_PACKAGE_CONTRACT,
         "conditions": conditions,
@@ -763,25 +763,230 @@ def _control_evidence_source_refs(tape: dict[str, Any]) -> list[str]:
 
 def _customer_report_v2(
     tape: dict[str, Any],
-    source_refs: list[str],
+    objects: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
+    source_refs = _customer_report_source_refs(tape, objects)
     return _base_v2_object(
         "customer_report_v2",
         source_refs=source_refs,
-        status="populated",
+        status="partial",
+        data_unavailable_reason="verification_not_written_at_generation",
         content={
-            "decision_summary": tape["verdict"]["value"],
+            "customer_responsibility_actions": _customer_responsibility_actions(
+                objects
+            ),
+            "decision_summary": _customer_decision_summary(tape, objects),
+            "evidence_summary": _customer_evidence_summary(tape, objects),
             "executive_summary": (
-                "Proof Package V2 marker generated from recorded V3 fixture data "
-                "and the deterministic Slice proof package."
+                "Proof Package V2 customer report generated from recorded V3 "
+                "fixture data and deterministic Slice package evidence."
             ),
             "limitations": [
-                "V2 verifies exported package consistency only.",
-                "No signing, external anchoring, compliance certification, or legal admissibility claim is made.",
+                "V2 reports exported package consistency only.",
+                "No signing, external anchoring, compliance status, legal conclusion, or upstream evidence completeness claim is made.",
             ],
+            "prevention_recommendations": _customer_prevention_recommendations(
+                objects
+            ),
+            "proof_verification_status": {
+                "data_unavailable_reason": "verifier_result_not_recorded_at_generation",
+                "replay_state": tape["replay_report"]["replay_state"]["state"],
+                "status": "not_verified_at_generation",
+                "verification_scope": "run the verifier against the exported package",
+            },
+            "visibility_gaps": _customer_visibility_gaps(objects),
             "verified_scope": "recorded package artifacts only",
         },
     )
+
+
+def _customer_report_source_refs(
+    tape: dict[str, Any],
+    objects: dict[str, dict[str, Any]],
+) -> list[str]:
+    refs: list[str] = []
+    for evidence_ref in tape["verdict"].get("evidence_refs", []):
+        if isinstance(evidence_ref, str) and evidence_ref:
+            refs.append(f"evidence:{evidence_ref}")
+    refs.extend(_action_handoff_source_refs(tape))
+    for object_name in (
+        "context_enrichment",
+        "visibility_gaps",
+        "compliance_mapping",
+        "controls_in_place_at_incident",
+    ):
+        obj = objects.get(object_name, {})
+        obj_refs = obj.get("source_refs", [])
+        if isinstance(obj_refs, list):
+            refs.extend(ref for ref in obj_refs if isinstance(ref, str) and ref)
+    if not refs:
+        refs = _v2_source_refs(tape)
+    return sorted(set(refs))
+
+
+def _customer_decision_summary(
+    tape: dict[str, Any],
+    objects: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    decision_rationale = objects["decision_rationale"]
+    approval_record = objects["approval_record"]
+    summary = {
+        "action_type": tape["handoff"]["action_type"],
+        "approval_state": approval_record.get("approval_state"),
+        "decision_rationale_summary": decision_rationale.get(
+            "decision_rationale_summary"
+        ),
+        "final_decision": tape["verdict"]["value"],
+        "working_hypothesis": decision_rationale.get("working_hypothesis"),
+    }
+    recorded_approval = approval_record.get("recorded_approval")
+    if isinstance(recorded_approval, dict):
+        approval_status = recorded_approval.get("approval_status")
+        if isinstance(approval_status, str) and approval_status:
+            summary["approval_status"] = approval_status
+    return summary
+
+
+def _customer_evidence_summary(
+    tape: dict[str, Any],
+    objects: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    summary = {
+        "action_evidence_refs": _action_handoff_source_refs(tape),
+        "finding_summaries": [
+            {
+                "evidence_refs": [
+                    f"evidence:{ref}" for ref in finding["evidence_refs"]
+                ],
+                "severity": finding["severity"],
+                "title": finding["title"],
+            }
+            for finding in tape["findings"]
+        ],
+        "verdict_evidence_refs": [
+            f"evidence:{ref}" for ref in tape["verdict"]["evidence_refs"]
+        ],
+    }
+    context_enrichment = objects.get("context_enrichment")
+    if isinstance(context_enrichment, dict) and context_enrichment.get(
+        "status"
+    ) != "not_applicable":
+        summary["context_summary"] = {
+            "context_type": context_enrichment.get("context_type"),
+            "source_refs": context_enrichment.get("source_refs", []),
+            "status": context_enrichment.get("status"),
+        }
+    compliance_mapping = objects.get("compliance_mapping")
+    if isinstance(compliance_mapping, dict) and compliance_mapping.get(
+        "status"
+    ) == "partial":
+        summary["compliance_mapping_summary"] = {
+            "action_type": compliance_mapping.get("action_type"),
+            "control_refs": compliance_mapping.get("control_refs", []),
+            "mapping_only": True,
+            "source_refs": compliance_mapping.get("source_refs", []),
+            "status": compliance_mapping.get("status"),
+        }
+    controls = objects.get("controls_in_place_at_incident")
+    if isinstance(controls, dict):
+        summary["controls_summary"] = {
+            "control_refs": controls.get("control_refs", []),
+            "data_unavailable_reason": controls.get("data_unavailable_reason"),
+            "source_refs": controls.get("source_refs", []),
+            "status": controls.get("status"),
+        }
+    return summary
+
+
+def _customer_visibility_gaps(
+    objects: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    visibility_gaps = objects["visibility_gaps"]
+    return {
+        "data_unavailable_reason": visibility_gaps.get("data_unavailable_reason"),
+        "gaps": deepcopy(visibility_gaps.get("gaps", [])),
+        "source_refs": deepcopy(visibility_gaps.get("source_refs", [])),
+        "status": visibility_gaps.get("status"),
+    }
+
+
+def _customer_responsibility_actions(
+    objects: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    actions: list[dict[str, Any]] = []
+    approval_record = objects["approval_record"]
+    if approval_record.get("review_required") is True:
+        actions.append(
+            {
+                "action": "human_review_required",
+                "reason": approval_record.get("review_reason"),
+                "source_refs": deepcopy(approval_record.get("source_refs", [])),
+            }
+        )
+    rollback_plan = objects.get("rollback_plan")
+    if isinstance(rollback_plan, dict) and rollback_plan.get("verification_steps"):
+        actions.append(
+            {
+                "action": "rollback_validation_needed",
+                "reason": "recorded rollback verification steps are present",
+                "source_refs": deepcopy(rollback_plan.get("source_refs", [])),
+            }
+        )
+    controls = objects.get("controls_in_place_at_incident")
+    if isinstance(controls, dict) and controls.get("status") == "unavailable":
+        actions.append(
+            {
+                "action": "controls_evidence_unavailable",
+                "reason": controls.get("data_unavailable_reason"),
+                "source_refs": [],
+            }
+        )
+    visibility_gaps = objects["visibility_gaps"]
+    if visibility_gaps.get("gaps"):
+        actions.append(
+            {
+                "action": "visibility_gap_follow_up",
+                "reason": "recorded visibility gaps affect investigation confidence",
+                "source_refs": deepcopy(visibility_gaps.get("source_refs", [])),
+            }
+        )
+    return actions
+
+
+def _customer_prevention_recommendations(
+    objects: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    recommendations: list[Any] = []
+    decision_recommendations = objects["decision_rationale"].get(
+        "preventive_recommendations"
+    )
+    if decision_recommendations:
+        recommendations.extend(
+            decision_recommendations
+            if isinstance(decision_recommendations, list)
+            else [decision_recommendations]
+        )
+    false_positive = objects.get("false_positive_reasoning", {})
+    tuning = false_positive.get("detection_tuning_recommendation")
+    if tuning:
+        recommendations.append(tuning)
+    if recommendations:
+        return {
+            "recommendations": deepcopy(recommendations),
+            "source_refs": sorted(
+                set(
+                    objects["decision_rationale"].get("source_refs", [])
+                    + false_positive.get("source_refs", [])
+                )
+            ),
+            "status": "populated",
+        }
+    return {
+        "data_unavailable_reason": "not_emitted_by_v3",
+        "recommendations": [],
+        "source_refs": [],
+        "status": "unavailable",
+    }
 
 
 def _blast_radius(
