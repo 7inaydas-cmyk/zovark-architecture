@@ -146,6 +146,25 @@ _SAFE_PROMPT_TRANSFORMATION_LOG_KEYS = frozenset(
         "redacted_reason",
     }
 )
+_SAFE_TOOL_CALL_SUMMARY_KEYS = frozenset(
+    {
+        "tool_name",
+        "tool_id",
+        "capability_id",
+        "tool_version",
+        "call_id",
+        "step_id",
+        "input_hash",
+        "output_hash",
+        "tool_result_hash",
+        "status",
+        "tool_status",
+        "error_code",
+        "error_type",
+        "data_unavailable_reason",
+        "redacted_reason",
+    }
+)
 _COMPLIANCE_ACTION_MAPPINGS = {
     "isolate_host": {
         "control_refs": [
@@ -1365,10 +1384,7 @@ def _v3_context_from_fixture(
                 "prompt_transformation_log": _sanitize_prompt_transformation_log(
                     execution.get("prompt_transformation_log")
                 ),
-                "tool_call_chain_summary": execution.get(
-                    "tool_call_chain_summary"
-                )
-                or _tool_call_chain_summary(execution),
+                "tool_call_chain_summary": _tool_call_chain_summary(execution),
             }
         )
         context_values = _recorded_context_values(
@@ -1419,6 +1435,11 @@ def _is_safe_prompt_metadata_value(value: Any) -> bool:
 
 
 def _tool_call_chain_summary(execution: dict[str, Any]) -> list[dict[str, Any]] | None:
+    supplied_summary = _sanitize_tool_call_chain_summary(
+        execution.get("tool_call_chain_summary")
+    )
+    if supplied_summary:
+        return supplied_summary
     tool_names = execution.get("tool_names")
     if not isinstance(tool_names, list) or not tool_names:
         return None
@@ -1440,6 +1461,36 @@ def _tool_call_chain_summary(execution: dict[str, Any]) -> list[dict[str, Any]] 
             record["tool_status"] = status
         records.append(record)
     return records or None
+
+
+def _sanitize_tool_call_chain_summary(value: Any) -> list[dict[str, Any]] | None:
+    entries = value if isinstance(value, list) else [value]
+    sanitized_entries: list[dict[str, Any]] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        sanitized = {
+            key: deepcopy(entry[key])
+            for key in sorted(_SAFE_TOOL_CALL_SUMMARY_KEYS)
+            if key in entry and _is_safe_tool_call_metadata_value(entry[key])
+        }
+        if sanitized:
+            sanitized_entries.append(sanitized)
+    return sanitized_entries or None
+
+
+def _is_safe_tool_call_metadata_value(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, bool):
+        return True
+    if isinstance(value, (int, float)):
+        return not isinstance(value, bool)
+    if isinstance(value, str):
+        return bool(value)
+    if isinstance(value, list):
+        return all(isinstance(item, str) and item for item in value)
+    return False
 
 
 def _execution_path(execution: dict[str, Any]) -> str:

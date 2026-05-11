@@ -457,6 +457,36 @@ def _unsafe_prompt_transformation_log_v3_fixture() -> dict:
     return fixture
 
 
+def _unsafe_tool_call_summary_v3_fixture() -> dict:
+    fixture = _safe_trace_metadata_v3_fixture()
+    fixture["execution"]["tool_call_chain_summary"] = [
+        {
+            "args": {"ip": "RAW TOOL ARGUMENT SECRET"},
+            "call_id": "tool-call-001",
+            "input_hash": "sha256:safe-tool-input",
+            "messages": [
+                {
+                    "content": "RAW TOOL MESSAGE CONTENT SECRET",
+                    "role": "user",
+                }
+            ],
+            "output": {"body": "RAW TOOL OUTPUT SECRET"},
+            "output_hash": "sha256:safe-tool-output",
+            "payload": {"body": "RAW TOOL PAYLOAD BODY SECRET"},
+            "reasoning": "RAW TOOL HIDDEN REASONING SECRET",
+            "status": "succeeded",
+            "tool_name": "extract_ipv4",
+        },
+        {
+            "arguments": "RAW TOOL ARGUMENT STRING SECRET",
+            "content": "RAW TOOL CONTENT SECRET",
+            "hidden_reasoning": "RAW TOOL CHAIN OF THOUGHT SECRET",
+            "notes": "RAW ANALYST NOTE SECRET",
+        },
+    ]
+    return fixture
+
+
 def _load_json(package_dir: Path, filename: str):
     return json.loads((package_dir / filename).read_text(encoding="utf-8"))
 
@@ -486,6 +516,48 @@ def _assert_package_omits_raw_prompt_leakage(package_dir: Path) -> None:
         "only unsafe content secret",
         "only unsafe prompt body secret",
         "never export",
+    ]
+    for token in forbidden:
+        assert token not in rendered
+
+
+def _assert_package_omits_raw_tool_summary_leakage(package_dir: Path) -> None:
+    rendered = _render_package_dir(package_dir)
+    forbidden = [
+        "raw tool argument secret",
+        "raw tool argument string secret",
+        "raw tool message content secret",
+        "raw tool output secret",
+        "raw tool payload body secret",
+        "raw tool hidden reasoning secret",
+        "raw tool chain of thought secret",
+        "raw analyst note secret",
+    ]
+    for token in forbidden:
+        assert token not in rendered
+
+
+def _assert_tool_summary_omits_unsafe_keys(context: dict) -> None:
+    summary = context.get("tool_call_chain_summary", [])
+    rendered = json.dumps(summary, sort_keys=True).lower()
+    forbidden = [
+        '"args"',
+        '"arguments"',
+        '"params"',
+        '"query"',
+        '"input"',
+        '"output"',
+        '"result"',
+        '"response"',
+        '"body"',
+        '"payload"',
+        '"messages"',
+        '"content"',
+        '"notes"',
+        '"reasoning"',
+        '"rationale"',
+        '"source_ref"',
+        '"source_refs"',
     ]
     for token in forbidden:
         assert token not in rendered
@@ -1882,6 +1954,65 @@ def test_generated_v2_sanitizes_prompt_transformation_log_prompt_texts(tmp_path)
     _assert_package_omits_raw_prompt_leakage(output_dir)
 
 
+def test_generated_v2_sanitizes_supplied_tool_call_chain_summary(tmp_path):
+    output_dir = tmp_path / "unsafe-tool-summary-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _unsafe_tool_call_summary_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    context = _load_json(output_dir, "investigation-tape.json")["raw_evidence"][0][
+        "raw_content"
+    ]["v3_trace_context"]
+
+    assert summary["status"] == "verified"
+    assert context["tool_call_chain_summary"] == [
+        {
+            "call_id": "tool-call-001",
+            "input_hash": "sha256:safe-tool-input",
+            "output_hash": "sha256:safe-tool-output",
+            "status": "succeeded",
+            "tool_name": "extract_ipv4",
+        }
+    ]
+    _assert_tool_summary_omits_unsafe_keys(context)
+    _assert_package_omits_raw_tool_summary_leakage(output_dir)
+    _assert_package_omits_raw_prompt_leakage(output_dir)
+
+
+def test_generated_v2_omits_tool_summary_entries_without_safe_metadata(tmp_path):
+    output_dir = tmp_path / "unsafe-only-tool-summary-v2-package"
+    fixture = _safe_trace_metadata_v3_fixture()
+    fixture["execution"]["tool_call_chain_summary"] = [
+        {
+            "arguments": "RAW TOOL ARGUMENT STRING SECRET",
+            "content": "RAW TOOL CONTENT SECRET",
+            "hidden_reasoning": "RAW TOOL CHAIN OF THOUGHT SECRET",
+            "messages": [
+                {
+                    "content": "RAW TOOL MESSAGE CONTENT SECRET",
+                    "role": "user",
+                }
+            ],
+        }
+    ]
+
+    write_proof_package_from_v3_fixture(
+        fixture,
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    context = _load_json(output_dir, "investigation-tape.json")["raw_evidence"][0][
+        "raw_content"
+    ]["v3_trace_context"]
+
+    assert context["tool_call_chain_summary"]
+    _assert_tool_summary_omits_unsafe_keys(context)
+    _assert_package_omits_raw_tool_summary_leakage(output_dir)
+
+
 def test_generated_v2_safe_trace_fields_are_emitted_only_when_recorded(tmp_path):
     output_dir = tmp_path / "safe-trace-absent-v2-package"
 
@@ -1993,6 +2124,23 @@ def test_default_v1_generation_excludes_unsafe_prompt_transformation_log(tmp_pat
     assert "prompt_transformation_log" not in context
     assert not (set(context) & V2_ONLY_CONTEXT_KEYS)
     _assert_package_omits_raw_prompt_leakage(output_dir)
+
+
+def test_default_v1_generation_excludes_unsafe_tool_call_chain_summary(tmp_path):
+    output_dir = tmp_path / "unsafe-tool-summary-v1-package"
+
+    write_proof_package_from_v3_fixture(
+        _unsafe_tool_call_summary_v3_fixture(),
+        output_dir,
+    )
+    context = _load_json(output_dir, "investigation-tape.json")["raw_evidence"][0][
+        "raw_content"
+    ]["v3_trace_context"]
+
+    assert V2_MARKER_FILE not in {path.name for path in output_dir.iterdir()}
+    assert "tool_call_chain_summary" not in context
+    assert not (set(context) & V2_ONLY_CONTEXT_KEYS)
+    _assert_package_omits_raw_tool_summary_leakage(output_dir)
 
 
 def test_safe_trace_v1_and_v2_generation_do_not_cross_contaminate(tmp_path):
