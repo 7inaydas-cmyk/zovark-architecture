@@ -2,15 +2,22 @@
 
 from __future__ import annotations
 
+import json
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
 from zovark.slice001 import ZovarkValidationError
 from zovark.slice001.cli import build_completed_tape
+from zovark.slice001.package_verifier import (
+    V2_MARKER_FILE,
+    V2_PACKAGE_CONTRACT,
+    _derive_v2_conditions,
+)
 from zovark.slice001.writer import build_proof_package, write_proof_package
 
 
+V1_PACKAGE_CONTRACT = "slice-001-proof-package/1.0"
 _EVENT_ARRAY_KEYS = (
     "process_events",
     "network_events",
@@ -24,10 +31,22 @@ _DETERMINISTIC_SOURCES = {"builtin", "db_saved", "saved_plan", "template"}
 
 def adapt_v3_fixture_to_slice_input(fixture: dict[str, Any]) -> dict[str, Any]:
     """Map a representative V3 fixture into the existing Slice input shape."""
+    return _adapt_v3_fixture_to_slice_input(fixture, include_v2_context=False)
+
+
+def _adapt_v3_fixture_to_slice_input(
+    fixture: dict[str, Any],
+    *,
+    include_v2_context: bool,
+) -> dict[str, Any]:
     _validate_fixture(fixture)
     alert = _alert_from_fixture(fixture)
     execution = _execution_from_fixture(fixture)
-    v3_context = _v3_context_from_fixture(fixture, execution=execution)
+    v3_context = _v3_context_from_fixture(
+        fixture,
+        execution=execution,
+        include_v2_context=include_v2_context,
+    )
 
     raw_input: dict[str, Any] = {
         "alert_id": _non_empty_string(alert, "alert_id"),
@@ -71,7 +90,23 @@ def build_tape_from_v3_fixture(
     tenant_id: str | None = None,
 ) -> dict[str, Any]:
     """Build a complete replay-sealed Slice tape from a V3 fixture."""
-    raw_input = adapt_v3_fixture_to_slice_input(fixture)
+    return _build_tape_from_v3_fixture(
+        fixture,
+        tenant_id=tenant_id,
+        include_v2_context=False,
+    )
+
+
+def _build_tape_from_v3_fixture(
+    fixture: dict[str, Any],
+    *,
+    tenant_id: str | None,
+    include_v2_context: bool,
+) -> dict[str, Any]:
+    raw_input = _adapt_v3_fixture_to_slice_input(
+        fixture,
+        include_v2_context=include_v2_context,
+    )
     tape = build_completed_tape(raw_input, tenant_id=tenant_id)
     expected_value = _declared_verdict_value(fixture)
     if expected_value is not None:
@@ -87,11 +122,22 @@ def build_proof_package_from_v3_fixture(
     fixture: dict[str, Any],
     *,
     tenant_id: str | None = None,
+    proof_package_version: str = V1_PACKAGE_CONTRACT,
 ) -> dict[str, Any]:
-    """Build the existing 9-file proof package in memory from a V3 fixture."""
-    return build_proof_package(
-        build_tape_from_v3_fixture(fixture, tenant_id=tenant_id)
-    )
+    """Build a proof package in memory from a V3 fixture."""
+    if proof_package_version == V1_PACKAGE_CONTRACT:
+        tape = build_tape_from_v3_fixture(fixture, tenant_id=tenant_id)
+        return build_proof_package(tape)
+    if proof_package_version == V2_PACKAGE_CONTRACT:
+        v2_tape = _build_tape_from_v3_fixture(
+            fixture,
+            tenant_id=tenant_id,
+            include_v2_context=True,
+        )
+        package = build_proof_package(v2_tape)
+        package[V2_MARKER_FILE] = build_v2_marker_from_tape(v2_tape)
+        return package
+    raise ZovarkValidationError("proof_package_version is unsupported")
 
 
 def write_proof_package_from_v3_fixture(
@@ -99,12 +145,394 @@ def write_proof_package_from_v3_fixture(
     output_dir: str | Path,
     *,
     tenant_id: str | None = None,
+    proof_package_version: str = V1_PACKAGE_CONTRACT,
 ) -> dict[str, str]:
-    """Write the existing 9-file proof package from a V3 fixture."""
-    return write_proof_package(
-        build_tape_from_v3_fixture(fixture, tenant_id=tenant_id),
-        output_dir,
+    """Write a proof package from a V3 fixture."""
+    if proof_package_version not in (V1_PACKAGE_CONTRACT, V2_PACKAGE_CONTRACT):
+        raise ZovarkValidationError("proof_package_version is unsupported")
+    if proof_package_version == V1_PACKAGE_CONTRACT:
+        tape = build_tape_from_v3_fixture(fixture, tenant_id=tenant_id)
+        return write_proof_package(tape, output_dir)
+
+    v2_tape = _build_tape_from_v3_fixture(
+        fixture,
+        tenant_id=tenant_id,
+        include_v2_context=True,
     )
+    written = write_proof_package(v2_tape, output_dir)
+    destination = Path(output_dir) / V2_MARKER_FILE
+    destination.write_text(
+        json.dumps(
+            build_v2_marker_from_tape(v2_tape),
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    written[V2_MARKER_FILE] = str(destination)
+    return written
+
+
+def build_v2_marker_from_tape(tape: dict[str, Any]) -> dict[str, Any]:
+    """Build the minimal V2 marker from an already sealed V1 tape."""
+    source_refs = _v2_source_refs(tape)
+    conditions = _derive_v2_conditions(tape)
+    objects = {
+        "approval_record": _approval_record(tape, source_refs),
+        "compliance_mapping": _not_applicable_object("compliance_mapping"),
+        "controls_in_place_at_incident": _unavailable_optional_object(
+            "controls_in_place_at_incident",
+            "customer_not_supplied",
+        ),
+        "customer_report_v2": _customer_report_v2(tape, source_refs),
+        "decision_rationale": _decision_rationale(tape, source_refs),
+        "visibility_gaps": _visibility_gaps(source_refs),
+    }
+    if conditions["benign_verdict"] or conditions["rejected_findings_present"] or conditions[
+        "analyst_override_present"
+    ]:
+        objects["false_positive_reasoning"] = _false_positive_reasoning(
+            tape,
+            source_refs,
+        )
+    else:
+        objects["false_positive_reasoning"] = _not_applicable_object(
+            "false_positive_reasoning"
+        )
+    if conditions["context_enrichment_used"]:
+        objects["context_enrichment"] = _minimal_required_placeholder(
+            "context_enrichment",
+            source_refs,
+            "recorded_context_summary_not_emitted_by_v3",
+        )
+    if (
+        conditions["response_action_present"]
+        or conditions["containment_recommended"]
+        or conditions["customer_impact_language_present"]
+    ):
+        objects["blast_radius"] = _blast_radius(tape, source_refs)
+    if conditions["response_action_present"] or conditions["containment_recommended"]:
+        objects["rollback_plan"] = _rollback_plan(tape, source_refs)
+    return {
+        "base_package_contract": V1_PACKAGE_CONTRACT,
+        "conditions": conditions,
+        "objects": objects,
+        "package_version": V2_PACKAGE_CONTRACT,
+    }
+
+
+def _v2_source_refs(tape: dict[str, Any]) -> list[str]:
+    evidence = tape.get("raw_evidence")
+    if not isinstance(evidence, list) or not evidence:
+        raise ZovarkValidationError("V2 package population requires evidence")
+    refs: list[str] = []
+    for entry in evidence:
+        evidence_id = _non_empty_string(entry, "evidence_id")
+        refs.append(f"evidence:{evidence_id}")
+    return refs
+
+
+def _base_v2_object(
+    object_type: str,
+    *,
+    source_refs: list[str],
+    status: str = "partial",
+    data_unavailable_reason: str | None = None,
+    content: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    obj = {
+        "object_type": object_type,
+        "object_version": "v2-adapter/0.1",
+        "source_refs": deepcopy(source_refs),
+        "status": status,
+    }
+    if data_unavailable_reason is not None:
+        obj["data_unavailable_reason"] = data_unavailable_reason
+    if content:
+        obj.update(deepcopy(content))
+    return obj
+
+
+def _not_applicable_object(object_type: str) -> dict[str, Any]:
+    return _base_v2_object(
+        object_type,
+        source_refs=[],
+        status="not_applicable",
+    )
+
+
+def _unavailable_optional_object(
+    object_type: str,
+    data_unavailable_reason: str,
+) -> dict[str, Any]:
+    return _base_v2_object(
+        object_type,
+        source_refs=[],
+        status="unavailable",
+        data_unavailable_reason=data_unavailable_reason,
+    )
+
+
+def _minimal_required_placeholder(
+    object_type: str,
+    source_refs: list[str],
+    data_unavailable_reason: str,
+) -> dict[str, Any]:
+    return _base_v2_object(
+        object_type,
+        source_refs=source_refs,
+        status="unavailable",
+        data_unavailable_reason=data_unavailable_reason,
+    )
+
+
+def _decision_rationale(
+    tape: dict[str, Any],
+    source_refs: list[str],
+) -> dict[str, Any]:
+    context = _primary_v3_context(tape)
+    verdict = tape["verdict"]
+    handoff = tape["handoff"]
+    content = {
+        "business_impact_assessment": handoff["blast_radius"].get(
+            "estimated_business_impact"
+        ),
+        "counter_evidence_considered": context.get("counter_evidence_considered"),
+        "decision_boundary": (
+            "This rationale summarizes recorded package evidence only; replay does "
+            "not prove upstream evidence completeness."
+        ),
+        "decision_rationale_summary": (
+            f"Deterministic Slice verdict {verdict['value']} was derived from "
+            f"{len(tape['findings'])} finding(s) and mapped to "
+            f"{handoff['action_type']} with human approval required."
+        ),
+        "escalation_justification": _escalation_justification(context, handoff),
+        "escalation_path": "human_review",
+        "evidence_considered": _evidence_considered(tape),
+        "final_decision": verdict["value"],
+        "lessons_learned": context.get("lessons_learned"),
+        "preventive_recommendations": context.get("preventive_recommendations"),
+        "rationale_items": _rationale_items(tape),
+        "working_hypothesis": _working_hypothesis(tape),
+    }
+    return _base_v2_object(
+        "decision_rationale",
+        source_refs=source_refs,
+        status="partial",
+        data_unavailable_reason="not_emitted_by_v3",
+        content=content,
+    )
+
+
+def _false_positive_reasoning(
+    tape: dict[str, Any],
+    source_refs: list[str],
+) -> dict[str, Any]:
+    context = _primary_v3_context(tape)
+    content = {
+        "auto_close_eligibility": None,
+        "baseline_match_evidence": context.get("baseline_match_evidence"),
+        "benign_explanation_chosen": context.get("benign_explanation_chosen"),
+        "benign_explanations_considered": context.get(
+            "benign_explanations_considered",
+            [],
+        ),
+        "benign_indicators": context.get("benign_indicators", []),
+        "confirmation_records": context.get("confirmation_records"),
+        "contacted_parties": context.get("contacted_parties"),
+        "contradicting_evidence_refs": context.get("contradicting_evidence_refs", []),
+        "detection_tuning_recommendation": context.get(
+            "detection_tuning_recommendation"
+        ),
+        "enrichment_results": context.get("enrichment_results"),
+        "match_telemetry": context.get("match_telemetry"),
+        "normal_schedule_match": context.get("normal_schedule_match"),
+        "reasoning_summary": (
+            f"False-positive reasoning is required because the verified verdict is "
+            f"{tape['verdict']['value']}. Current V3 fixture data does not emit "
+            "all practitioner false-positive fields."
+        ),
+        "rejected_finding_refs": context.get("rejected_finding_refs", []),
+        "rejected_finding_summaries": context.get("rejected_findings", []),
+        "suppression_rule_id": context.get("suppression_rule_id"),
+        "whitelist_match_evidence": context.get("whitelist_match_evidence"),
+    }
+    return _base_v2_object(
+        "false_positive_reasoning",
+        source_refs=source_refs,
+        status="partial",
+        data_unavailable_reason="not_emitted_by_v3",
+        content=content,
+    )
+
+
+def _visibility_gaps(source_refs: list[str]) -> dict[str, Any]:
+    return _base_v2_object(
+        "visibility_gaps",
+        source_refs=source_refs,
+        status="unavailable",
+        data_unavailable_reason="not_emitted_by_v3",
+        content={
+            "gaps": [
+                {
+                    "affected_question": "Which upstream V3 trace fields were not emitted?",
+                    "gap_id": "vg-v3-trace-fields",
+                    "gap_type": "not_emitted_by_v3",
+                    "impact_on_confidence": (
+                        "Package verification remains deterministic, but V2 "
+                        "practitioner context is incomplete."
+                    ),
+                }
+            ]
+        },
+    )
+
+
+def _approval_record(
+    tape: dict[str, Any],
+    source_refs: list[str],
+) -> dict[str, Any]:
+    handoff = tape["handoff"]
+    governance_decision = _primary_v3_context(tape).get("governance_decision", {})
+    review_required = governance_decision.get("needs_human_review", True)
+    review_reason = governance_decision.get(
+        "review_reason",
+        "approval_required handoff generated by Slice proof package",
+    )
+    return _base_v2_object(
+        "approval_record",
+        source_refs=source_refs,
+        status="populated",
+        content={
+            "approval_state": handoff["approval_mode"],
+            "approver_ref": "human_review_required",
+            "governance_decision": deepcopy(governance_decision),
+            "governance_decision_ref": f"handoff:{handoff['handoff_id']}",
+            "handoff_ref": handoff["handoff_id"],
+            "review_reason": review_reason,
+            "review_required": review_required,
+        },
+    )
+
+
+def _customer_report_v2(
+    tape: dict[str, Any],
+    source_refs: list[str],
+) -> dict[str, Any]:
+    return _base_v2_object(
+        "customer_report_v2",
+        source_refs=source_refs,
+        status="populated",
+        content={
+            "decision_summary": tape["verdict"]["value"],
+            "executive_summary": (
+                "Proof Package V2 marker generated from recorded V3 fixture data "
+                "and the deterministic Slice proof package."
+            ),
+            "limitations": [
+                "V2 verifies exported package consistency only.",
+                "No signing, external anchoring, compliance certification, or legal admissibility claim is made.",
+            ],
+            "verified_scope": "recorded package artifacts only",
+        },
+    )
+
+
+def _blast_radius(
+    tape: dict[str, Any],
+    source_refs: list[str],
+) -> dict[str, Any]:
+    handoff_blast_radius = tape["handoff"]["blast_radius"]
+    return _base_v2_object(
+        "blast_radius",
+        source_refs=source_refs,
+        status="partial",
+        data_unavailable_reason="not_emitted_by_v3",
+        content={
+            "asset_refs": handoff_blast_radius.get("directly_affected", []),
+            "confidence": "derived_from_slice_handoff",
+            "identity_refs": [],
+            "network_refs": handoff_blast_radius.get("lateral_movement_blocked", []),
+            "process_refs": [],
+            "scope_summary": handoff_blast_radius.get("estimated_business_impact"),
+        },
+    )
+
+
+def _rollback_plan(
+    tape: dict[str, Any],
+    source_refs: list[str],
+) -> dict[str, Any]:
+    rollback = tape["handoff"]["rollback_plan"]
+    return _base_v2_object(
+        "rollback_plan",
+        source_refs=source_refs,
+        status="partial",
+        data_unavailable_reason="not_emitted_by_v3",
+        content={
+            "action_ref": tape["handoff"]["handoff_id"],
+            "preconditions": [],
+            "risks": [rollback["recovery_notes"]],
+            "rollback_owner_ref": "human_reviewer",
+            "rollback_steps": rollback.get("manual_steps", []),
+            "verification_steps": [],
+        },
+    )
+
+
+def _primary_v3_context(tape: dict[str, Any]) -> dict[str, Any]:
+    for entry in tape["raw_evidence"]:
+        raw_content = entry.get("raw_content", {})
+        if not isinstance(raw_content, dict):
+            continue
+        context = raw_content.get("v3_trace_context")
+        if isinstance(context, dict):
+            return context
+    return {}
+
+
+def _evidence_considered(tape: dict[str, Any]) -> list[dict[str, str]]:
+    return [
+        {
+            "evidence_id": entry["evidence_id"],
+            "evidence_ref": f"evidence:{entry['evidence_id']}",
+            "source_type": entry["source_type"],
+        }
+        for entry in tape["raw_evidence"]
+    ]
+
+
+def _rationale_items(tape: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
+        {
+            "evidence_refs": deepcopy(finding["evidence_refs"]),
+            "severity": finding["severity"],
+            "summary": finding["title"],
+        }
+        for finding in tape["findings"]
+    ]
+
+
+def _working_hypothesis(tape: dict[str, Any]) -> str:
+    raw_content = tape["raw_evidence"][0]["raw_content"]
+    description = raw_content.get("description")
+    if isinstance(description, str) and description:
+        return description
+    return "Evaluate the recorded V3 fixture evidence with deterministic Slice rules."
+
+
+def _escalation_justification(
+    context: dict[str, Any],
+    handoff: dict[str, Any],
+) -> str:
+    governance_decision = context.get("governance_decision", {})
+    if isinstance(governance_decision, dict):
+        review_reason = governance_decision.get("review_reason")
+        if isinstance(review_reason, str) and review_reason:
+            return review_reason
+    return f"{handoff['approval_mode']} required for {handoff['action_type']}"
 
 
 def _validate_fixture(fixture: dict[str, Any]) -> None:
@@ -137,6 +565,7 @@ def _v3_context_from_fixture(
     fixture: dict[str, Any],
     *,
     execution: dict[str, Any],
+    include_v2_context: bool = False,
 ) -> dict[str, Any]:
     preserved = {
         "execution_mode": execution.get("execution_mode"),
@@ -156,6 +585,35 @@ def _v3_context_from_fixture(
         "findings": fixture.get("findings", execution.get("findings")),
         "verdict": fixture.get("verdict", execution.get("verdict")),
     }
+    if include_v2_context:
+        preserved.update(
+            {
+                "analyst_override": execution.get("analyst_override"),
+                "rejected_findings": execution.get("rejected_findings"),
+                "rejected_finding_refs": execution.get("rejected_finding_refs"),
+                "benign_indicators": execution.get("benign_indicators"),
+                "contradicting_evidence_refs": execution.get(
+                    "contradicting_evidence_refs"
+                ),
+                "benign_explanations_considered": execution.get(
+                    "benign_explanations_considered"
+                ),
+                "benign_explanation_chosen": execution.get(
+                    "benign_explanation_chosen"
+                ),
+                "contacted_parties": execution.get("contacted_parties"),
+                "confirmation_records": execution.get("confirmation_records"),
+                "match_telemetry": execution.get("match_telemetry"),
+                "enrichment_results": execution.get("enrichment_results"),
+                "baseline_match_evidence": execution.get("baseline_match_evidence"),
+                "whitelist_match_evidence": execution.get("whitelist_match_evidence"),
+                "normal_schedule_match": execution.get("normal_schedule_match"),
+                "suppression_rule_id": execution.get("suppression_rule_id"),
+                "detection_tuning_recommendation": execution.get(
+                    "detection_tuning_recommendation"
+                ),
+            }
+        )
     context = {
         key: deepcopy(value)
         for key, value in preserved.items()
