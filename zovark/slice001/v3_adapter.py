@@ -286,10 +286,7 @@ def build_v2_marker_from_tape(tape: dict[str, Any]) -> dict[str, Any]:
     objects = {
         "approval_record": _approval_record(tape, source_refs),
         "compliance_mapping": _compliance_mapping(tape),
-        "controls_in_place_at_incident": _controls_in_place_at_incident(
-            tape,
-            source_refs,
-        ),
+        "controls_in_place_at_incident": _controls_in_place_at_incident(tape),
         "customer_report_v2": _customer_report_v2(tape, source_refs),
         "decision_rationale": _decision_rationale(tape, source_refs),
         "visibility_gaps": _visibility_gaps(tape, source_refs),
@@ -659,7 +656,6 @@ def _compliance_mapping(
 
 def _controls_in_place_at_incident(
     tape: dict[str, Any],
-    source_refs: list[str],
 ) -> dict[str, Any]:
     context = _primary_v3_context(tape)
     actual_control_values = _recorded_control_evidence_values(context)
@@ -667,6 +663,12 @@ def _controls_in_place_at_incident(
         return _unavailable_optional_object(
             "controls_in_place_at_incident",
             "customer_not_supplied",
+        )
+    source_refs = _control_evidence_source_refs(tape)
+    if not source_refs:
+        return _unavailable_optional_object(
+            "controls_in_place_at_incident",
+            "control_evidence_source_ref_unavailable",
         )
     control_values = {
         **actual_control_values,
@@ -737,6 +739,26 @@ def _action_handoff_source_refs(tape: dict[str, Any]) -> list[str]:
         for evidence_ref in evidence_refs
         if isinstance(evidence_ref, str) and evidence_ref
     ]
+
+
+def _control_evidence_source_refs(tape: dict[str, Any]) -> list[str]:
+    refs: list[str] = []
+    evidence_entries = tape.get("raw_evidence", [])
+    if not isinstance(evidence_entries, list):
+        return refs
+    for entry in evidence_entries:
+        if not isinstance(entry, dict):
+            continue
+        raw_content = entry.get("raw_content", {})
+        if not isinstance(raw_content, dict):
+            continue
+        contexts = [raw_content]
+        v3_context = raw_content.get("v3_trace_context")
+        if isinstance(v3_context, dict):
+            contexts.append(v3_context)
+        if any(_recorded_control_evidence_values(context) for context in contexts):
+            refs.append(f"evidence:{_non_empty_string(entry, 'evidence_id')}")
+    return refs
 
 
 def _customer_report_v2(

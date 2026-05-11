@@ -1146,12 +1146,21 @@ def test_generated_v2_populates_controls_from_customer_snapshot(tmp_path):
     marker = _load_json(output_dir, V2_MARKER_FILE)
     evidence = _load_json(output_dir, "evidence-ledger.json")
     verified_refs = {f"evidence:{entry['evidence_id']}" for entry in evidence}
+    control_evidence_refs = {
+        f"evidence:{entry['evidence_id']}"
+        for entry in evidence
+        if entry["raw_content"]
+        .get("v3_trace_context", {})
+        .get("mfa_status")
+        == "enabled"
+    }
     controls = marker["objects"]["controls_in_place_at_incident"]
 
     assert summary["status"] == "verified"
     assert controls["status"] == "partial"
     assert controls["source_refs"]
     assert set(controls["source_refs"]) <= verified_refs
+    assert set(controls["source_refs"]) == control_evidence_refs
     assert controls["control_source_ref"] in controls["source_refs"]
     assert controls["control_time_scope"] == "incident_time"
     assert controls["customer_attestation_ref"] == "customer-attestation-001"
@@ -1159,6 +1168,56 @@ def test_generated_v2_populates_controls_from_customer_snapshot(tmp_path):
     assert controls["control_values"]["backup_status"] == "available"
     assert controls["control_values"]["edr_status"] == "enabled"
     assert controls["control_snapshot_hash"]
+
+
+def test_generated_v2_controls_refs_exclude_unrelated_telemetry(tmp_path):
+    output_dir = tmp_path / "controls-unrelated-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _compliance_controls_with_unrelated_evidence_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    evidence = _load_json(output_dir, "evidence-ledger.json")
+    unrelated_refs = {
+        f"evidence:{entry['evidence_id']}"
+        for entry in evidence
+        if entry["raw_content"].get("event_id") == "v3-pe-unrelated"
+    }
+    control_evidence_refs = {
+        f"evidence:{entry['evidence_id']}"
+        for entry in evidence
+        if entry["raw_content"]
+        .get("v3_trace_context", {})
+        .get("backup_status")
+        == "available"
+    }
+    controls = marker["objects"]["controls_in_place_at_incident"]
+
+    assert summary["status"] == "verified"
+    assert unrelated_refs
+    assert controls["source_refs"]
+    assert set(controls["source_refs"]) == control_evidence_refs
+    assert not (set(controls["source_refs"]) & unrelated_refs)
+
+
+def test_v2_controls_without_control_evidence_uses_no_fabricated_ref():
+    tape = deepcopy(build_tape_from_v3_fixture(_compliance_controls_v3_fixture()))
+    tape["raw_evidence"] = [
+        entry
+        for entry in tape["raw_evidence"]
+        if "v3_trace_context" not in entry.get("raw_content", {})
+    ]
+
+    marker = build_v2_marker_from_tape(tape)
+    controls = marker["objects"]["controls_in_place_at_incident"]
+
+    assert controls["status"] == "unavailable"
+    assert controls["data_unavailable_reason"] == "customer_not_supplied"
+    assert controls["source_refs"] == []
+    assert "control_values" not in controls
 
 
 def test_generated_v2_control_metadata_only_is_unavailable(tmp_path):
