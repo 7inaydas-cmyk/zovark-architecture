@@ -94,6 +94,44 @@ _ROLLBACK_PLAN_KEYS = (
     "estimated_recovery_time",
     "escalation_if_rollback_fails",
 )
+_CONTROL_EVIDENCE_KEYS = (
+    "mfa_status",
+    "backup_status",
+    "backup_immutability",
+    "backup_verification_status",
+    "edr_status",
+    "logging_status",
+    "central_incident_log_status",
+    "irp_adherence_evidence",
+    "data_inventory_evidence",
+    "control_enabled",
+    "control_disabled",
+)
+_CONTROL_METADATA_KEYS = (
+    "control_snapshot_timestamp",
+    "control_time_scope",
+    "control_source",
+    "control_owner",
+    "control_refs",
+    "customer_attestation_ref",
+)
+_CONTROL_SNAPSHOT_KEYS = _CONTROL_EVIDENCE_KEYS + _CONTROL_METADATA_KEYS
+_COMPLIANCE_ACTION_MAPPINGS = {
+    "isolate_host": {
+        "control_refs": [
+            "approval_record",
+            "blast_radius",
+            "rollback_plan",
+        ],
+        "framework_name": "Proof Package V2 practitioner requirements",
+        "framework_version": V2_PACKAGE_CONTRACT,
+        "mapping_limitations": [
+            "Mapping connects verified action evidence to V2 practitioner objects only.",
+            "Mapping is not a compliance certification or legal conclusion.",
+        ],
+        "mapping_version": "v2-adapter/0.1",
+    }
+}
 
 
 def adapt_v3_fixture_to_slice_input(fixture: dict[str, Any]) -> dict[str, Any]:
@@ -247,11 +285,8 @@ def build_v2_marker_from_tape(tape: dict[str, Any]) -> dict[str, Any]:
     conditions = _derive_v2_conditions(tape)
     objects = {
         "approval_record": _approval_record(tape, source_refs),
-        "compliance_mapping": _not_applicable_object("compliance_mapping"),
-        "controls_in_place_at_incident": _unavailable_optional_object(
-            "controls_in_place_at_incident",
-            "customer_not_supplied",
-        ),
+        "compliance_mapping": _compliance_mapping(tape),
+        "controls_in_place_at_incident": _controls_in_place_at_incident(tape),
         "customer_report_v2": _customer_report_v2(tape, source_refs),
         "decision_rationale": _decision_rationale(tape, source_refs),
         "visibility_gaps": _visibility_gaps(tape, source_refs),
@@ -594,6 +629,138 @@ def _approval_record(
     )
 
 
+def _compliance_mapping(
+    tape: dict[str, Any],
+) -> dict[str, Any]:
+    action_type = tape["handoff"]["action_type"]
+    mapping = _COMPLIANCE_ACTION_MAPPINGS.get(action_type)
+    if mapping is None:
+        return _not_applicable_object("compliance_mapping")
+    source_refs = _action_handoff_source_refs(tape)
+    if not source_refs:
+        return _unavailable_optional_object(
+            "compliance_mapping",
+            "action_evidence_not_available",
+        )
+    content = deepcopy(mapping)
+    content["action_type"] = action_type
+    content["mapped_evidence_refs"] = deepcopy(source_refs)
+    return _base_v2_object(
+        "compliance_mapping",
+        source_refs=source_refs,
+        status="partial",
+        data_unavailable_reason="external_framework_mapping_not_supplied",
+        content=content,
+    )
+
+
+def _controls_in_place_at_incident(
+    tape: dict[str, Any],
+) -> dict[str, Any]:
+    context = _primary_v3_context(tape)
+    actual_control_values = _recorded_control_evidence_values(context)
+    if not actual_control_values:
+        return _unavailable_optional_object(
+            "controls_in_place_at_incident",
+            "customer_not_supplied",
+        )
+    source_refs = _control_evidence_source_refs(tape)
+    if not source_refs:
+        return _unavailable_optional_object(
+            "controls_in_place_at_incident",
+            "control_evidence_source_ref_unavailable",
+        )
+    control_values = {
+        **actual_control_values,
+        **_recorded_values(context, _CONTROL_METADATA_KEYS),
+    }
+    content = {
+        "control_refs": _control_refs(control_values),
+        "control_snapshot_hash": sha256_of_obj(control_values),
+        "control_source_ref": source_refs[0],
+        "control_time_scope": control_values.get("control_time_scope", "incident_time"),
+        "control_values": control_values,
+    }
+    customer_attestation_ref = control_values.get("customer_attestation_ref")
+    if isinstance(customer_attestation_ref, str) and customer_attestation_ref:
+        content["customer_attestation_ref"] = customer_attestation_ref
+    return _base_v2_object(
+        "controls_in_place_at_incident",
+        source_refs=source_refs,
+        status="partial",
+        data_unavailable_reason="customer_control_snapshot_partially_supplied",
+        content=content,
+    )
+
+
+def _control_refs(control_values: dict[str, Any]) -> list[str]:
+    refs = control_values.get("control_refs")
+    if isinstance(refs, list) and refs:
+        return deepcopy(refs)
+    return sorted(
+        key
+        for key in control_values
+        if key
+        not in {
+            "control_refs",
+            "control_snapshot_timestamp",
+            "control_time_scope",
+            "control_source",
+            "control_owner",
+            "customer_attestation_ref",
+        }
+    )
+
+
+def _recorded_control_evidence_values(context: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: deepcopy(context[key])
+        for key in _CONTROL_EVIDENCE_KEYS
+        if key in context and _has_control_evidence_value(context[key])
+    }
+
+
+def _has_control_evidence_value(value: Any) -> bool:
+    if isinstance(value, str) and value in {
+        "not_recorded",
+        "not_supplied",
+        "unknown",
+    }:
+        return False
+    return _has_enrichment_value(value)
+
+
+def _action_handoff_source_refs(tape: dict[str, Any]) -> list[str]:
+    evidence_refs = tape["handoff"].get("evidence_refs", [])
+    if not isinstance(evidence_refs, list):
+        return []
+    return [
+        f"evidence:{evidence_ref}"
+        for evidence_ref in evidence_refs
+        if isinstance(evidence_ref, str) and evidence_ref
+    ]
+
+
+def _control_evidence_source_refs(tape: dict[str, Any]) -> list[str]:
+    refs: list[str] = []
+    evidence_entries = tape.get("raw_evidence", [])
+    if not isinstance(evidence_entries, list):
+        return refs
+    for entry in evidence_entries:
+        if not isinstance(entry, dict):
+            continue
+        raw_content = entry.get("raw_content", {})
+        if not isinstance(raw_content, dict):
+            continue
+        contexts = [raw_content]
+        v3_context = raw_content.get("v3_trace_context")
+        if isinstance(v3_context, dict):
+            contexts.append(v3_context)
+        if any(_recorded_control_evidence_values(context) for context in contexts):
+            refs.append(f"evidence:{_non_empty_string(entry, 'evidence_id')}")
+    return refs
+
+
 def _customer_report_v2(
     tape: dict[str, Any],
     source_refs: list[str],
@@ -895,6 +1062,24 @@ def _v3_context_from_fixture(
                 "escalation_if_rollback_fails": execution.get(
                     "escalation_if_rollback_fails"
                 ),
+                "mfa_status": execution.get("mfa_status"),
+                "backup_status": execution.get("backup_status"),
+                "backup_immutability": execution.get("backup_immutability"),
+                "edr_status": execution.get("edr_status"),
+                "logging_status": execution.get("logging_status"),
+                "central_incident_log_status": execution.get(
+                    "central_incident_log_status"
+                ),
+                "irp_adherence_evidence": execution.get("irp_adherence_evidence"),
+                "data_inventory_evidence": execution.get("data_inventory_evidence"),
+                "control_snapshot_timestamp": execution.get(
+                    "control_snapshot_timestamp"
+                ),
+                "control_time_scope": execution.get("control_time_scope"),
+                "control_source": execution.get("control_source"),
+                "control_owner": execution.get("control_owner"),
+                "control_refs": execution.get("control_refs"),
+                "customer_attestation_ref": execution.get("customer_attestation_ref"),
             }
         )
         context_values = _recorded_context_values(

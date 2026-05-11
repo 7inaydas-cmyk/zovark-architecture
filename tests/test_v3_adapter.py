@@ -18,6 +18,7 @@ from zovark.slice001.v3_adapter import (
     adapt_v3_fixture_to_slice_input,
     build_proof_package_from_v3_fixture,
     build_tape_from_v3_fixture,
+    build_v2_marker_from_tape,
     write_proof_package_from_v3_fixture,
 )
 from zovark.slice001.writer import EXPECTED_OUTPUT_FILES
@@ -288,6 +289,78 @@ def _action_card_missing_people_v3_fixture() -> dict:
     return fixture
 
 
+def _compliance_controls_v3_fixture() -> dict:
+    fixture = _action_card_v3_fixture()
+    fixture["execution"].update(
+        {
+            "backup_immutability": "enabled",
+            "backup_status": "available",
+            "central_incident_log_status": "enabled",
+            "control_owner": "customer-security",
+            "control_refs": [
+                "mfa_status",
+                "backup_status",
+                "edr_status",
+                "central_incident_log_status",
+            ],
+            "control_snapshot_timestamp": "2026-05-01T09:55:00Z",
+            "control_source": "customer_supplied_fixture",
+            "control_time_scope": "incident_time",
+            "customer_attestation_ref": "customer-attestation-001",
+            "data_inventory_evidence": "not_supplied",
+            "edr_status": "enabled",
+            "irp_adherence_evidence": "incident_record_opened",
+            "logging_status": "centralized",
+            "mfa_status": "enabled",
+        }
+    )
+    return fixture
+
+
+def _compliance_controls_with_unrelated_evidence_fixture() -> dict:
+    fixture = _compliance_controls_v3_fixture()
+    fixture["process_events"].append(
+        {
+            "command_line": "notepad.exe",
+            "event_id": "v3-pe-unrelated",
+            "event_type": "process_event",
+            "parent_pid": 100,
+            "parent_process": "explorer.exe",
+            "pid": 5000,
+            "process_name": "notepad.exe",
+            "timestamp": "2026-05-01T10:00:01Z",
+            "user": "CORP\\analyst",
+        }
+    )
+    return fixture
+
+
+def _control_metadata_only_v3_fixture() -> dict:
+    fixture = _action_card_v3_fixture()
+    fixture["execution"].update(
+        {
+            "control_owner": "customer-security",
+            "control_refs": ["metadata-only-control-ref"],
+            "control_snapshot_timestamp": "2026-05-01T09:55:00Z",
+            "control_source": "customer_supplied_fixture",
+            "control_time_scope": "incident_time",
+            "customer_attestation_ref": "customer-attestation-001",
+        }
+    )
+    return fixture
+
+
+def _control_evidence_without_metadata_v3_fixture() -> dict:
+    fixture = _action_card_v3_fixture()
+    fixture["execution"].update(
+        {
+            "backup_status": "available",
+            "mfa_status": "enabled",
+        }
+    )
+    return fixture
+
+
 def _load_json(package_dir: Path, filename: str):
     return json.loads((package_dir / filename).read_text(encoding="utf-8"))
 
@@ -313,6 +386,8 @@ V2_ONLY_CONTEXT_KEYS = {
     "benign_indicators",
     "business_processes_affected",
     "confirmation_records",
+    "backup_immutability",
+    "central_incident_log_status",
     "contacted_parties",
     "context_enrichment",
     "correlation_history",
@@ -320,7 +395,9 @@ V2_ONLY_CONTEXT_KEYS = {
     "conditional_approval_constraints",
     "crown_jewel_status",
     "customer_defined_autonomy_boundary",
+    "customer_attestation_ref",
     "data_leak_assessment",
+    "data_inventory_evidence",
     "decision_rationale",
     "denial_reason",
     "detection_tuning_recommendation",
@@ -328,6 +405,7 @@ V2_ONLY_CONTEXT_KEYS = {
     "embedded_ai_in_saas_visibility_gap",
     "emergency_flag",
     "enrichment_results",
+    "edr_status",
     "escalation_if_rollback_fails",
     "estimated_recovery_time",
     "false_positive_reasoning",
@@ -336,7 +414,9 @@ V2_ONLY_CONTEXT_KEYS = {
     "institutional_knowledge",
     "isolation_method",
     "known_blind_spots",
+    "logging_status",
     "match_telemetry",
+    "mfa_status",
     "normal_schedule_match",
     "post_action_validation_required",
     "recent_ticket_history",
@@ -348,6 +428,11 @@ V2_ONLY_CONTEXT_KEYS = {
     "rollforward_steps",
     "rpo_target",
     "rto_target",
+    "control_owner",
+    "control_refs",
+    "control_snapshot_timestamp",
+    "control_source",
+    "control_time_scope",
     "source_refs",
     "single_points_of_failure",
     "suppression_rule_id",
@@ -959,6 +1044,321 @@ def test_action_card_v1_and_v2_generation_do_not_cross_contaminate(tmp_path):
         "slice-001-proof-package/1.0"
     )
     assert verify_proof_package(v2_dir)["package_contract"] == V2_PACKAGE_CONTRACT
+
+
+def test_generated_v2_populates_compliance_mapping_from_verified_action(tmp_path):
+    output_dir = tmp_path / "compliance-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _compliance_controls_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    evidence = _load_json(output_dir, "evidence-ledger.json")
+    verified_refs = {f"evidence:{entry['evidence_id']}" for entry in evidence}
+    handoff = _load_json(output_dir, "edr-handoff.json")
+    handoff_refs = {f"evidence:{ref}" for ref in handoff["evidence_refs"]}
+    compliance_mapping = marker["objects"]["compliance_mapping"]
+
+    assert summary["status"] == "verified"
+    assert compliance_mapping["status"] == "partial"
+    assert compliance_mapping["source_refs"]
+    assert set(compliance_mapping["source_refs"]) <= verified_refs
+    assert set(compliance_mapping["source_refs"]) == handoff_refs
+    assert compliance_mapping["mapped_evidence_refs"] == compliance_mapping["source_refs"]
+    assert compliance_mapping["action_type"] == "isolate_host"
+    assert compliance_mapping["framework_name"] == (
+        "Proof Package V2 practitioner requirements"
+    )
+    assert compliance_mapping["control_refs"] == [
+        "approval_record",
+        "blast_radius",
+        "rollback_plan",
+    ]
+
+
+def test_generated_v2_compliance_mapping_excludes_unrelated_raw_evidence(tmp_path):
+    output_dir = tmp_path / "compliance-unrelated-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _compliance_controls_with_unrelated_evidence_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    evidence = _load_json(output_dir, "evidence-ledger.json")
+    handoff = _load_json(output_dir, "edr-handoff.json")
+    unrelated_refs = {
+        f"evidence:{entry['evidence_id']}"
+        for entry in evidence
+        if entry["raw_content"].get("event_id") == "v3-pe-unrelated"
+    }
+    handoff_refs = {f"evidence:{ref}" for ref in handoff["evidence_refs"]}
+    compliance_mapping = marker["objects"]["compliance_mapping"]
+
+    assert summary["status"] == "verified"
+    assert unrelated_refs
+    assert set(compliance_mapping["source_refs"]) == handoff_refs
+    assert not (set(compliance_mapping["source_refs"]) & unrelated_refs)
+    assert not (set(compliance_mapping["mapped_evidence_refs"]) & unrelated_refs)
+
+
+def test_v2_unsupported_action_gets_no_compliance_mapping():
+    tape = deepcopy(build_tape_from_v3_fixture(_representative_v3_fixture()))
+    tape["handoff"]["action_type"] = "notify_only"
+
+    marker = build_v2_marker_from_tape(tape)
+    compliance_mapping = marker["objects"]["compliance_mapping"]
+
+    assert marker["conditions"]["response_action_present"] is False
+    assert compliance_mapping["status"] == "not_applicable"
+    assert compliance_mapping["source_refs"] == []
+    assert "control_refs" not in compliance_mapping
+
+
+def test_v2_supported_action_without_handoff_refs_gets_no_fabricated_mapping():
+    tape = deepcopy(build_tape_from_v3_fixture(_compliance_controls_v3_fixture()))
+    tape["handoff"]["evidence_refs"] = []
+
+    marker = build_v2_marker_from_tape(tape)
+    compliance_mapping = marker["objects"]["compliance_mapping"]
+
+    assert compliance_mapping["status"] == "unavailable"
+    assert compliance_mapping["data_unavailable_reason"] == (
+        "action_evidence_not_available"
+    )
+    assert compliance_mapping["source_refs"] == []
+    assert "mapped_evidence_refs" not in compliance_mapping
+
+
+def test_generated_v2_populates_controls_from_customer_snapshot(tmp_path):
+    output_dir = tmp_path / "controls-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _compliance_controls_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    evidence = _load_json(output_dir, "evidence-ledger.json")
+    verified_refs = {f"evidence:{entry['evidence_id']}" for entry in evidence}
+    control_evidence_refs = {
+        f"evidence:{entry['evidence_id']}"
+        for entry in evidence
+        if entry["raw_content"]
+        .get("v3_trace_context", {})
+        .get("mfa_status")
+        == "enabled"
+    }
+    controls = marker["objects"]["controls_in_place_at_incident"]
+
+    assert summary["status"] == "verified"
+    assert controls["status"] == "partial"
+    assert controls["source_refs"]
+    assert set(controls["source_refs"]) <= verified_refs
+    assert set(controls["source_refs"]) == control_evidence_refs
+    assert controls["control_source_ref"] in controls["source_refs"]
+    assert controls["control_time_scope"] == "incident_time"
+    assert controls["customer_attestation_ref"] == "customer-attestation-001"
+    assert controls["control_values"]["mfa_status"] == "enabled"
+    assert controls["control_values"]["backup_status"] == "available"
+    assert controls["control_values"]["edr_status"] == "enabled"
+    assert controls["control_snapshot_hash"]
+
+
+def test_generated_v2_controls_refs_exclude_unrelated_telemetry(tmp_path):
+    output_dir = tmp_path / "controls-unrelated-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _compliance_controls_with_unrelated_evidence_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    evidence = _load_json(output_dir, "evidence-ledger.json")
+    unrelated_refs = {
+        f"evidence:{entry['evidence_id']}"
+        for entry in evidence
+        if entry["raw_content"].get("event_id") == "v3-pe-unrelated"
+    }
+    control_evidence_refs = {
+        f"evidence:{entry['evidence_id']}"
+        for entry in evidence
+        if entry["raw_content"]
+        .get("v3_trace_context", {})
+        .get("backup_status")
+        == "available"
+    }
+    controls = marker["objects"]["controls_in_place_at_incident"]
+
+    assert summary["status"] == "verified"
+    assert unrelated_refs
+    assert controls["source_refs"]
+    assert set(controls["source_refs"]) == control_evidence_refs
+    assert not (set(controls["source_refs"]) & unrelated_refs)
+
+
+def test_v2_controls_without_control_evidence_uses_no_fabricated_ref():
+    tape = deepcopy(build_tape_from_v3_fixture(_compliance_controls_v3_fixture()))
+    tape["raw_evidence"] = [
+        entry
+        for entry in tape["raw_evidence"]
+        if "v3_trace_context" not in entry.get("raw_content", {})
+    ]
+
+    marker = build_v2_marker_from_tape(tape)
+    controls = marker["objects"]["controls_in_place_at_incident"]
+
+    assert controls["status"] == "unavailable"
+    assert controls["data_unavailable_reason"] == "customer_not_supplied"
+    assert controls["source_refs"] == []
+    assert "control_values" not in controls
+
+
+def test_generated_v2_control_metadata_only_is_unavailable(tmp_path):
+    output_dir = tmp_path / "metadata-only-controls-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _control_metadata_only_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    controls = marker["objects"]["controls_in_place_at_incident"]
+
+    assert summary["status"] == "verified"
+    assert controls["status"] == "unavailable"
+    assert controls["data_unavailable_reason"] == "customer_not_supplied"
+    assert controls["source_refs"] == []
+    assert "control_values" not in controls
+    rendered = json.dumps(controls, sort_keys=True)
+    assert "mfa_status" not in rendered
+    assert "backup_status" not in rendered
+    assert "edr_status" not in rendered
+    assert "logging_status" not in rendered
+
+
+def test_generated_v2_control_evidence_without_metadata_is_preserved(tmp_path):
+    output_dir = tmp_path / "controls-no-metadata-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _control_evidence_without_metadata_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    controls = marker["objects"]["controls_in_place_at_incident"]
+
+    assert summary["status"] == "verified"
+    assert controls["status"] == "partial"
+    assert controls["control_values"] == {
+        "backup_status": "available",
+        "mfa_status": "enabled",
+    }
+    assert controls["control_refs"] == ["backup_status", "mfa_status"]
+    assert controls["control_time_scope"] == "incident_time"
+    assert "control_snapshot_timestamp" not in controls["control_values"]
+
+
+def test_generated_v2_missing_control_snapshot_is_explicit(tmp_path):
+    output_dir = tmp_path / "missing-controls-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _representative_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    summary = verify_proof_package(output_dir)
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    controls = marker["objects"]["controls_in_place_at_incident"]
+
+    assert summary["status"] == "verified"
+    assert controls["status"] == "unavailable"
+    assert controls["data_unavailable_reason"] == "customer_not_supplied"
+    assert controls["source_refs"] == []
+    assert "control_values" not in controls
+
+
+def test_default_v1_generation_excludes_compliance_and_control_fields(tmp_path):
+    output_dir = tmp_path / "v1-compliance-controls-package"
+
+    write_proof_package_from_v3_fixture(
+        _compliance_controls_v3_fixture(),
+        output_dir,
+    )
+    context = _load_json(output_dir, "investigation-tape.json")["raw_evidence"][0][
+        "raw_content"
+    ]["v3_trace_context"]
+
+    assert sorted(path.name for path in output_dir.iterdir()) == sorted(
+        EXPECTED_OUTPUT_FILES
+    )
+    assert not (set(context) & V2_ONLY_CONTEXT_KEYS)
+    assert verify_proof_package(output_dir)["package_contract"] == (
+        "slice-001-proof-package/1.0"
+    )
+
+
+def test_compliance_controls_v1_and_v2_generation_do_not_cross_contaminate(tmp_path):
+    fixture = _compliance_controls_v3_fixture()
+    v1_dir = tmp_path / "v1-first"
+    v2_dir = tmp_path / "v2-second"
+
+    write_proof_package_from_v3_fixture(fixture, v1_dir)
+    v1_before = {
+        path.name: path.read_text(encoding="utf-8") for path in v1_dir.iterdir()
+    }
+    write_proof_package_from_v3_fixture(
+        fixture,
+        v2_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    v1_after = {
+        path.name: path.read_text(encoding="utf-8") for path in v1_dir.iterdir()
+    }
+    v2_marker = _load_json(v2_dir, V2_MARKER_FILE)
+
+    assert v1_before == v1_after
+    assert v2_marker["objects"]["compliance_mapping"]["status"] == "partial"
+    assert v2_marker["objects"]["controls_in_place_at_incident"]["status"] == (
+        "partial"
+    )
+    assert verify_proof_package(v1_dir)["package_contract"] == (
+        "slice-001-proof-package/1.0"
+    )
+    assert verify_proof_package(v2_dir)["package_contract"] == V2_PACKAGE_CONTRACT
+
+
+def test_generated_v2_compliance_mapping_does_not_claim_certification(tmp_path):
+    output_dir = tmp_path / "bounded-compliance-v2-package"
+
+    write_proof_package_from_v3_fixture(
+        _compliance_controls_v3_fixture(),
+        output_dir,
+        proof_package_version=V2_PACKAGE_CONTRACT,
+    )
+    marker = _load_json(output_dir, V2_MARKER_FILE)
+    rendered = json.dumps(
+        marker["objects"]["compliance_mapping"],
+        sort_keys=True,
+    ).lower()
+
+    forbidden_claims = [
+        "compliance achieved",
+        "certified",
+        "legal admissible",
+        "soc 2 compliant",
+        "sec ready",
+    ]
+    for claim in forbidden_claims:
+        assert claim not in rendered
 
 
 def test_generated_v2_marker_does_not_export_hidden_reasoning_or_raw_prompts(tmp_path):
