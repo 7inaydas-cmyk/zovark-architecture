@@ -148,6 +148,37 @@ benchmark harnesses, services, feature flags, or customer-facing workflows must
 add or update the feature registry according to ADR-0037 before implementation
 claims are made.
 
+## Context Compaction Memory Contracts
+
+Architecture/contracts files:
+
+- `docs/context-compaction-memory.md`
+- `docs/investigation-memory-contract.md`
+- `contracts/context-compaction-envelope-v1.schema.json`
+- `contracts/memory-retrieval-request-v1.schema.json`
+- `contracts/memory-retrieval-result-v1.schema.json`
+
+These files define a future Context Compaction Memory contract for preventing
+unbounded raw tool output from entering model context. Oversized or high-volume
+tool output is required to be stored losslessly in future
+`investigation_memory`, represented to the model through deterministic bounded
+envelopes, referenced by `memory_ref_id`, and retrieved only through bounded,
+audited, capability-scoped requests.
+
+Current implementation status:
+
+- No runtime memory storage is implemented.
+- No retrieval service is implemented.
+- No V3 adapter behavior is changed.
+- No proof-package verifier behavior is changed.
+- No AlertForge contract or ingest is added.
+- No benchmark, customer-readiness, signing, anchoring, legal, or compliance
+  workflow is added.
+
+The root `contracts/` directory is used because this repo snapshot has no
+current applied/root schema directory. Recovered patch-tree schema locations
+remain historical material and are not made canonical by this contract layer.
+
 ## Proof Package V2 Generation
 
 V2 is generated only through the explicit adapter path:
@@ -238,6 +269,7 @@ V2 verifier behavior:
 - First-class Capability Identity objects in generated proof packages.
 - First-class Investigation Trace V1 record export.
 - AlertForge input parser or integration runner.
+- Runtime Context Compaction Memory storage or bounded retrieval service.
 - Live V3 runtime ingestion from `Zovark_final`.
 - Live SIEM/EDR connectors.
 - Live LLM/tool execution.

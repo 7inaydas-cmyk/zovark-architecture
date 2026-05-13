@@ -213,6 +213,9 @@ local product/testbed work:
 - `ADR-0037` Feature lifecycle and dead-code housekeeping: any new CLI, service,
   feature flag, schema, benchmark harness, AlertForge ingest path, or product
   component needs feature-registry/lifecycle alignment before implementation.
+- Context Compaction Memory contracts: architecture/contracts-only schema work
+  should remain non-runtime until feature lifecycle alignment is performed for
+  any future storage or retrieval implementation.
 - `ADR-0044` through `ADR-0051`: recovered older `v3.2.4.3` material may contain
   relevant later decisions, but none are current active source of truth until
   reconciled.

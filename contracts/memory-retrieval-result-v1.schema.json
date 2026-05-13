@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.zovark.io/contracts/memory-retrieval-result-v1.schema.json",
+  "title": "Zovark Memory Retrieval Result V1",
+  "description": "Bounded audited result for investigation_memory retrieval. Architecture contract only; not a runtime implementation.",
+  "type": "object",
+  "additionalProperties": false,
+  "x-zovark-license": "Apache-2.0",
+  "x-zovark-open-source": true,
+  "x-zovark-schema-version": "1.0.0",
+  "x-zovark-standards-attribution": [
+    {
+      "standard": "Zovark",
+      "role": "canonical"
+    }
+  ],
+  "required": [
+    "result_version",
+    "retrieval_result_id",
+    "retrieval_request_id",
+    "memory_ref_id",
+    "status",
+    "returned_ranges",
+    "returned_byte_count",
+    "hash_algorithm",
+    "result_hash",
+    "audit_ref",
+    "model_visible"
+  ],
+  "properties": {
+    "result_version": {
+      "type": "string",
+      "const": "memory-retrieval-result-v1"
+    },
+    "retrieval_result_id": {
+      "$ref": "#/$defs/ref"
+    },
+    "retrieval_request_id": {
+      "$ref": "#/$defs/ref"
+    },
+    "memory_ref_id": {
+      "$ref": "#/$defs/memory_ref_id"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["fulfilled", "partial", "denied", "not_found", "range_invalid", "unavailable"]
+    },
+    "returned_ranges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/range"
+      }
+    },
+    "returned_byte_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 65536
+    },
+    "hash_algorithm": {
+      "type": "string",
+      "const": "sha256"
+    },
+    "result_hash": {
+      "$ref": "#/$defs/sha256"
+    },
+    "model_visible": {
+      "type": "boolean"
+    },
+    "model_visible_excerpt": {
+      "type": ["string", "null"],
+      "maxLength": 65536,
+      "description": "Optional bounded retrieved content shown to the model. Null for denied, unavailable, or metadata-only results."
+    },
+    "redaction_policy_ref": {
+      "type": ["string", "null"],
+      "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+    },
+    "data_unavailable_reason": {
+      "type": ["string", "null"],
+      "enum": [
+        "access_denied",
+        "memory_not_found",
+        "range_invalid",
+        "content_not_exported",
+        "policy_disallowed",
+        "not_applicable",
+        null
+      ]
+    },
+    "audit_ref": {
+      "$ref": "#/$defs/ref"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "ref": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+    },
+    "memory_ref_id": {
+      "type": "string",
+      "pattern": "^mem:v1:[A-Za-z0-9._-]{1,128}:[A-Za-z0-9._-]{1,128}:sha256:[0-9a-f]{64}$"
+    },
+    "range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["range_type"],
+      "properties": {
+        "range_type": {
+          "type": "string",
+          "enum": ["byte", "line", "record"]
+        },
+        "start": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "end": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "start_line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "end_line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "record_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+        },
+        "record_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "range_hash": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    }
+  }
+}
