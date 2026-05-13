@@ -145,35 +145,46 @@
           }
         },
         {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["range_type"],
-          "anyOf": [
+          "oneOf": [
             {
-              "required": ["record_id"]
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["range_type", "record_id"],
+              "properties": {
+                "range_type": {
+                  "type": "string",
+                  "const": "record"
+                },
+                "record_id": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+                },
+                "range_hash": {
+                  "type": ["string", "null"],
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              }
             },
             {
-              "required": ["record_index"]
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["range_type", "record_index"],
+              "properties": {
+                "range_type": {
+                  "type": "string",
+                  "const": "record"
+                },
+                "record_index": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "range_hash": {
+                  "type": ["string", "null"],
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              }
             }
-          ],
-          "properties": {
-            "range_type": {
-              "type": "string",
-              "const": "record"
-            },
-            "record_id": {
-              "type": "string",
-              "pattern": "^[A-Za-z0-9._:-]{1,160}$"
-            },
-            "record_index": {
-              "type": "integer",
-              "minimum": 0
-            },
-            "range_hash": {
-              "type": ["string", "null"],
-              "pattern": "^[0-9a-f]{64}$"
-            }
-          }
+          ]
         }
       ]
     }
