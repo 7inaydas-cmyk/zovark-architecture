@@ -66,17 +66,25 @@ AlertForge scenario -> Zovark ingest -> V3 fixture adapter -> V2 package -> veri
 - No live V3 runtime from `Zovark_final` is wired into this repository.
 - No live SIEM, EDR, LLM, DB, network, dispatcher, Vault, or dashboard runtime is
   part of the current implementation.
-- No local testbed compose file or startup script exists for the pre-build
-  product path.
+- A local static proof/Replay testbed runner exists for the implemented
+  fixture-to-package path. No product compose file or live runtime startup script
+  exists.
 - No persisted output directory policy exists for generated V2 proof packages
   outside temporary test directories.
 
 ## Missing Commands Or Scripts
 
-Useful future commands before local product/testbed work starts:
+Current local proof/Replay testbed command:
 
-- Generate a V2 package from a specified V3-like JSON fixture.
-- Verify a generated V2 package and print the deterministic verifier summary.
+```bash
+python3 -m zovark.slice001.local_testbed \
+  --input samples/v3-local-proof-fixture.json \
+  --output .tmp/local-testbed-v2 \
+  --package-version v2
+```
+
+Useful future commands before broader local product/testbed work starts:
+
 - Run the realistic static scenario validation without relying on pytest helper
   internals.
 - Clean temporary generated package output directories.
@@ -84,8 +92,7 @@ Useful future commands before local product/testbed work starts:
 - Optionally run a bounded preflight that checks Python version and expected file
   layout.
 
-These commands should be added only in a scoped implementation PR. This review
-does not add them.
+These future commands should be added only in scoped implementation PRs.
 
 ## Missing Environment Assumptions
 
@@ -104,14 +111,14 @@ Before a local testbed build, define:
 
 ## Missing Local Validation Workflow
 
-Current validation is strong for repository tests but not yet packaged as a
-local build workflow.
+Current validation is strong for repository tests and now has a local static
+proof/Replay workflow. It is still not a product runtime workflow.
 
-Recommended future workflow before product/testbed implementation:
+Current and future workflow before product/testbed implementation:
 
 1. Run Slice 001 sample generation and verification.
-2. Run V3 fixture -> V1 generation and verification.
-3. Run V3 fixture -> explicit V2 generation and verification.
+2. Run the local testbed V3 fixture -> V1 generation and verification.
+3. Run the local testbed V3 fixture -> explicit V2 generation and verification.
 4. Run realistic static scenario validation.
 5. Run raw-leak assertions against generated V2 package artifacts.
 6. Confirm no customer-readiness, legal, certification, signing, anchoring, or
@@ -123,7 +130,7 @@ Recommended future workflow before product/testbed implementation:
 - No AlertForge output contract exists.
 - No Zovark ingest contract for AlertForge outputs exists.
 - No local product runtime dependency model exists.
-- No generated-package output lifecycle is defined.
+- No generated-package output lifecycle is defined beyond local `.tmp/` examples.
 - No benchmark command exists.
 - No customer-ready artifact policy exists.
 
@@ -142,11 +149,19 @@ Recommended future workflow before product/testbed implementation:
 The smallest safe next build work should be local workflow plumbing around the
 already-implemented static path, not live integrations.
 
-Recommended first implementation target:
+Implemented first local workflow target:
 
 ```text
 local fixture command -> explicit V2 package generation -> offline verifier -> leak/determinism checks
 ```
 
-AlertForge integration should wait until the AlertForge output contract and
+Feature-lifecycle boundary: no current applied/root
+`product/features/feature-registry.yaml` file is present in this repo snapshot.
+The recovered patch-tree feature-registry append was inspected for context, and
+the local runner is treated as `F-002` Replay/tape workflow plumbing rather than
+a new product feature. Any future product/testbed component, AlertForge contract
+or importer, benchmark harness, service, feature flag, or customer-facing
+workflow must perform explicit feature-registry alignment under ADR-0037.
+
+AlertForge integration still waits until the AlertForge output contract and
 Zovark ingest requirements are explicit.

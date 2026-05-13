@@ -110,6 +110,44 @@ Verifier path:
 python -m zovark.slice001 verify --package out/
 ```
 
+## Local Proof/Replay Testbed Runner
+
+Primary module:
+
+- `zovark/slice001/local_testbed.py`
+
+Sample fixture:
+
+- `samples/v3-local-proof-fixture.json`
+
+Local V2 command:
+
+```bash
+python3 -m zovark.slice001.local_testbed \
+  --input samples/v3-local-proof-fixture.json \
+  --output .tmp/local-testbed-v2 \
+  --package-version v2
+```
+
+The runner loads a sanitized V3-like fixture, calls the existing V3 adapter,
+writes a V1 or explicit V2 proof package, and runs offline Replay verification
+unless `--no-verify` is provided. It is scoped to the existing `F-002` Replay
+engine and tape recorder lifecycle area and is not an AlertForge integration,
+benchmark harness, customer-readiness bundle, or live product runtime.
+
+ADR-0037 feature-lifecycle note: no current applied/root
+`product/features/feature-registry.yaml` file is present in this repo snapshot.
+The only discovered feature-registry material is recovered patch-tree material,
+including
+`zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/patches/feature-registry.yaml.append_v3_2_4_5`.
+That recovered material was inspected for lifecycle context. This PR does not
+update a root feature registry because the local testbed runner is scoped as
+`F-002` Replay/tape workflow plumbing, not as a new product feature. Future
+product components, standalone testbed features, AlertForge ingest paths,
+benchmark harnesses, services, feature flags, or customer-facing workflows must
+add or update the feature registry according to ADR-0037 before implementation
+claims are made.
+
 ## Proof Package V2 Generation
 
 V2 is generated only through the explicit adapter path:
@@ -191,6 +229,7 @@ V2 verifier behavior:
 | `tests/test_v3_adapter.py` | V3 adapter shape validation, V1/V2 generation, V2 object population, V1/V2 projection separation, sanitizer regressions. |
 | `tests/test_v3_generated_package_verification.py` | V3-generated V1 package verifies with Replay V2 and CLI verification path remains valid. |
 | `tests/test_v2_realistic_scenario_validation.py` | AlertForge-style static realistic scenario generates a V2 package, verifies, checks source refs, checks determinism, and checks sensitive-data leakage. |
+| `tests/test_local_testbed.py` | Local static proof/Replay runner, V1/V2 generation, V2 verification, V1/V2 separation, leak checks, deterministic package output. |
 | `tests/fixtures/proof-package-v2/response-action/` | Committed static V2 package fixture. |
 | `tests/fixtures/v3-realistic-scenarios/` | Committed static V3-like realistic scenario fixture. |
 
@@ -198,14 +237,13 @@ V2 verifier behavior:
 
 - First-class Capability Identity objects in generated proof packages.
 - First-class Investigation Trace V1 record export.
-- A command-line wrapper for V3 fixture -> V2 proof package generation.
 - AlertForge input parser or integration runner.
 - Live V3 runtime ingestion from `Zovark_final`.
 - Live SIEM/EDR connectors.
 - Live LLM/tool execution.
 - DB-backed workflow.
 - Dashboard/API workflow.
-- Product-level local testbed command.
+- Product-level local testbed command beyond the static proof/Replay runner.
 - Benchmarks or scale measurement scripts for the V3/V2 path.
 - Customer-readiness package.
 - Signing, anchoring, provenance manifest, SLSA, or in-toto.

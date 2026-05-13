@@ -1,0 +1,255 @@
+{
+  "fixture_id": "v3-local-proof-fixture-001",
+  "tenant_id": "tenant-local-static",
+  "alert": {
+    "alert_id": "local-alert-001",
+    "alert_type": "local_static_v3_like_investigation",
+    "child_process": "powershell.exe",
+    "description": "Sanitized local proof and Replay workflow fixture",
+    "host": "local-workstation-01.example.test",
+    "host_fqdn": "local-workstation-01.example.test",
+    "ingested_at": "2026-05-11T10:00:00Z",
+    "severity": "critical",
+    "source_process": "winword.exe",
+    "timestamp": "2026-05-11T10:00:00Z"
+  },
+  "execution": {
+    "access_denied_paths": [
+      "dns-resolver-log-export"
+    ],
+    "affected_user_count": 1,
+    "approval_channel": "recorded_ticket",
+    "approval_reason": "Containment recommended for confirmed credential access evidence in the static fixture.",
+    "approval_status": "conditional",
+    "approval_timestamp": "2026-05-11T10:06:00Z",
+    "approver_identity": "local-soc-lead",
+    "approver_role": "SOC lead",
+    "asset_criticality": "high",
+    "asset_owner": "local-it",
+    "backup_availability": "recorded_customer_backup_available",
+    "backup_immutability": "enabled",
+    "backup_status": "available",
+    "backup_verification_status": "recorded_not_recently_tested",
+    "business_processes_affected": [
+      "local finance workflow"
+    ],
+    "central_incident_log_status": "enabled",
+    "conditional_approval_constraints": [
+      "Notify local asset owner before isolation",
+      "Validate rollback owner availability"
+    ],
+    "context_enrichment": {
+      "source": "recorded_static_fixture",
+      "summary_hash": "sha256:local-context-summary"
+    },
+    "control_owner": "local-security",
+    "control_refs": [
+      "mfa_status",
+      "backup_status",
+      "edr_status",
+      "central_incident_log_status"
+    ],
+    "control_snapshot_timestamp": "2026-05-11T09:55:00Z",
+    "control_source": "local_static_fixture",
+    "control_time_scope": "incident_time",
+    "correlation_history": [
+      {
+        "correlation_count": 1,
+        "matched_indicator": "203.0.113.50"
+      }
+    ],
+    "crown_jewel_status": false,
+    "customer_defined_autonomy_boundary": "approval_required",
+    "data_inventory_evidence": "not_supplied",
+    "data_leak_assessment": "not_recorded_in_fixture",
+    "direct_dependencies": [
+      "local-workstation-access",
+      "edr-containment-control"
+    ],
+    "edr_status": "enabled",
+    "emergency_flag": false,
+    "escalation_if_rollback_fails": "escalate_to_local_soc_manager",
+    "estimated_recovery_time": "PT2H",
+    "execution_mode": "tools",
+    "geo_ip_data": {
+      "country_code": "ZZ",
+      "source": "static_fixture"
+    },
+    "governance_decision": {
+      "autonomy_level": "assist",
+      "needs_human_review": true,
+      "review_reason": "confirmed malicious verdict with containment action"
+    },
+    "incomplete_telemetry": [
+      "dns_resolver_logs"
+    ],
+    "input_provenance_tags": [
+      "local_static_fixture",
+      "sanitized_v3_like_input"
+    ],
+    "irp_adherence_evidence": "incident_record_opened",
+    "isolation_method": "edr_isolate_host",
+    "known_blind_spots": [
+      {
+        "affected_question": "Were DNS resolver logs available for the full command-and-control window?",
+        "data_unavailable_reason": "fixture_does_not_include_dns_logs",
+        "gap_id": "local-vg-dns-logs",
+        "gap_type": "missing_dns_logs",
+        "impact_on_confidence": "Domain-level command-and-control evidence could not be corroborated from this fixture."
+      }
+    ],
+    "logging_status": "centralized",
+    "model_fingerprint": "fp-local-static-001",
+    "model_ref": "model:static-local-selector",
+    "mfa_status": "enabled",
+    "path_taken": "A",
+    "plan_executed": "local_static_containment_review",
+    "post_action_validation_required": true,
+    "prompt_hash": "sha256:local-prompt-hash-static",
+    "prompt_transformation_log": [
+      {
+        "operation": "redact_prompt_body",
+        "output_prompt_hash": "sha256:local-prompt-hash-static",
+        "redaction_applied": true,
+        "redaction_policy_ref": "prompt-redaction-policy-v1",
+        "transformation_id": "local-prompt-transform-001"
+      }
+    ],
+    "prompt_version": "local-static-prompt-v1",
+    "recent_ticket_history": [
+      {
+        "summary_hash": "sha256:local-ticket-history",
+        "ticket_id": "INC-LOCAL-001"
+      }
+    ],
+    "restore_steps": [
+      "Keep endpoint isolated until credential reset is confirmed",
+      "Release isolation after local asset owner and SOC lead approval"
+    ],
+    "rollback_owner": "local-soc-lead",
+    "rollforward_steps": [
+      "Continue containment if command-and-control attempts persist"
+    ],
+    "rpo_target": "not_recorded",
+    "rto_target": "PT4H",
+    "separation_of_reasoning_execution_flag": true,
+    "shadow_it_unknown": false,
+    "single_points_of_failure": [
+      "local workstation availability"
+    ],
+    "source": "saved_plan",
+    "telemetry_missing": [
+      "dns_resolver_logs"
+    ],
+    "third_party_dependencies": [
+      "EDR containment control"
+    ],
+    "third_party_feed_identifiers": [
+      "static-fixture-ti-feed"
+    ],
+    "threat_intel_ip_match": {
+      "indicator": "203.0.113.50",
+      "list": "static-fixture-ti"
+    },
+    "tool_call_chain_summary": [
+      {
+        "call_id": "local-tool-call-001",
+        "input_hash": "sha256:local-tool-input",
+        "output_hash": "sha256:local-tool-output",
+        "status": "succeeded",
+        "tool_name": "extract_ipv4"
+      }
+    ],
+    "tool_names": [
+      "extract_ipv4",
+      "score_brute_force",
+      "correlate_with_history"
+    ],
+    "user_department": "local-finance",
+    "user_job_title": "finance analyst",
+    "user_role": "finance analyst",
+    "user_typical_behavior": {
+      "powershell_usage": "rare"
+    },
+    "validation_after_rollback": [
+      "Confirm endpoint network connectivity",
+      "Rerun local malware triage checks"
+    ]
+  },
+  "findings": [
+    {
+      "severity": "critical",
+      "title": "Credential access via LSASS memory read"
+    }
+  ],
+  "verdict": {
+    "value": "confirmed_malicious"
+  },
+  "process_events": [
+    {
+      "command_line": "powershell.exe -EncodedCommand <redacted-static-token>",
+      "event_id": "local-pe-001",
+      "event_type": "process_event",
+      "parent_pid": 1024,
+      "parent_process": "winword.exe",
+      "pid": 4812,
+      "process_name": "powershell.exe",
+      "timestamp": "2026-05-11T10:00:01Z",
+      "user": "LOCAL\\user"
+    },
+    {
+      "command_line": "rundll32.exe C:\\\\Windows\\\\Temp\\\\invoice.dat,Start",
+      "event_id": "local-pe-002",
+      "event_type": "process_event",
+      "parent_pid": 4812,
+      "parent_process": "powershell.exe",
+      "pid": 5300,
+      "process_name": "rundll32.exe",
+      "timestamp": "2026-05-11T10:00:02Z",
+      "user": "LOCAL\\user"
+    }
+  ],
+  "network_events": [
+    {
+      "bytes_received": 245760,
+      "destination_ip": "203.0.113.50",
+      "destination_port": 443,
+      "event_id": "local-ne-001",
+      "event_type": "network_event",
+      "pid": 4812,
+      "process": "powershell.exe",
+      "process_name": "powershell.exe",
+      "protocol": "HTTPS",
+      "source_host": "local-workstation-01",
+      "timestamp": "2026-05-11T10:00:03Z"
+    }
+  ],
+  "credential_access_events": [
+    {
+      "event_id": "local-ca-001",
+      "event_type": "credential_access",
+      "host": "local-workstation-01",
+      "pid": 5300,
+      "process": "rundll32.exe",
+      "target_process": "lsass.exe",
+      "technique": "T1003.001",
+      "technique_name": "LSASS Memory",
+      "timestamp": "2026-05-11T10:00:04Z"
+    }
+  ],
+  "lateral_movement_events": [
+    {
+      "destination_host": "LOCAL-FILE-01",
+      "destination_ip": "198.51.100.13",
+      "event_id": "local-lm-001",
+      "event_type": "lateral_movement_attempt",
+      "pid": 5300,
+      "process": "rundll32.exe",
+      "source_host": "local-workstation-01",
+      "status": "blocked_by_firewall",
+      "technique": "T1021.002",
+      "technique_name": "SMB/Windows Admin Shares",
+      "timestamp": "2026-05-11T10:00:05Z"
+    }
+  ]
+}
