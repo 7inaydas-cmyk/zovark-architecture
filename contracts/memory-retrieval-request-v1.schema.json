@@ -105,39 +105,73 @@
       "pattern": "^mem:v1:[A-Za-z0-9._-]{1,128}:[A-Za-z0-9._-]{1,128}:sha256:[0-9a-f]{64}$"
     },
     "range": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["range_type"],
-      "properties": {
-        "range_type": {
-          "type": "string",
-          "enum": ["byte", "line", "record"]
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["range_type", "start", "end"],
+          "properties": {
+            "range_type": {
+              "type": "string",
+              "const": "byte"
+            },
+            "start": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "end": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
         },
-        "start": {
-          "type": "integer",
-          "minimum": 0
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["range_type", "start_line", "end_line"],
+          "properties": {
+            "range_type": {
+              "type": "string",
+              "const": "line"
+            },
+            "start_line": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "end_line": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
         },
-        "end": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "start_line": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "end_line": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "record_id": {
-          "type": "string",
-          "pattern": "^[A-Za-z0-9._:-]{1,160}$"
-        },
-        "record_index": {
-          "type": "integer",
-          "minimum": 0
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["range_type"],
+          "anyOf": [
+            {
+              "required": ["record_id"]
+            },
+            {
+              "required": ["record_index"]
+            }
+          ],
+          "properties": {
+            "range_type": {
+              "type": "string",
+              "const": "record"
+            },
+            "record_id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+            },
+            "record_index": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
         }
-      }
+      ]
     }
   }
 }
