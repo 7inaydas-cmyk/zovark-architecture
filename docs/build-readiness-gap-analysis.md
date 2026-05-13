@@ -155,5 +155,13 @@ Implemented first local workflow target:
 local fixture command -> explicit V2 package generation -> offline verifier -> leak/determinism checks
 ```
 
+Feature-lifecycle boundary: no current applied/root
+`product/features/feature-registry.yaml` file is present in this repo snapshot.
+The recovered patch-tree feature-registry append was inspected for context, and
+the local runner is treated as `F-002` Replay/tape workflow plumbing rather than
+a new product feature. Any future product/testbed component, AlertForge contract
+or importer, benchmark harness, service, feature flag, or customer-facing
+workflow must perform explicit feature-registry alignment under ADR-0037.
+
 AlertForge integration still waits until the AlertForge output contract and
 Zovark ingest requirements are explicit.

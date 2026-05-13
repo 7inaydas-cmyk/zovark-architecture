@@ -7,17 +7,26 @@ Replay verifier.
 ## Feature Lifecycle
 
 ADR-0037 requires durable feature lifecycle discipline before adding new CLI,
-testbed, AlertForge, benchmark, service, or schema work. This runner is scoped as
-workflow plumbing for the existing `F-002` Replay engine and tape recorder
-feature referenced in the recovered ownership metadata:
+testbed, AlertForge, benchmark, service, or schema work. No current applied/root
+`product/features/feature-registry.yaml` file is present in this repo snapshot.
+The only discovered feature-registry material is recovered patch-tree material,
+including:
 
 ```text
-zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/OWNERS.yaml
+zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/patches/feature-registry.yaml.append_v3_2_4_5
 ```
 
-No new feature ID is introduced in this PR because the runner does not add a new
-product capability. It exposes the already-implemented fixture-to-proof-package
-and offline Replay path for local use.
+That recovered material was inspected for lifecycle context. This runner is
+scoped as workflow plumbing for the existing `F-002` Replay engine and tape
+recorder feature referenced in recovered ownership metadata, not as a new
+product feature. No new feature ID is introduced and no root feature-registry
+entry is changed in this PR.
+
+The local runner remains a narrow static proof/Replay workflow. Any future
+product component, standalone testbed feature, AlertForge ingest path, benchmark
+harness, service, feature flag, or customer-facing workflow must add or update
+the feature registry according to ADR-0037 before implementation claims are
+made.
 
 ## Prerequisites
 
