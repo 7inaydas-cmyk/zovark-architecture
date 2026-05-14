@@ -143,12 +143,21 @@ Retrieval must be bounded, audited, and capability-scoped:
 - The request must include purpose.
 - The request must specify byte ranges, line ranges, or record ranges.
 - The request must declare a maximum returned byte count.
+- Byte ranges use `[start, end)` bounds and require `end > start`.
+- Line ranges use inclusive line bounds and require `end_line >= start_line`.
+- Record ranges select exactly one `record_id` or `record_index`.
 - The result must record returned ranges, result status, content hash, and audit
   refs.
 - The model must receive only the approved bounded result, never the whole
   memory object by default.
 
 Denied, partial, invalid-range, and unavailable results must be explicit.
+Failure results must not carry model-visible content. Fulfilled, partial, and
+other model-visible results must include at least one returned range, a positive
+returned byte count, and a non-null bounded excerpt. Portable JSON Schema
+validates the range shapes and result/status consistency; implementations and
+validation harnesses must additionally enforce sibling ordering rules such as
+`end > start` and `end_line >= start_line`.
 
 ## Proof/Replay Implications
 

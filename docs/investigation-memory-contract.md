@@ -64,22 +64,30 @@ Memory retrieval can address content by byte, line, or record ranges.
 Byte ranges:
 
 - Use zero-based inclusive `start` and exclusive `end`.
-- `end` must be greater than or equal to `start`.
+- `end` must be greater than `start`.
 - The range `[0, content_size_bytes)` represents the full object and must not be
   returned to a model unless an explicit policy permits full bounded output.
 
 Line ranges:
 
 - Use one-based inclusive `start_line` and inclusive `end_line`.
+- `end_line` must be greater than or equal to `start_line`.
 - Line numbering is derived from the canonical decoded content.
 - Line range metadata should record the byte range when deterministic mapping is
   available.
 
 Record ranges:
 
-- Use deterministic record identifiers or zero-based record indexes.
+- Use exactly one deterministic record identifier or zero-based record index.
 - Record order must be stable under replay.
 - Record hashes should be recorded when individual record hashing is available.
+
+The JSON Schema contracts require the correct field set and reject unknown
+properties for each range type. Portable JSON Schema draft 2020-12 does not
+compare sibling values such as `end > start` or `end_line >= start_line`
+without nonstandard extensions, so implementations and validation harnesses must
+enforce those ordering rules as semantic checks in addition to schema shape
+validation.
 
 ## Source Tool-Call Linkage
 
@@ -134,6 +142,19 @@ Required retrieval audit metadata:
 
 Audit records must be deterministic and replay-visible. They must not depend on
 wall-clock values generated during replay.
+
+Retrieval result consistency requirements:
+
+- `fulfilled` and `partial` results must be model-visible, return at least one
+  bounded range, return a positive byte count, and carry a non-null bounded
+  model-visible excerpt.
+- Any result with `model_visible: true` must return at least one bounded range,
+  return a positive byte count, and carry a non-null bounded model-visible
+  excerpt.
+- `denied`, `not_found`, `range_invalid`, and `unavailable` results must not
+  carry model-visible content. They must use `model_visible: false`, empty
+  `returned_ranges`, `returned_byte_count: 0`, and a non-null unavailable reason
+  appropriate to the failure status.
 
 ## Capability-Scoped Access Rules
 

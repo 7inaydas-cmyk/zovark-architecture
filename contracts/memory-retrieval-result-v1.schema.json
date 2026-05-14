@@ -5,6 +5,169 @@
   "description": "Bounded audited result for investigation_memory retrieval. Architecture contract only; not a runtime implementation.",
   "type": "object",
   "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "required": ["model_visible"],
+        "properties": {
+          "model_visible": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "required": ["model_visible_excerpt"],
+        "properties": {
+          "returned_ranges": {
+            "minItems": 1
+          },
+          "returned_byte_count": {
+            "minimum": 1
+          },
+          "model_visible_excerpt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 65536
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["status"],
+        "properties": {
+          "status": {
+            "enum": ["fulfilled", "partial"]
+          }
+        }
+      },
+      "then": {
+        "required": ["model_visible_excerpt"],
+        "properties": {
+          "model_visible": {
+            "const": true
+          },
+          "returned_ranges": {
+            "minItems": 1
+          },
+          "returned_byte_count": {
+            "minimum": 1
+          },
+          "model_visible_excerpt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 65536
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["status"],
+        "properties": {
+          "status": {
+            "enum": ["denied", "not_found", "range_invalid", "unavailable"]
+          }
+        }
+      },
+      "then": {
+        "required": ["data_unavailable_reason"],
+        "properties": {
+          "model_visible": {
+            "const": false
+          },
+          "returned_ranges": {
+            "maxItems": 0
+          },
+          "returned_byte_count": {
+            "const": 0
+          },
+          "model_visible_excerpt": {
+            "type": "null"
+          },
+          "data_unavailable_reason": {
+            "type": "string",
+            "enum": [
+              "access_denied",
+              "memory_not_found",
+              "range_invalid",
+              "content_not_exported",
+              "policy_disallowed",
+              "not_applicable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["status"],
+        "properties": {
+          "status": {
+            "const": "denied"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "data_unavailable_reason": {
+            "enum": ["access_denied", "policy_disallowed"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["status"],
+        "properties": {
+          "status": {
+            "const": "not_found"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "data_unavailable_reason": {
+            "const": "memory_not_found"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["status"],
+        "properties": {
+          "status": {
+            "const": "range_invalid"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "data_unavailable_reason": {
+            "const": "range_invalid"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["status"],
+        "properties": {
+          "status": {
+            "const": "unavailable"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "data_unavailable_reason": {
+            "enum": ["content_not_exported", "not_applicable"]
+          }
+        }
+      }
+    }
+  ],
   "x-zovark-license": "Apache-2.0",
   "x-zovark-open-source": true,
   "x-zovark-schema-version": "1.0.0",
@@ -47,6 +210,7 @@
     },
     "returned_ranges": {
       "type": "array",
+      "description": "Ranges actually returned to the requester. Fulfilled, partial, and model-visible results require at least one bounded returned range. Denied, not_found, range_invalid, and unavailable results require this array to be empty.",
       "items": {
         "$ref": "#/$defs/range"
       }
@@ -54,7 +218,8 @@
     "returned_byte_count": {
       "type": "integer",
       "minimum": 0,
-      "maximum": 65536
+      "maximum": 65536,
+      "description": "Number of bytes returned in the model-visible or retrieval result body. Fulfilled, partial, and model-visible results require a positive value. Failure statuses require zero."
     },
     "hash_algorithm": {
       "type": "string",
@@ -69,7 +234,7 @@
     "model_visible_excerpt": {
       "type": ["string", "null"],
       "maxLength": 65536,
-      "description": "Optional bounded retrieved content shown to the model. Null for denied, unavailable, or metadata-only results."
+      "description": "Bounded retrieved content shown to the model for fulfilled, partial, or model_visible results. Null or absent for denied, not_found, range_invalid, unavailable, or metadata-only results."
     },
     "redaction_policy_ref": {
       "type": ["string", "null"],
@@ -109,6 +274,7 @@
         {
           "type": "object",
           "additionalProperties": false,
+          "description": "Byte range using [start, end) semantics. The portable JSON Schema shape requires both bounds; semantic validation must enforce end > start.",
           "required": ["range_type", "start", "end"],
           "properties": {
             "range_type": {
@@ -117,17 +283,20 @@
             },
             "start": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "description": "Zero-based inclusive byte offset."
             },
             "end": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "description": "Zero-based exclusive byte offset. Must be greater than start."
             }
           }
         },
         {
           "type": "object",
           "additionalProperties": false,
+          "description": "Line range using one-based inclusive bounds. The portable JSON Schema shape requires both bounds; semantic validation must enforce end_line >= start_line.",
           "required": ["range_type", "start_line", "end_line"],
           "properties": {
             "range_type": {
@@ -136,11 +305,13 @@
             },
             "start_line": {
               "type": "integer",
-              "minimum": 1
+              "minimum": 1,
+              "description": "One-based inclusive start line."
             },
             "end_line": {
               "type": "integer",
-              "minimum": 1
+              "minimum": 1,
+              "description": "One-based inclusive end line. Must be greater than or equal to start_line."
             }
           }
         },
@@ -149,6 +320,7 @@
             {
               "type": "object",
               "additionalProperties": false,
+              "description": "Record range selecting exactly one deterministic record identifier.",
               "required": ["range_type", "record_id"],
               "properties": {
                 "range_type": {
@@ -168,6 +340,7 @@
             {
               "type": "object",
               "additionalProperties": false,
+              "description": "Record range selecting exactly one zero-based deterministic record index.",
               "required": ["range_type", "record_index"],
               "properties": {
                 "range_type": {
