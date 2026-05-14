@@ -107,3 +107,9 @@ The V1 output remains the existing nine-file package. It does not emit
 ADR-0036 remains a schema boundary constraint: local proof-package and export
 work must not make vendor/proprietary schemas canonical dependencies for Replay,
 audit, storage, verdict, or customer evidence.
+
+Context Compaction Memory is not part of this local runner. The current testbed
+uses sanitized static fixtures and existing proof/Replay code only. Future
+runtime work that produces high-volume tool output must apply the
+`docs/context-compaction-memory.md` and `docs/investigation-memory-contract.md`
+contracts before placing tool output into model context.

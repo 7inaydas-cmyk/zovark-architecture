@@ -43,6 +43,9 @@ command:
 uv run --with pytest python3 -m pytest tests/test_v2_realistic_scenario_validation.py -q
 ```
 
+Context Compaction Memory now exists only as architecture/contracts. It is not a
+runtime memory service and is not wired into the local proof/Replay runner.
+
 ## Install Gaps
 
 - No console script is declared in `pyproject.toml`.
@@ -53,6 +56,8 @@ uv run --with pytest python3 -m pytest tests/test_v2_realistic_scenario_validati
   pytest.
 - No local environment template exists for future V3 runtime, AlertForge, or
   product/testbed settings.
+- No runtime configuration exists for future `investigation_memory` storage or
+  bounded retrieval because that layer is architecture/contracts only.
 
 ## Runtime Gaps
 
@@ -129,6 +134,7 @@ Current and future workflow before product/testbed implementation:
 - No product entrypoint exists.
 - No AlertForge output contract exists.
 - No Zovark ingest contract for AlertForge outputs exists.
+- No runtime Context Compaction Memory storage or retrieval service exists.
 - No local product runtime dependency model exists.
 - No generated-package output lifecycle is defined beyond local `.tmp/` examples.
 - No benchmark command exists.
@@ -165,3 +171,9 @@ workflow must perform explicit feature-registry alignment under ADR-0037.
 
 AlertForge integration still waits until the AlertForge output contract and
 Zovark ingest requirements are explicit.
+
+Before greenfield runtime or AlertForge integration work, the Context Compaction
+Memory contracts must be treated as a design constraint: no model should receive
+unbounded raw tool output, and future proof/replay records need memory refs,
+content hashes, bounded envelopes, and retrieval audit refs rather than LLM-made
+canonical summaries.
