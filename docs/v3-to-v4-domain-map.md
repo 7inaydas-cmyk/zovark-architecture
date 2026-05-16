@@ -41,7 +41,7 @@ change schemas, capture fixtures, or implement an adapter.
 | Signed manifest | Not found as current V3 runtime package feature | Not implemented | Current proof package has no manifest/provenance/signing | Future package-contract identity only | Do not imply cryptographic signing today | Future package-contract PR, not PR #27 |
 | Evidentiary package | Current repo nine-file package; older runtime reports/docs | Implemented only in current proof repo | Current verifier validates package consistency, not legal completeness | Need package identity later if manifest/provenance added | Avoid legal-admissibility claims | Later package-contract PR |
 | Deployment profiles | `docker-compose*.yml`, `deploy/docs/*`, `scripts/deploy.sh`, `scripts/test-airgap.sh` | Implemented platform assets | No current proof dependency | Need deployment/environment identity for measured runtime fixtures | Profiles conflict with proof-local constraints; no production validation found | Later runtime work |
-| RamaLama/local inference | Not found as `RamaLama` in ground-truth report; llama-server/ollama style references exist | Not current named asset | Current proof verifier uses no live model runtime | Future local model provider identity may be needed | Exact runtime choice unresolved | Later Inference Gateway |
+| RamaLama/local inference | Recovered local-inference material includes llama-server-style work; v3.2.4.4 amendment names RamaLama as the local-SLM runtime | Architecture naming decision only; no runtime implementation | Current proof verifier uses no live model runtime and replay never re-inferences | Future local model provider identity is required before integration | Legacy local-inference assets require retraining/rework under bounded-envelope semantics | Later Inference Gateway |
 | WASM content safety | Not found in inspected V3 runtime evidence | Not implemented | No proof relationship today | Unknown | Do not add until separately justified | Later platform work, if any |
 | Contract registry | Current repo OpenSpec specs and validators; older repo migrations/specs | Partial | Current specs govern proof/replay | CIC should align with specs and ADR hierarchy | No runtime contract registry found | PR #29 |
 | Semantic invariants | Current repo tests/validators; older repo tool and sandbox tests | Partial | Current proof invariants remain authoritative | CIC and Trace must preserve fail-closed semantics | Old runtime tests were not rerun in this PR | PR #29 and PR #30 |
@@ -82,7 +82,7 @@ This map does not decide:
 - signing, transparency logs, or key management;
 - live EDR or SIEM connector rollout;
 - cloud model egress policy;
-- RamaLama/local inference provider;
+- RamaLama local-SLM runtime implementation;
 - Vault runtime authorization;
 - action execution;
 - dashboard/runtime deployment;

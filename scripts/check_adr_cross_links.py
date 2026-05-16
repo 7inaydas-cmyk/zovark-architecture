@@ -8,9 +8,11 @@ openspec/specs/adr-cross-link/spec.md.
 
 Two modes:
 
-  Bootstrap mode (current state) — `architecture/adr/` does not exist at the
-  repo root. The patch tree carries ADR-0038..0043; baseline ADRs 0001..0037
-  are not in this repo. Script verifies that:
+  Bootstrap mode (current state) — the full predecessor baseline is not present
+  at the repo root. The patch tree carries ADR-0038..0043; baseline ADRs
+  0001..0037 are not fully applied. The repo may still carry targeted
+  amendment ADRs, such as ADR-0009, without that being a full baseline import.
+  Script verifies that:
     1. `architecture/adr-index.md` exists.
     2. The 'Baseline ADRs (post-apply verified)' section is present.
     3. All 8 expected baseline ADR IDs appear as placeholder rows.
@@ -61,14 +63,16 @@ STATUS_VALID = {"active", "proposed", "amended"}
 
 
 def detect_mode(repo_root: Path) -> str:
-    """Return 'post-apply' if a baseline ADR set exists at repo_root/architecture/adr/."""
+    """Return 'post-apply' only when the enumerated baseline ADR set exists."""
     root_adr = repo_root / "architecture" / "adr"
     if root_adr.is_dir():
-        # Look for at least one baseline ADR file (numeric prefix < 38).
+        present_ids = set()
         for f in root_adr.glob("*.md"):
             m = re.match(r"^(\d{4})-", f.name)
-            if m and int(m.group(1)) < 38:
-                return "post-apply"
+            if m:
+                present_ids.add(f"ADR-{m.group(1)}")
+        if set(BASELINE_ADR_IDS).issubset(present_ids):
+            return "post-apply"
     return "bootstrap"
 
 

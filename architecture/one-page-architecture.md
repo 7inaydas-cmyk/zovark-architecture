@@ -20,6 +20,13 @@ Customer description: *Before your SOC isolates a host or disables a user, Zovar
 
 The product hero artifacts are the **approval-required EDR action card** and the **replayable proof package**. The investigation tape is the internal proof substrate that produces them; it is not the external headline.
 
+### Primary differentiator
+
+Per ADR-0052, the differentiator is deterministic replay plus evidence
+integrity: the customer can verify the recorded evidence, verdict, and approval
+path offline without re-running model inference. Cloud, hybrid, and air-gap
+topologies are customer choices; air-gap is supported but not the headline.
+
 ## 2. First MVP build slice
 
 Smallest path that exercises every governing spec. Per rc3 scorecard.

@@ -119,6 +119,9 @@ If a field is not in this document, it must not appear in `telemetry_envelope.sc
 
 - **Why:** Some updates are mode-specific (e.g., air-gap mode may receive a smaller bundle that excludes online-only features).
 - **Format:** Enum: `saas`, `hybrid`, `air-gap`.
+- **Positioning note:** Telemetry mode and topology choice are independent of
+  the buying wedge. Per ADR-0052, deterministic replay and evidence integrity
+  are the primary differentiator; air-gap remains a supported topology option.
 
 ### `disabled_capabilities`
 

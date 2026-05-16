@@ -35,6 +35,14 @@ Customer description: Before your SOC isolates a host or disables a user, Zovark
 
 The product hero artifacts are the approval-required EDR action card and the replayable proof package. The investigation tape is the internal proof substrate that produces them.
 
+### Primary differentiator
+
+ADR-0052 clarifies the buying-wedge emphasis: deterministic replay and evidence
+integrity are the primary customer-facing differentiator. Air-gap remains a
+supported topology and an important regulated-buyer option, but it is not the
+headline. The topology choice does not change the invariant that replay never
+re-inferences.
+
 ## Finalization rule
 
 The architecture is frozen only when:

@@ -79,7 +79,7 @@ live models, network calls, database state, dispatchers, or autonomous response.
 | Signed manifest | Not implemented | Intentionally deferred | Manifest/provenance phase |
 | Evidentiary package | Not implemented as a legal services artifact | Intentionally deferred | Later high-trust services |
 | Deployment profiles | Not implemented | Intentionally deferred | Later platform work |
-| RamaLama/local inference | Not implemented | Intentionally deferred | Harness/Inference Gateway MVP |
+| RamaLama/local inference | Named by ADR-0009 amendment; not implemented | Architecture decision only; runtime deferred | Harness/Inference Gateway MVP |
 | WASM content safety | Not implemented | Intentionally deferred | Later platform work |
 | Contract registry | OpenSpec and validators exist; runtime registry absent | Partially preserved | Later contract hardening |
 | Semantic invariants | Tests and validators cover Slice 001 invariants | Partially preserved | Later contract tests |
@@ -127,7 +127,7 @@ Slice 001 excludes:
 - databases
 - dispatchers
 - Vault runtime
-- RamaLama or other model runtime
+- RamaLama or other model runtime implementation
 - WASM runtime
 - autonomous response
 - deployment profiles
@@ -171,7 +171,7 @@ This reconciliation does not authorize:
 - AI Investigation Trace implementation
 - Fast Mode or Reasoning Mode implementation
 - Harness or Inference Gateway runtime
-- RamaLama, WASM, Temporal, Vault, database, Sentry, or dispatcher work
+- RamaLama runtime, WASM, Temporal, Vault, database, Sentry, or dispatcher work
 - live EDR or autonomous response
 
 Those require separate scoped PRs.
