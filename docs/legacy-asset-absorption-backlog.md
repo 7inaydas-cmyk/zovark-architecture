@@ -39,8 +39,10 @@ The two-model architecture from `Zovark_swami` maps to the ADR-0009 split:
 - CODE role: deeper investigation generation or synthesis work where approved.
 
 Under the v3.2.4.4 amendment, the local-SLM runtime named for this topology is
-RamaLama. Cloud-only, local-only, and hybrid inference remain tenant-selected
-topology choices. Replay never re-inferences in any topology.
+RamaLama. Cloud/local/hybrid inference remain planned target topology choices,
+pending runtime implementation, operator controls, and validation. They are not
+currently tenant-selectable runtime capabilities. Replay/evidence-integrity
+positioning does not depend on local inference being available.
 
 ## Not Yet Accepted
 
