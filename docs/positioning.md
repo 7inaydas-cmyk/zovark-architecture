@@ -6,15 +6,17 @@ outreach.
 
 ## Lead
 
-Every investigation produces a byte-identical-replayable record. Replay never
-re-inferences. Auditors verify verdicts offline, forever, regardless of model
-availability.
+Zovark's positioning direction is replay-grade evidence integrity: every
+investigation should produce a byte-identical-replayable record, replay should
+not re-inference, and auditors should be able to verify verdicts offline after
+the original model is retired. Recovered ADR-0046, ADR-0047, and INV-039 remain
+candidate material until reconciled into the current baseline.
 
 ## Customer-Facing Summary
 
 Zovark is the audit-grade evidence layer for AI-assisted SOC response. Before
-your SOC isolates a host or disables a user, Zovark shows the evidence, explains
-the verdict, records the approval path, and creates a replayable proof package.
+your SOC isolates a host or disables a user, Zovark should show the evidence,
+explain the verdict, record the approval path, and create replayable evidence.
 
 The customer-facing differentiator is deterministic replay plus evidence
 integrity. Air-gap deployment remains important for regulated buyers, but it is
@@ -24,27 +26,31 @@ a topology option rather than the headline.
 
 Zovark supports cloud, hybrid, and air-gap topology choices. Customer-instance
 authority remains governed by ADR-0038. Telemetry mode is governed by ADR-0041.
-The topology choice does not change the replay invariant.
+The topology choice does not change the replay positioning direction.
 
 ## Inference
 
 Zovark supports cloud LLM, local SLM through RamaLama, or hybrid inference
-topologies. RamaLama is the named local-SLM runtime under the ADR-0009
-amendment. The customer chooses the topology per tenant configuration.
+topologies as architecture guidance. RamaLama is the named local-SLM runtime
+under the ADR-0009 amendment, pending runtime implementation. The customer
+chooses the topology per tenant configuration once the relevant runtime support
+exists.
 
-Replay never re-inferences for any topology. Replay uses the recorded
-model-visible inputs, outputs, provenance, hashes, and verdict inputs captured at
-investigation time.
+Replay should not re-inference for any topology. Reconciled replay work should
+use the recorded model-visible inputs, outputs, provenance, hashes, and verdict
+inputs captured at investigation time.
 
 ## Evidence Integrity
 
-Evidence integrity depends on deterministic verdict canonicalization under
-ADR-0046, replay compatibility and failure modes under ADR-0047, and the
-recording invariants tracked by INV-036 and INV-039.
+Evidence integrity is the positioning direction. Recovered ADR-0046, recovered
+ADR-0047, and recovered INV-039 describe candidate deterministic verdict,
+replay-record, and bounded-context material that must be reconciled before it is
+cited as active current architecture or customer-facing commitment.
 
-The proof story is: captured evidence, canonical verdict input, deterministic
-verdict, replay-compatible record, and offline verification that does not call
-live models or tools.
+Until that reconciliation lands, the proof story should be framed as planned
+architecture direction: captured evidence, canonical verdict input,
+deterministic verdict, replay-compatible record, and offline verification that
+does not call live models or tools.
 
 ## Anti-Claims
 
@@ -59,5 +65,7 @@ This positioning does not claim:
 - benchmarked capacity, latency, false-positive, false-negative, or accuracy
   numbers without a benchmark artifact per INV-022;
 - that air-gap deployment is required for deterministic replay;
-- that RamaLama is implemented in this architecture repo; or
+- that RamaLama is implemented in this architecture repo;
+- that recovered ADR-0046, ADR-0047, or INV-039 are active current source before
+  reconciliation; or
 - that customer outreach or customer-readiness material is complete.
