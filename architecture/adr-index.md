@@ -8,9 +8,21 @@ Source ADRs currently live in the v3.2.4.6 patch tree at
 This snapshot ships ADR-0038 through ADR-0043; ADR-0001 through ADR-0037 remain in
 the predecessor baseline and must be verified after apply.
 
-All six visible ADRs are status **proposed** and become **accepted** on merge of
+All six visible patch ADRs are status **proposed** and become **accepted** on merge of
 M1-ARCH-001 (ADR-0042 also requires M1-ARCH-002). ADR-0043 additionally requires
 founder sign-off (M1-DECISION-001) before tagging the bootstrap baseline.
+
+This branch also carries a targeted v3.2.4.4 positioning amendment:
+
+- `architecture/adr/0009-two-model-architecture.md` amends recovered
+  predecessor ADR-0009 to name RamaLama as the local-SLM runtime and to make
+  cloud-only, local-only, and hybrid inference topology choices explicit.
+- `architecture/adr/0052-positioning-deterministic-replay.md` proposes
+  deterministic replay and evidence integrity as the primary customer-facing
+  differentiator.
+
+These files are documentation/ADR amendments only. They do not import the full
+predecessor ADR baseline, implement RamaLama, or change runtime behavior.
 
 | ADR | Title | Status | Scope | Affected invariants | Supersedes | Superseded by | Amends | Amended by | Implementation status | Customer-facing impact | Related files | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -20,6 +32,7 @@ founder sign-off (M1-DECISION-001) before tagging the bootstrap baseline.
 | ADR-0041 | Telemetry Boundary | proposed | M1 architecture; M2 enforcement | INV-029, INV-032 | none | none | none | none | schema and example checks implemented; runtime emitter scan/audit logging planned M2 | yes | `.../architecture/adr/0041-telemetry-boundary.md`, `.../architecture/telemetry-justification.md`, `.../architecture/blueprint/schemas/telemetry_envelope.schema.json` | Active proposal. `check_telemetry_boundary.py` is not present and remains an M2 deliverable. |
 | ADR-0042 | Cryptographic Key Management | proposed | M1 architecture; M4 implementation | INV-031 | unsafe old-key transition pattern | none | none | none | document-only in this patch; HSM/key-ledger gates planned M4 | yes | `.../architecture/adr/0042-cryptographic-key-management.md`, `.../SECURITY-VULN-DISCLOSURE.md` | Active proposal. No HSM, key ledger, or rotation-age script exists in this tree. |
 | ADR-0043 | Open-Source Release Strategy | proposed strategic pivot | M1 decision; M1/M6 release operations | INV-009, INV-027, INV-031 | closed-source commercial scope statement | none | none | none | proposed decision plus draft license text; release-channel implementation not present | yes | `.../architecture/adr/0043-open-source-release-strategy.md`, `.../LICENSE-source-available.md` | Founder sign-off and counsel review required before acceptance. |
+| ADR-0052 | Deterministic Replay as Primary Differentiator | proposed | positioning; customer-facing story; no runtime implementation | INV-022, INV-036, INV-039 | none | none | ADR-0009 | none | document-only; no benchmarks, runtime, or customer-readiness material | yes | `architecture/adr/0052-positioning-deterministic-replay.md`, `docs/positioning.md` | Positions deterministic replay/evidence integrity as primary differentiator; air-gap remains a planned regulated-deployment target pending runtime support, operator controls, validation, and deployment evidence. |
 
 ## Baseline ADRs (post-apply verified)
 
@@ -34,6 +47,7 @@ populate full metadata.
 | ADR | Short name | Verification status | Reference site(s) |
 |---|---|---|---|
 | ADR-0011 | (control-plane authority predecessor) | post-apply-verified | Amended by ADR-0038. |
+| ADR-0009 | (two-model architecture) | amendment-present | Amended by `architecture/adr/0009-two-model-architecture.md`; full predecessor source remains recovered material. |
 | ADR-0024 | (audit erasure / tenant usage) | post-apply-verified | `invariants.md` INV-020, INV-021. |
 | ADR-0025 | (audit erasure boundary) | post-apply-verified | `invariants.md` INV-020. |
 | ADR-0027 | (verdict canonicalization) | post-apply-verified | `invariants.md` INV-018. |

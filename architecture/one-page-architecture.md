@@ -20,6 +20,17 @@ Customer description: *Before your SOC isolates a host or disables a user, Zovar
 
 The product hero artifacts are the **approval-required EDR action card** and the **replayable proof package**. The investigation tape is the internal proof substrate that produces them; it is not the external headline.
 
+### Primary differentiator
+
+Per ADR-0052, the differentiator is deterministic replay plus evidence
+integrity: the customer can verify the recorded evidence, verdict, and approval
+path offline without re-running model inference. Hybrid inference with RamaLama
+as the planned local-SLM runtime is the current architecture direction, paired
+with approved cloud inference where tenant policy allows it. Local, hybrid, and
+air-gap profiles are planned target topology choices pending runtime
+implementation, operator controls, deployment evidence, and validation; they are
+not current customer-selectable runtime capabilities.
+
 ## 2. First MVP build slice
 
 Smallest path that exercises every governing spec. Per rc3 scorecard.
@@ -70,26 +81,3 @@ Combined artifact: `replay_state` (per-replay) + audit chain entry of type `tape
 - No live LLM during replay — `recorded_output` mode only.
 - No customer production data; no cross-tenant runtime.
 - No production claims of enforcement — the tape and replay report are the evidence; nothing else.
-
-Later: vault runtime authorization (`vault-authorization` capability); signed EDR action authorization; production tenant isolation; production audit chain with root-signing; DR + restore-gap (`disaster_recovery_restore_completed` event).
-
-## 6. Deferred architecture
-
-Per rc3 scorecard `PASS-with-explicit-DEFERRAL` annotations: M2 control-plane DR sketch (ARCH-P2-002, owner: architect); M3 vault IPC schemas + `check_vault_ipc_contract.py` (owner: schema-owner); post-apply baseline-ADR cross-link verification (script ready, awaits v3.2.3.5 baseline merge).
-
-Also out of MVP: live EDR vendor integration; credential vault runtime; autonomous response; multi-tenant SaaS; Sigma generation; SIEM publication; DR drills; customer-facing dashboards.
-
-See `architecture/review/release-candidate-scorecard.md` for owner/milestone/acceptance per item.
-
-## 7. Build rule
-
-The first implementation must prove the wedge:
-
-> Can a customer inspect and replay why Zovark recommended an EDR action?
-
-Stated in external product terms:
-
-> Does the proof package show the evidence, explain the verdict, record the approval path, and provide a replayable verification?
-
-If yes — the slice is useful, and the architecture is productized.
-If no — the architecture is unproductized; iterate before broadening scope.

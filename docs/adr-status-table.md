@@ -5,7 +5,9 @@ ADR sync, or make recovered ADR material automatically authoritative.
 
 ## Source Classification
 
-The current repo visibly carries `ADR-0038` through `ADR-0043` in the patch tree.
+The current repo visibly carries `ADR-0038` through `ADR-0043` in the patch tree
+plus the v3.2.4.4 `ADR-0009` amendment and proposed `ADR-0052` positioning ADR
+under `architecture/adr/`.
 `ADR-0001` through `ADR-0035` are candidate predecessor baseline material.
 `ADR-0036` and `ADR-0037` are recovered predecessor baseline constraints.
 `ADR-0044` through `ADR-0051` are recovered older material and are not
@@ -23,7 +25,7 @@ automatically active current source of truth until reconciled.
 | ADR-0006 | Data flywheel, opt-in pooled with tenant-first benefits | Candidate predecessor baseline material | accepted in candidate source | deferred | candidate historical | No customer data pooling exists. |
 | ADR-0007 | Webhook-only ingest | Candidate predecessor baseline material | accepted in candidate source | deferred | candidate historical | AlertForge ingest contract is future work. |
 | ADR-0008 | Deployment topology phasing | Candidate predecessor baseline material | accepted in candidate source | deferred | candidate historical | No production deployment topology is implemented. |
-| ADR-0009 | Two-model architecture, fast and code | Candidate predecessor baseline material | accepted in candidate source | deferred | candidate historical | No live model routing is implemented. |
+| ADR-0009 | Two-model architecture, fast and code | Candidate predecessor baseline material plus v3.2.4.4 amendment | accepted in candidate source; amended | active constraint | recovered amendment, not runtime implementation | RamaLama is named for planned local-SLM runtime architecture. Local-only and hybrid RamaLama inference are approved target topology choices only after runtime implementation, operator controls, and validation; they are not current customer-selectable runtime capabilities. |
 | ADR-0010 | Open-source schemas only | Candidate predecessor baseline material | accepted in candidate source | active constraint | candidate historical | Aligns with ADR-0036 schema boundary. |
 | ADR-0011 | Cloud-first launch, air-gap as later topology | Candidate predecessor baseline material | accepted in candidate source | deferred | candidate historical | Amended by visible ADR-0038 boundary; reconcile before runtime topology. |
 | ADR-0012 | Engineering team builds in compressed timeframe with parallel execution | Candidate predecessor baseline material | superseded in candidate source | no | candidate historical | Do not use for current build planning. |
@@ -66,6 +68,7 @@ automatically active current source of truth until reconciled.
 | ADR-0049 | Sigma Alert-Budget Governance | Recovered older material | recovered | unknown | not automatically active | Sigma governance remains future work. |
 | ADR-0050 | On-Call, Paging, and Vendor-Compromise Incident Response | Recovered older material | recovered | unknown | not automatically active | No operational paging or vendor-compromise workflow exists. |
 | ADR-0051 | Calendar Reconciliation | Recovered older material | recovered | unknown | not automatically active | Older source says it supersedes ADR-0012 and ADR-0032; do not apply silently. |
+| ADR-0052 | Deterministic Replay as Primary Differentiator | v3.2.4.4 amendment ADR | proposed | active positioning constraint | proposed current amendment | Deterministic replay and evidence integrity are the primary differentiator; air-gap is a planned regulated-deployment target, not a current supported deployment profile. |
 
 ## Current Position
 

@@ -104,7 +104,7 @@ validated by repeated customer evidence.
 | Manifest/provenance/signing | deferred | ADRs and roadmap preserve future option; not implemented now. |
 | Live EDR/SIEM connectors | deferred until customer pull | No live connector work in this synthesis. |
 | Harness/Inference Gateway runtime | partially built in older runtime, future platform work | Keep V3 forward; do not rebuild runtime before trace/proof semantics are stable. |
-| RamaLama/local runtime | aspirational or not found in repo evidence | Do not claim current implementation. |
+| RamaLama/local runtime | named by ADR-0009 amendment as local-SLM runtime; no implementation in this repo | Do not claim current implementation; replay never re-inferences regardless of topology. |
 | WASM content safety | aspirational or not found in repo evidence | Do not claim current implementation. |
 | v4.1 10K alerts/sec target | aspirational v4.1 target | Current measured evidence does not prove this target. |
 | Fast Mode / Reasoning Mode | deferred until customer pull and trace design | Exact names are product-mode language, not current repo runtime terms. |

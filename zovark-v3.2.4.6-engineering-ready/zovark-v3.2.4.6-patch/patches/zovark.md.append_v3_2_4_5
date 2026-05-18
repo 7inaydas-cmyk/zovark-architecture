@@ -6,6 +6,11 @@
 
 ## §16 — Future Direction: Control Plane, Update Factory, Research Pipeline
 
+Per ADR-0052, future-direction positioning leads with deterministic replay and
+evidence integrity. Air-gap remains a planned regulated-deployment target pending runtime support, operator controls, validation, and deployment evidence, but not the headline.
+Replay never re-inferences regardless of whether the original inference topology
+was cloud-only, local-only through RamaLama, or hybrid.
+
 Per ADR-0038 / ADR-0039 / ADR-0040 / ADR-0041 / ADR-0042 / ADR-0043, Zovark's
 architecture extends beyond the Customer Instance to a fleet-management
 Control Plane, an Update Factory producing two-distinct-role-signed

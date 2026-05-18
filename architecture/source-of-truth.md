@@ -35,6 +35,26 @@ Customer description: Before your SOC isolates a host or disables a user, Zovark
 
 The product hero artifacts are the approval-required EDR action card and the replayable proof package. The investigation tape is the internal proof substrate that produces them.
 
+### Primary differentiator
+
+ADR-0052 clarifies the buying-wedge emphasis: deterministic replay and evidence
+integrity are the primary customer-facing differentiator.
+
+The current architecture direction is hybrid inference with RamaLama as the
+planned local-SLM runtime paired with approved cloud inference where tenant
+policy allows it. This PR names that direction for architecture planning only;
+it does not add RamaLama runtime implementation, tenant controls, deployment
+automation, benchmarks, or customer-ready topology selection.
+
+Air-gap is an older deployment philosophy and a possible regulated-deployment
+target, not the headline wedge and not a current runtime capability claimed by
+this architecture-only PR. Any air-gap profile must remain pending until runtime
+support, operator controls, validation, and deployment evidence exist.
+
+The topology choice does not change the replay/evidence-integrity direction:
+reconciled replay work should not re-inference and should rely on recorded
+model-visible inputs, outputs, provenance, hashes, and verdict inputs.
+
 ## Finalization rule
 
 The architecture is frozen only when:

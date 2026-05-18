@@ -133,7 +133,7 @@ or `unknown`. Conflict risk values are limited to `none`, `possible`,
 | ADR-0006 | Data flywheel, opt-in pooled with tenant-first benefits | accepted | candidate zip `0006-data-flywheel-opt-in-pooled-with-tenant-first-benefits.md` | candidate predecessor baseline | deferred | possible | No customer data pooling or outreach should start from the local build path. Requires privacy and customer validation before use. |
 | ADR-0007 | Webhook-only ingest | accepted | candidate zip `0007-webhook-only-ingest.md` | candidate predecessor baseline | deferred | possible | Tension area. AlertForge is a synthetic scenario generator, not architecture; ingest contract is future work and should not be assumed webhook-only yet. |
 | ADR-0008 | Deployment topology phasing | accepted | candidate zip `0008-deployment-topology-phasing.md` | candidate predecessor baseline | deferred | possible | Local testbed can proceed without deciding cloud/hybrid/air-gap deployment topology. |
-| ADR-0009 | Two-model architecture, fast and code | accepted | candidate zip `0009-two-model-architecture-fast-and-code.md` | candidate predecessor baseline | deferred | possible | Tension area. Current work records model identity safely but forbids live LLM calls and raw prompt capture in proof packages. |
+| ADR-0009 | Two-model architecture, fast and code | accepted, amended | candidate zip `0009-two-model-architecture-fast-and-code.md`; amendment `architecture/adr/0009-two-model-architecture.md` | candidate predecessor baseline plus recovered amendment | active | possible | Tension area. v3.2.4.4 amendment names RamaLama as local-SLM runtime and treats cloud-only, local-only, and hybrid topology as architecturally-approved planned choices pending runtime implementation, while preserving no live LLM calls in replay. |
 | ADR-0010 | Open-source schemas only | accepted | candidate zip `0010-open-source-schemas-only.md` | candidate predecessor baseline | active | possible | Tension area. Current V1/V2 proof-package contracts are explicit, but schema/version source-of-truth needs review before broader schema claims. |
 | ADR-0011 | Cloud-first launch, air-gap as later topology | accepted | candidate zip `0011-cloud-first-launch-air-gap-as-later-topology.md` | candidate predecessor baseline | deferred | possible | Tension area and amended by ADR-0038. Offline Replay and customer-instance authority keep air-gap/offline verification relevant. |
 | ADR-0012 | Engineering team builds in compressed timeframe with parallel execution | superseded | candidate zip `0012-engineering-team-builds-in-compressed-timeframe-with-paralle.md` | candidate predecessor baseline | superseded | none | Superseded by ADR-0032; do not use for current build planning. |
@@ -176,6 +176,7 @@ or `unknown`. Conflict risk values are limited to `none`, `possible`,
 | ADR-0049 | Sigma Alert-Budget Governance | recovered | older `v3.2.4.3` architecture material | recovered older patch material | unknown | possible | Sigma generation and alert-budget governance remain outside the current local proof/Replay path. |
 | ADR-0050 | On-Call, Paging, and Vendor-Compromise Incident Response | recovered | older `v3.2.4.3` architecture material | recovered older patch material | unknown | possible | Operational on-call, paging, and vendor-compromise incident response are not current local-build work. |
 | ADR-0051 | Calendar Reconciliation | recovered | older `v3.2.4.3` architecture material | recovered older patch material | unknown | possible | Older material says this supersedes `ADR-0012` and `ADR-0032`; do not apply that supersession until reconciled. |
+| ADR-0052 | Deterministic Replay as Primary Differentiator | proposed | `architecture/adr/0052-positioning-deterministic-replay.md` | v3.2.4.4 amendment ADR | active | none | New positioning ADR: deterministic replay/evidence integrity is the primary differentiator; air-gap is a planned regulated-deployment target pending runtime support, operator controls, validation, and deployment evidence, not the headline. |
 
 ## Likely Tension Areas
 
@@ -186,9 +187,8 @@ local product/testbed work:
   proof-package and offline Replay centered. Marketing language must stay bounded.
 - `ADR-0007` Webhook-only ingest: AlertForge is a synthetic scenario generator,
   not the Zovark architecture. The ingest contract remains future work.
-- `ADR-0009` Two-model architecture, fast and code: current proof packages may
-  preserve safe model metadata, but no raw prompts, live LLM calls, or hidden
-  reasoning capture are allowed.
+- `ADR-0009` Two-model architecture, fast and code: v3.2.4.4 names RamaLama as
+  the canonical local-SLM runtime and treats cloud-only, local-only, and hybrid topology as architecturally-approved planned choices pending runtime implementation, while preserving no live LLM calls in replay. Current proof packages may preserve safe model metadata, but no raw prompts, live LLM calls, or hidden reasoning capture are allowed.
 - `ADR-0010` Open-source schemas only: V1/V2 contracts exist, but broader schema
   registry obligations remain unreconciled.
 - `ADR-0011` Cloud-first launch, air-gap later: current offline Replay and
