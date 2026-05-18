@@ -30,12 +30,15 @@ live integration in this repo.
 Zovark supports three inference topologies:
 
 - **Cloud-only:** model calls are served by an approved cloud LLM provider.
-- **Local-only:** model calls are served locally through RamaLama.
+- **Local-only:** model calls are served locally through RamaLama after runtime
+  support is implemented.
 - **Hybrid:** tenant policy can route some calls to a cloud LLM and some calls to
-  local SLM inference through RamaLama.
+  local SLM inference through RamaLama after runtime support is implemented.
 
-Local-only and hybrid inference are first-class topology choices, not deferred
-future concepts. The customer chooses the topology per tenant configuration.
+Local-only and hybrid inference are approved target topology choices, not
+current runtime capabilities. They become selectable only after the
+corresponding runtime implementation, operator controls, and validation are in
+place.
 
 The replay-record provenance invariant is unchanged across all three
 topologies: replay never re-inferences regardless of the original inference
@@ -48,7 +51,7 @@ provenance, hashes, and verdict inputs captured at investigation time.
 
 - Names a concrete local-SLM runtime for architecture and future implementation
   planning.
-- Keeps cloud, local, and hybrid topology choices explicit and tenant-scoped.
+- Keeps cloud, local, and hybrid topology targets explicit and tenant-scoped.
 - Preserves deterministic replay as the trust boundary across inference
   providers.
 - Avoids treating air-gap deployment as the sole or primary buying wedge.
@@ -66,8 +69,10 @@ provenance, hashes, and verdict inputs captured at investigation time.
 
 - **Keep local inference unnamed.** Rejected because it leaves local-only and
   hybrid topology claims ambiguous.
-- **Keep local inference deferred.** Rejected because regulated and sovereignty
-  buyers may choose local-only inference as a first-class tenant configuration.
+- **Keep local inference deferred as an architecture decision.** Rejected
+  because regulated and sovereignty buyers may require local-only inference as a
+  target tenant topology once the corresponding runtime support, controls, and
+  validation exist.
 - **Make local inference mandatory.** Rejected because deterministic replay does
   not require local inference; cloud-only remains a valid topology when tenant
   policy permits it.
@@ -78,7 +83,8 @@ provenance, hashes, and verdict inputs captured at investigation time.
 
 This amendment does not implement RamaLama, introduce live LLM calls, change
 Proof Package V1/V2 contracts, change Replay verifier behavior, add benchmarks,
-or make customer-readiness claims.
+or make customer-readiness claims. This amendment does not make local-only or
+hybrid RamaLama inference available as a runtime capability.
 
 ## Related
 
