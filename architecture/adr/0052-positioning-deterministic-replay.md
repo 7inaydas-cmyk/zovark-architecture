@@ -36,9 +36,10 @@ Air-gap remains a supported topology. It is not the headline.
   ADR-0046, and ADR-0047 as the audit-evidence story.
 - Air-gap remains in the buying-wedge story as a deployment option, not the
   wedge.
-- Local inference through RamaLama, per the ADR-0009 amendment, is available to
-  customers who prefer it for sovereignty, cost, or latency reasons. The
-  architecture does not require local inference for deterministic replay.
+- Local inference through RamaLama, per the ADR-0009 amendment, is an approved
+  topology choice pending runtime implementation for customers who require
+  sovereignty, cost, or latency properties. The architecture does not require
+  local inference for deterministic replay.
 - Quantified claims remain forbidden unless backed by benchmark artifacts per
   INV-022.
 
