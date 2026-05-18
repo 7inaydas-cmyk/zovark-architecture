@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.zovark.io/retention_certificate/v1.0.0/schema.json",
+  "title": "Tenant retention certificate (ADR-0024 Workflow A)",
+  "description": "Issued when a tenant relationship is terminated but retention obligations require Zovark to retain evidence. NOT a deletion certificate.",
+  "type": "object",
+  "x-zovark-schema-version": "1.0.0",
+  "x-zovark-compatibility": "backward",
+  "x-zovark-license": "Apache-2.0",
+  "x-zovark-owner": "legal-owner",
+  "x-zovark-visibility": "public",
+  "x-zovark-standards-attribution": [
+    {
+      "standard": "JSON-Schema-2020-12",
+      "version": "2020-12",
+      "role": "canonical",
+      "license": "BSD-3-Clause",
+      "source": "https://json-schema.org/"
+    }
+  ],
+  "x-zovark-breaking-change-requires-adr": true,
+  "required": [
+    "schema_version",
+    "tenant_id",
+    "mode",
+    "requested_by",
+    "approved_by",
+    "retention_basis",
+    "retention_expires_at_ns",
+    "record_counts",
+    "audit_chain_root_at_termination",
+    "executed_at_ns",
+    "signature",
+    "signing_key_fingerprint"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "tenant_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "mode": {
+      "const": "terminate_retain"
+    },
+    "requested_by": {
+      "type": "string"
+    },
+    "approved_by": {
+      "type": "string",
+      "description": "Two-person approval: a second operator distinct from requested_by"
+    },
+    "retention_basis": {
+      "type": "string",
+      "description": "Legal or contractual basis e.g. SOC2, HIPAA, contract clause N"
+    },
+    "retention_expires_at_ns": {
+      "type": "integer"
+    },
+    "legal_hold_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "active"
+      ]
+    },
+    "record_counts": {
+      "type": "object",
+      "properties": {
+        "investigations": {
+          "type": "integer"
+        },
+        "replay_records": {
+          "type": "integer"
+        },
+        "audit_events": {
+          "type": "integer"
+        },
+        "alerts": {
+          "type": "integer"
+        }
+      }
+    },
+    "audit_chain_root_at_termination": {
+      "type": "string",
+      "contentEncoding": "base16"
+    },
+    "executed_at_ns": {
+      "type": "integer"
+    },
+    "signature": {
+      "type": "string",
+      "contentEncoding": "base64"
+    },
+    "signing_key_fingerprint": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

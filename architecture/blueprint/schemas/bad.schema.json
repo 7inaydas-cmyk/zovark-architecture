@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/test/v1.0.0/schema.json",
+  "title": "test schema with valid attribution",
+  "type": "object",
+  "x-zovark-schema-version": "1.0.0",
+  "x-zovark-compatibility": "backward",
+  "x-zovark-license": "Apache-2.0",
+  "x-zovark-owner": "test-owner",
+  "x-zovark-visibility": "internal",
+  "x-zovark-standards-attribution": [
+    {
+      "standard": "FAKESTANDARD-9999",
+      "version": "9.9.9",
+      "role": "canonical",
+      "license": "Apache-2.0",
+      "source": "https://example.invalid/"
+    }
+  ],
+  "x-zovark-breaking-change-requires-adr": true,
+  "properties": {
+    "foo": {
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.zovark.io/audit_event/v1.0.0/schema.json",
+  "title": "Audit Event",
+  "description": "Append-only, hash-chained audit event row. Per ADR-0025 / INV-006: every event has prev_hash and chain_hash; payload is RFC 8785 JCS canonical JSON before hashing.",
+  "type": "object",
+  "x-zovark-schema-version": "1.0.0",
+  "x-zovark-compatibility": "backward",
+  "x-zovark-license": "Apache-2.0",
+  "x-zovark-owner": "security-owner",
+  "x-zovark-visibility": "internal",
+  "x-zovark-standards-attribution": [
+    {
+      "standard": "JSON-Schema-2020-12",
+      "version": "2020-12",
+      "role": "canonical",
+      "license": "BSD-3-Clause",
+      "source": "https://json-schema.org/draft/2020-12/schema"
+    }
+  ],
+  "x-zovark-breaking-change-requires-adr": true,
+  "additionalProperties": false,
+  "required": [
+    "seq",
+    "tenant_id",
+    "occurred_at_ns",
+    "event_type",
+    "payload",
+    "chain_hash"
+  ],
+  "properties": {
+    "seq": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Per-tenant monotonic sequence."
+    },
+    "tenant_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "occurred_at_ns": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Event time in ns since unix epoch."
+    },
+    "event_type": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Z][A-Z0-9_]+$"
+    },
+    "actor": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": [
+            "user",
+            "service",
+            "system",
+            "subagent"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "session_id": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "payload": {
+      "type": "string",
+      "description": "RFC 8785 JCS canonical JSON. Verifiable via canonicalization round-trip; non-canonical payloads must produce PAYLOAD_NOT_CANONICAL in the verifier."
+    },
+    "prev_hash": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "chain_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "SHA-256 of (prev_hash || canonical_payload)."
+    }
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.zovark.io/campaign_record/v1.0.0/schema.json",
+  "title": "Campaign Record",
+  "description": "Correlated multi-investigation campaign assembled by the CORRELATE stage. Groups findings/verdicts by adversary signal across time and tenant scope.",
+  "type": "object",
+  "x-zovark-schema-version": "1.0.0",
+  "x-zovark-compatibility": "backward",
+  "x-zovark-license": "Apache-2.0",
+  "x-zovark-owner": "platform-owner",
+  "x-zovark-visibility": "internal",
+  "x-zovark-standards-attribution": [
+    {
+      "standard": "OCSF-1.1",
+      "version": "1.1",
+      "role": "referenced",
+      "license": "Apache-2.0",
+      "source": "https://schema.ocsf.io/"
+    },
+    {
+      "standard": "MITRE ATT&CK STIX 2.1",
+      "version": "v15.1",
+      "role": "referenced",
+      "license": "Apache-2.0",
+      "source": "https://github.com/mitre-attack/attack-stix-data"
+    }
+  ],
+  "x-zovark-breaking-change-requires-adr": true,
+  "additionalProperties": false,
+  "required": [
+    "campaign_id",
+    "tenant_id",
+    "first_seen_ns",
+    "last_seen_ns",
+    "investigation_ids",
+    "attack_techniques",
+    "confidence_basis_points",
+    "campaign_status"
+  ],
+  "properties": {
+    "campaign_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tenant_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "first_seen_ns": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "last_seen_ns": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "investigation_ids": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10000,
+      "items": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "attack_techniques": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 100,
+      "items": {
+        "type": "string",
+        "pattern": "^T\\d{4}(\\.\\d{3})?$",
+        "description": "MITRE ATT&CK technique ID."
+      }
+    },
+    "confidence_basis_points": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "campaign_status": {
+      "enum": [
+        "active",
+        "contained",
+        "closed",
+        "false_positive"
+      ]
+    },
+    "actor_attribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": [
+            "named_group",
+            "unknown_group",
+            "insider",
+            "automated"
+          ]
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

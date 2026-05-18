@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.zovark.io/learning_pack/v1.0.0/schema.json",
+  "title": "Learning Pack",
+  "description": "Bundle that exports analyst feedback and reviewed verdicts as training signals. Tenant-tagged; never mixes data across tenants. Customer-controlled retention per ADR-0024.",
+  "type": "object",
+  "x-zovark-schema-version": "1.0.0",
+  "x-zovark-compatibility": "backward",
+  "x-zovark-license": "Apache-2.0",
+  "x-zovark-owner": "platform-owner",
+  "x-zovark-visibility": "internal",
+  "x-zovark-standards-attribution": [],
+  "x-zovark-breaking-change-requires-adr": true,
+  "additionalProperties": false,
+  "required": [
+    "pack_id",
+    "tenant_id",
+    "schema_version",
+    "generated_at_ns",
+    "items_count",
+    "items_hash",
+    "consent_version"
+  ],
+  "properties": {
+    "pack_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tenant_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "generated_at_ns": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "items_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "items_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "Merkle root over the canonicalized item list."
+    },
+    "consent_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Version of customer consent policy in effect."
+    },
+    "encryption": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dek_fingerprint",
+        "algorithm"
+      ],
+      "properties": {
+        "dek_fingerprint": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{8,64}$"
+        },
+        "algorithm": {
+          "enum": [
+            "AES-256-GCM"
+          ]
+        }
+      }
+    }
+  }
+}

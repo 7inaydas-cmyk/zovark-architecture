@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.zovark.io/tenant_usage_event/v1.1.0/schema.json",
+  "title": "Tenant usage event (INV-021, INV-026)",
+  "description": "Tenant-attributed usage record emitted by every billable or resource-consuming action. Source for billing, capacity planning, and customer-facing usage disclosure. v1.1.0 (v3.2): quantity changed from number to integer with explicit unit per INV-026 (numeric precision discipline).",
+  "type": "object",
+  "x-zovark-schema-version": "1.1.0",
+  "x-zovark-compatibility": "backward",
+  "x-zovark-license": "Apache-2.0",
+  "x-zovark-owner": "billing-owner",
+  "x-zovark-visibility": "public",
+  "x-zovark-standards-attribution": [
+    {
+      "standard": "JSON-Schema-2020-12",
+      "version": "2020-12",
+      "role": "canonical",
+      "license": "BSD-3-Clause",
+      "source": "https://json-schema.org/"
+    }
+  ],
+  "x-zovark-breaking-change-requires-adr": true,
+  "required": [
+    "schema_version",
+    "tenant_id",
+    "usage_type",
+    "quantity",
+    "unit",
+    "source_stage",
+    "recorded_at_ns"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.1.0"},
+    "tenant_id": {"type": "string", "format": "uuid"},
+    "usage_type": {
+      "type": "string",
+      "enum": [
+        "gpu_us",
+        "cpu_us",
+        "tokens_in",
+        "tokens_out",
+        "storage_bytes",
+        "egress_bytes",
+        "edr_api_call",
+        "siem_api_call",
+        "replay_storage_bytes",
+        "wasm_us",
+        "docker_us"
+      ],
+      "description": "Note: time-based units are now microseconds (us) instead of milliseconds for finer-grained attribution under continuous batching"
+    },
+    "quantity": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Integer quantity per INV-026; fractional GPU-time is recorded as integer microseconds, never as float milliseconds"
+    },
+    "unit": {
+      "type": "string",
+      "enum": ["us", "tokens", "bytes", "count"],
+      "description": "Explicit unit; must be consistent with usage_type (gpu_us → us, tokens_in → tokens, storage_bytes → bytes, edr_api_call → count)"
+    },
+    "source_stage": {
+      "type": "string",
+      "enum": [
+        "INGEST",
+        "ANALYZE",
+        "EXECUTE",
+        "ASSESS",
+        "GOVERN",
+        "STORE",
+        "HEALER",
+        "DETECTION_GENERATION"
+      ]
+    },
+    "investigation_id": {"type": "string", "format": "uuid"},
+    "vendor_id": {"type": "string", "description": "For edr_api_call / siem_api_call attribution"},
+    "batch_attribution_method": {
+      "type": "string",
+      "enum": ["sole_consumer", "proportional_to_tokens_in_batch", "proportional_to_step_count", "equal_split"],
+      "description": "Per ADR-0033 §14.17: continuous-batched GPU attribution uses 'proportional_to_tokens_in_batch' for v1.0; deterministic per-tenant attribution validated by tests/contract/usage-attribution-deterministic.test.py"
+    },
+    "batch_id": {"type": "string", "description": "For continuous-batched workloads, the batch step id; same batch_id across replicas must produce identical per-tenant rows"},
+    "recorded_at_ns": {"type": "integer", "description": "ns since epoch; integer per INV-026"}
+  },
+  "additionalProperties": false
+}
