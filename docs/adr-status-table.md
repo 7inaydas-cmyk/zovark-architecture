@@ -68,7 +68,7 @@ automatically active current source of truth until reconciled.
 | ADR-0049 | Sigma Alert-Budget Governance | Recovered older material | recovered | unknown | not automatically active | Sigma governance remains future work. |
 | ADR-0050 | On-Call, Paging, and Vendor-Compromise Incident Response | Recovered older material | recovered | unknown | not automatically active | No operational paging or vendor-compromise workflow exists. |
 | ADR-0051 | Calendar Reconciliation | Recovered older material | recovered | unknown | not automatically active | Older source says it supersedes ADR-0012 and ADR-0032; do not apply silently. |
-| ADR-0052 | Deterministic Replay as Primary Differentiator | v3.2.4.4 amendment ADR | proposed | active positioning constraint | proposed current amendment | Deterministic replay and evidence integrity are the primary differentiator; air-gap is a supported topology option, not the headline. |
+| ADR-0052 | Deterministic Replay as Primary Differentiator | v3.2.4.4 amendment ADR | proposed | active positioning constraint | proposed current amendment | Deterministic replay and evidence integrity are the primary differentiator; air-gap is a planned regulated-deployment target, not a current supported deployment profile. |
 
 ## Current Position
 
