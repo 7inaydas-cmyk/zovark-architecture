@@ -121,7 +121,7 @@ If a field is not in this document, it must not appear in `telemetry_envelope.sc
 - **Format:** Enum: `saas`, `hybrid`, `air-gap`.
 - **Positioning note:** Telemetry mode and topology choice are independent of
   the buying wedge. Per ADR-0052, deterministic replay and evidence integrity
-  are the primary differentiator; air-gap remains a supported topology option.
+  are the primary differentiator; air-gap remains a planned regulated-deployment target pending runtime support, operator controls, validation, and deployment evidence.
 
 ### `disabled_capabilities`
 
