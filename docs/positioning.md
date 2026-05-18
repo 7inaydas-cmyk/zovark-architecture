@@ -19,22 +19,28 @@ your SOC isolates a host or disables a user, Zovark should show the evidence,
 explain the verdict, record the approval path, and create replayable evidence.
 
 The customer-facing differentiator is deterministic replay plus evidence
-integrity. Air-gap deployment remains important for regulated buyers, but it is
-a topology option rather than the headline.
+integrity. Air-gap deployment remains a possible regulated-deployment target,
+but it is a planned topology target rather than the headline and is not a
+current supported deployment profile.
 
 ## Topology
 
-Zovark supports cloud, hybrid, and air-gap topology choices. Customer-instance
-authority remains governed by ADR-0038. Telemetry mode is governed by ADR-0041.
-The topology choice does not change the replay positioning direction.
+Zovark's architecture direction includes cloud, hybrid, and air-gap topology
+targets. Hybrid inference with RamaLama as the planned local-SLM runtime is the
+current direction, paired with approved cloud inference where tenant policy
+allows it. Non-cloud and air-gap profiles remain pending until the relevant
+runtime support, operator controls, validation, and deployment evidence exist.
+Customer-instance authority remains governed by ADR-0038. Telemetry mode is
+governed by ADR-0041. The topology choice does not change the replay
+positioning direction.
 
 ## Inference
 
-Zovark supports cloud LLM, local SLM through RamaLama, or hybrid inference
-topologies as architecture guidance. RamaLama is the named local-SLM runtime
-under the ADR-0009 amendment, pending runtime implementation. The customer
-chooses the topology per tenant configuration once the relevant runtime support
-exists.
+Zovark's architecture direction includes cloud LLM, local SLM through RamaLama,
+or hybrid inference topologies. RamaLama is the named local-SLM runtime under
+the ADR-0009 amendment, pending runtime implementation. The customer chooses the
+topology per tenant configuration only once the relevant runtime support,
+operator controls, and validation exist.
 
 Replay should not re-inference for any topology. Reconciled replay work should
 use the recorded model-visible inputs, outputs, provenance, hashes, and verdict
@@ -65,6 +71,7 @@ This positioning does not claim:
 - benchmarked capacity, latency, false-positive, false-negative, or accuracy
   numbers without a benchmark artifact per INV-022;
 - that air-gap deployment is required for deterministic replay;
+- that air-gap is a current supported deployment profile;
 - that RamaLama is implemented in this architecture repo;
 - that recovered ADR-0046, ADR-0047, or INV-039 are active current source before
   reconciliation; or
