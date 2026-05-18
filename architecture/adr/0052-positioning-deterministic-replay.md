@@ -11,9 +11,11 @@ Earlier marketing framing emphasized air-gap deployment as the buying wedge.
 Air-gap is one of three deployment topologies under ADR-0038. It is necessary
 for some regulated buyers, but it is not the differentiator by itself.
 
-The differentiator is evidence integrity: every investigation produces a
-byte-identical-replayable record; replay never re-inferences; auditors can
-verify verdicts offline indefinitely, even after the original model is retired.
+The differentiator is evidence integrity: every investigation should produce a
+byte-identical-replayable record; replay should not re-inference; auditors
+should be able to verify verdicts offline indefinitely, even after the original
+model is retired. This PR establishes that positioning direction without making
+recovered ADR-0046 or ADR-0047 active current source before reconciliation.
 
 ## Decision
 
@@ -32,8 +34,10 @@ Air-gap remains a supported topology. It is not the headline.
 
 - Customer-facing material leads with replay and evidence integrity, not
   air-gap.
-- Regulated-buyer conversations anchor on INV-004, INV-005, INV-036, INV-039,
-  ADR-0046, and ADR-0047 as the audit-evidence story.
+- Regulated-buyer conversations must not cite recovered ADR-0046, ADR-0047, or
+  INV-039 as active commitments until those materials are reconciled into the
+  current baseline. Until then, they remain candidate/future evidence-integrity
+  work that informs the positioning direction.
 - Air-gap remains in the buying-wedge story as a deployment option, not the
   wedge.
 - Local inference through RamaLama, per the ADR-0009 amendment, is an approved
@@ -59,14 +63,16 @@ Air-gap remains a supported topology. It is not the headline.
 - ADR-0009, as amended by v3.2.4.4
 - ADR-0038
 - ADR-0041
-- ADR-0046
-- ADR-0047
+- ADR-0046 as recovered candidate material pending reconciliation
+- ADR-0047 as recovered candidate material pending reconciliation
 - INV-036
-- INV-039
+- INV-039 as recovered candidate material pending reconciliation
 - INV-022 quantified claim provenance
 
 ## Boundary
 
 This ADR does not add runtime implementation, RamaLama code, benchmarks,
 customer-readiness material, legal admissibility claims, compliance
-certification claims, signing, anchoring, SLSA, or in-toto scope.
+certification claims, signing, anchoring, SLSA, or in-toto scope. It does not
+make recovered ADR-0046, ADR-0047, or INV-039 active current source before a
+separate reconciliation PR.
