@@ -135,7 +135,7 @@ unless `--no-verify` is provided. It is scoped to the existing `F-002` Replay
 engine and tape recorder lifecycle area and is not an AlertForge integration,
 benchmark harness, customer-readiness bundle, or live product runtime.
 
-ADR-0037 feature-lifecycle note: no current applied/root
+INV-028 feature-lifecycle note: no current applied/root
 `product/features/feature-registry.yaml` file is present in this repo snapshot.
 The only discovered feature-registry material is recovered patch-tree material,
 including
@@ -145,7 +145,7 @@ update a root feature registry because the local testbed runner is scoped as
 `F-002` Replay/tape workflow plumbing, not as a new product feature. Future
 product components, standalone testbed features, AlertForge ingest paths,
 benchmark harnesses, services, feature flags, or customer-facing workflows must
-add or update the feature registry according to ADR-0037 before implementation
+add or update the feature registry according to INV-028 before implementation
 claims are made.
 
 ## Context Compaction Memory Contracts

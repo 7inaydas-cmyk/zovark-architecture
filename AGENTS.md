@@ -56,7 +56,3 @@ This repository is currently an architecture/reference/proof repository. Do not
 let review language imply that the final runtime product, AlertForge
 integration, benchmark suite, customer-readiness workflow, or outreach process
 already exists.
-
-ADR-0036 and ADR-0037 are recovered predecessor baseline constraints. Treat
-schema-boundary and feature-lifecycle violations as serious until those ADRs are
-fully imported or otherwise reconciled.

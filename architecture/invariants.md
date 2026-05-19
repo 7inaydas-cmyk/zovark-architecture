@@ -59,7 +59,7 @@ This file is **append-only** in normal flow. Modifications to existing entries r
 
 ## INV-009 — Open-source-only dependencies
 
-**Statement.** No paid components in the production codebase. Approved licenses: Apache-2.0, BSD-3-Clause, MIT, ISC. AGPL is excluded for canonical-schema dependencies (per ADR-0036).
+**Statement.** No paid components in the production codebase. Approved licenses: Apache-2.0, BSD-3-Clause, MIT, ISC. AGPL is excluded for canonical-schema dependencies (per INV-027).
 **Established by:** ADR-0013.
 **Status:** COVERED.
 
@@ -168,13 +168,11 @@ This file is **append-only** in normal flow. Modifications to existing entries r
 ## INV-027 — Open-source schema boundary
 
 **Statement.** No vendor-proprietary schema is canonical. All canonical storage and verdict schemas are Zovark-defined and Apache-2.0 licensed.
-**Established by:** ADR-0036.
 **Status:** COVERED.
 
 ## INV-028 — Feature lifecycle and dead-code housekeeping
 
 **Statement.** Every feature has a lifecycle status from `allowed_statuses`. Features in terminal states (`retired`, `deleted`, `rejected`) cannot have active runtime code.
-**Established by:** ADR-0037.
 **Status:** COVERED.
 
 ---

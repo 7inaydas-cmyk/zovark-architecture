@@ -109,7 +109,7 @@ Apache-2.0 carries a patent grant. Zovark contributes any patents covering Apach
 
 - *Fully Apache-2.0 (everything open)*: rejected; gives away competitive defensibility; encourages forks of the runtime.
 - *Fully closed-source* (the original evaluation-scope posture): the founder may choose this; in that case ADR-0043 is rejected and Zovark ships closed-source binaries with attestations only. Regulated buyers may push back during procurement.
-- *AGPL-3.0 for runtime*: rejected; AGPL viral terms create deployment friction; ADR-0036 already excludes AGPL from canonical schemas.
+- *AGPL-3.0 for runtime*: rejected; AGPL viral terms create deployment friction; INV-027 already excludes AGPL from canonical schemas.
 - *BSL (Business Source License)*: considered; rejected because BSL converts to Apache-2.0 after a delay, which we don't commit to.
 
 ## Counts referenced from this ADR

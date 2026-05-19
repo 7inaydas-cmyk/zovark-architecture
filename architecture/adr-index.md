@@ -2,11 +2,10 @@
 
 This is the source of truth for the status of all architectural decisions.
 
-Source ADRs currently live in the v3.2.4.6 patch tree at
-`zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/architecture/adr/`.
-`VERSION_METADATA.json` records the expected post-apply baseline count as 43 ADRs.
-This snapshot ships ADR-0038 through ADR-0043; ADR-0001 through ADR-0037 remain in
-the predecessor baseline and must be verified after apply.
+Authoritative ADRs currently live under `architecture/adr/`. This
+consolidation snapshot ships the promoted ADR files at that path; retired and
+superseded predecessor items are tracked in the consolidation source-of-truth
+work.
 
 All six visible patch ADRs are status **proposed** and become **accepted** on merge of
 M1-ARCH-001 (ADR-0042 also requires M1-ARCH-002). ADR-0043 additionally requires

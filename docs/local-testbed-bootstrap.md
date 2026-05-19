@@ -6,7 +6,7 @@ Replay verifier.
 
 ## Feature Lifecycle
 
-ADR-0037 requires durable feature lifecycle discipline before adding new CLI,
+INV-028 requires durable feature lifecycle discipline before adding new CLI,
 testbed, AlertForge, benchmark, service, or schema work. No current applied/root
 `product/features/feature-registry.yaml` file is present in this repo snapshot.
 The only discovered feature-registry material is recovered patch-tree material,
@@ -25,7 +25,7 @@ entry is changed in this PR.
 The local runner remains a narrow static proof/Replay workflow. Any future
 product component, standalone testbed feature, AlertForge ingest path, benchmark
 harness, service, feature flag, or customer-facing workflow must add or update
-the feature registry according to ADR-0037 before implementation claims are
+the feature registry according to INV-028 before implementation claims are
 made.
 
 ## Prerequisites
@@ -104,7 +104,7 @@ The V1 output remains the existing nine-file package. It does not emit
   certification, or full implementation compliance claims for recovered
   ADR-0044 through ADR-0051.
 
-ADR-0036 remains a schema boundary constraint: local proof-package and export
+INV-027 remains a schema boundary constraint: local proof-package and export
 work must not make vendor/proprietary schemas canonical dependencies for Replay,
 audit, storage, verdict, or customer evidence.
 

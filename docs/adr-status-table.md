@@ -5,13 +5,11 @@ ADR sync, or make recovered ADR material automatically authoritative.
 
 ## Source Classification
 
-The current repo visibly carries `ADR-0038` through `ADR-0043` in the patch tree
-plus the v3.2.4.4 `ADR-0009` amendment and proposed `ADR-0052` positioning ADR
-under `architecture/adr/`.
-`ADR-0001` through `ADR-0035` are candidate predecessor baseline material.
-`ADR-0036` and `ADR-0037` are recovered predecessor baseline constraints.
-`ADR-0044` through `ADR-0051` are recovered older material and are not
-automatically active current source of truth until reconciled.
+The current repo visibly carries promoted ADR files under `architecture/adr/`,
+plus the v3.2.4.4 `ADR-0009` amendment and proposed `ADR-0052` positioning ADR.
+`ADR-0001` through `ADR-0035` are candidate predecessor baseline material where
+not already promoted. `ADR-0044` through `ADR-0051` are recovered older material
+and are not automatically active current source of truth until reconciled.
 
 ## ADR Table
 
@@ -26,7 +24,7 @@ automatically active current source of truth until reconciled.
 | ADR-0007 | Webhook-only ingest | Candidate predecessor baseline material | accepted in candidate source | deferred | candidate historical | AlertForge ingest contract is future work. |
 | ADR-0008 | Deployment topology phasing | Candidate predecessor baseline material | accepted in candidate source | deferred | candidate historical | No production deployment topology is implemented. |
 | ADR-0009 | Two-model architecture, fast and code | Candidate predecessor baseline material plus v3.2.4.4 amendment | accepted in candidate source; amended | active constraint | recovered amendment, not runtime implementation | RamaLama is named for planned local-SLM runtime architecture. Local-only and hybrid RamaLama inference are approved target topology choices only after runtime implementation, operator controls, and validation; they are not current customer-selectable runtime capabilities. |
-| ADR-0010 | Open-source schemas only | Candidate predecessor baseline material | accepted in candidate source | active constraint | candidate historical | Aligns with ADR-0036 schema boundary. |
+| ADR-0010 | Open-source schemas only | Candidate predecessor baseline material | accepted in candidate source | active constraint | candidate historical | Aligns with INV-027 schema boundary. |
 | ADR-0011 | Cloud-first launch, air-gap as later topology | Candidate predecessor baseline material | accepted in candidate source | deferred | candidate historical | Amended by visible ADR-0038 boundary; reconcile before runtime topology. |
 | ADR-0012 | Engineering team builds in compressed timeframe with parallel execution | Candidate predecessor baseline material | superseded in candidate source | no | candidate historical | Do not use for current build planning. |
 | ADR-0013 | No paid components in production codebase | Candidate predecessor baseline material | accepted in candidate source | active constraint | candidate historical | Dependency policy concern, not runtime proof. |
@@ -52,8 +50,6 @@ automatically active current source of truth until reconciled.
 | ADR-0033 | Open standards and schema registry | Candidate predecessor baseline material | accepted in candidate source | deferred | candidate historical | Broader schema registry is not implemented. |
 | ADR-0034 | Tenant DEK rotation policy | Candidate predecessor baseline material | accepted in candidate source | deferred | candidate historical | No tenant key-management runtime exists. |
 | ADR-0035 | Open-source on-call and paging stack | Candidate predecessor baseline material | accepted in candidate source | deferred | candidate historical | No on-call/paging stack exists. |
-| ADR-0036 | Open-source schema boundary | Recovered predecessor baseline material | accepted in recovered source | active constraint | recovered historical, not imported canonical | Canonical Zovark schemas must be source-available; vendor schemas are mapping/export surfaces only. |
-| ADR-0037 | Feature lifecycle and dead-code housekeeping | Recovered predecessor baseline material | accepted in recovered source | active constraint | recovered historical, not imported canonical | New product, CLI, schema, service, benchmark, or integration work needs feature-lifecycle alignment. |
 | ADR-0038 | Control Plane and Customer-Instance Authority Boundary | Visible current repo/patch ADR | proposed | deferred | current visible patch ADR | Reconcile before live control-plane work. |
 | ADR-0039 | Update Factory and Signed Bundle Distribution | Visible current repo/patch ADR | proposed | deferred | current visible patch ADR | Signing, update factory, SLSA, and in-toto remain out of scope. |
 | ADR-0040 | Research Pipeline and Gated Candidate Promotion | Visible current repo/patch ADR | proposed | deferred | current visible patch ADR | Supports gated promotion; no research runtime is implemented. |

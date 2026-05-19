@@ -81,4 +81,4 @@ The next implementation steps must preserve:
 - no raw prompt, tool-argument, tool-output, payload, message, note, hidden
   reasoning, or chain-of-thought leakage;
 - no customer or benchmark claims without evidence; and
-- ADR-0036 and ADR-0037 constraints.
+- INV-027 and INV-028 constraints.
