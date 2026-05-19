@@ -11,7 +11,7 @@ The v3.2.4.2 architecture commits to "cloud SaaS first" but has no documented DR
 
 ## Decision
 
-### Targets (binding customer commitments)
+### Design targets pending implementation
 
 | Subsystem | RPO | RTO | Topology |
 |-----------|-----|-----|----------|
@@ -22,13 +22,13 @@ The v3.2.4.2 architecture commits to "cloud SaaS first" but has no documented DR
 | Customer Instance (SaaS) | ≤15 minutes | ≤4 hours | Per-tenant; multi-AZ DB primary + read replica; daily PITR snapshot | [hypothesis:M3-DR-targets]
 | Customer Instance (Hybrid/air-gap) | Customer-owned | Customer-owned | Reference architecture published; not Zovark-operated |
 
-These are **customer commitments**, not internal SLOs. Marketing and contracts use these numbers without modification.
+These are design targets pending PITR runbook, DR drill ledger, failover implementation, and evidence. They are not customer commitments, marketing claims, or contract terms until implemented and tested. INV-033 is the binding invariant for DR drill cadence.
 
 ### Backup mechanisms
 
 - **PostgreSQL primary**: continuous WAL streaming to a hot standby in a second AZ within the same region (synchronous_commit=remote_apply for the registry; remote_write for customer-instance per-tenant DBs to keep customer write latency acceptable).
-- **PITR**: daily base backups + 7-day WAL retention. Tested restore from PITR runs **monthly** in a sandbox region; restore success recorded in `ops/dr-drill-ledger.jsonl` (append-only, hash-chained).
-- **Cross-region async replica**: 15-minute replication target. Used only for regional disaster failover. Failover runbook in `ops/runbooks/dr-failover.md` (lands at M3 alongside production ingest auth).
+- **PITR design target**: daily base backups + 7-day WAL retention. Tested restore from PITR is planned to run **monthly** in a sandbox region; restore success will be recorded in `ops/dr-drill-ledger.jsonl` once implemented.
+- **Cross-region async replica design target**: 15-minute replication target. Intended only for regional disaster failover. Failover runbook in `ops/runbooks/dr-failover.md` lands with the implementation work.
 - **Object store** (bundles, SBOMs, attestations): S3-class with cross-region replication and Object Lock for ledger files (append-only enforced at storage layer).
 
 ### Restore drill cadence

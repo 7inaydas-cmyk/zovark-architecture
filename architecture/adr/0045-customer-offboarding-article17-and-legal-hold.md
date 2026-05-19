@@ -18,9 +18,9 @@ The v3.2.4.2 architecture has no documented customer-offboarding workflow. INV-0
 
 ### Cryptographic deletion mechanism
 
-Each tenant has a top-level DEK held in HSM-backed key storage. Customer data at rest is encrypted with subordinate keys derived from the tenant DEK. To "delete" customer data at scale, we destroy the tenant DEK; encrypted blobs are mathematically unrecoverable. This is the **only** customer-data deletion path in SaaS topology. We do not depend on per-blob deletion completing on every replica; we depend on DEK destruction propagating, which is small and atomic.
+The planned SaaS deletion mechanism uses a top-level tenant DEK held in HSM-backed key storage, with customer data at rest encrypted under subordinate keys derived from that tenant DEK. At scale, customer-data deletion is intended to destroy the tenant DEK so encrypted blobs become unreadable. This is a future design target pending HSM procurement, key-ledger implementation, offboarding deletion jobs, and DSAR API implementation; it is not current runtime behavior or a customer/legal compliance claim. INV-034 is the binding invariant for customer-data deletion via DEK destruction, and ADR-0042 records the HSM/key-management design constraints.
 
-For per-data-subject Article 17 deletion (smaller scope), the affected subject's records are re-encrypted under a new DEK that excludes the deleted records. The old DEK is destroyed. Operationally heavier but allows targeted deletion without affecting the rest of the tenant's data.
+For per-data-subject Article 17 deletion (smaller scope), the target design re-encrypts affected subject records under a new DEK that excludes the deleted records, then destroys the old DEK. This remains implementation-pending with the DSAR API and offboarding job.
 
 ### Audit-chain interaction
 

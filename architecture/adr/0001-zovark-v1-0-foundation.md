@@ -7,7 +7,7 @@
 **Source classification:** bootstrap predecessor ADR, mechanically normalized for current ADR format
 ## Context
 
-Zovark v1.0 is a greenfield enterprise security operations center investigation and response product. The product targets enterprise SOCs, regulated industries, and ultimately defense and intelligence customers. The wedge against incumbent AI-SOC copilots rests on two capabilities: replay-grade evidence and coordinated-campaign correlation with autonomous response.
+Zovark v1.0 is a greenfield enterprise security operations center investigation and response product. The product targets enterprise SOCs, regulated industries, and ultimately defense and intelligence customers. The wedge against incumbent AI-SOC copilots rests on replay-grade evidence and coordinated-campaign correlation with approval-required response handoff. Autonomous-response capability is not part of the current architecture baseline and is retired through ADR-0021 in `architecture/source-of-truth.md`.
 
 The product is closed-source commercial. Customers receive licensed access. Open-source dependencies and standards-aligned schemas are used throughout, but the product is proprietary. No paid software dependencies are required for production deployment.
 
@@ -18,7 +18,7 @@ Zovark is built as a closed-source commercial product targeting cloud SaaS first
 The two load-bearing capabilities are:
 
 1. Replay-grade investigation records that prove what happened in any investigation and prove the record itself was not altered.
-2. Coordinated-campaign correlation across alerts with autonomous EDR response gated by per-tenant policy.
+2. Coordinated-campaign correlation across alerts with approval-required EDR handoff. No live EDR dispatch or autonomous response is implemented or binding in this baseline.
 
 ## Consequences
 
