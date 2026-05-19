@@ -207,6 +207,113 @@ This file is **append-only** in normal flow. Modifications to existing entries r
 **Status:** DEFERRED → M2.
 **Fitness function:** Planned M2 `check_telemetry_boundary.py` — scans for telemetry-emission patterns; verifies every emitted field is on the allowlist; verifies audit-log writes happen. This patch tree currently provides schema/example checks and `scripts/check_telemetry_boundary_schema_present.py`.
 
+### INV-033 — DR drill cadence is enforced
+
+**Statement.** Disaster-recovery drills (PITR-restore monthly; regional-failover quarterly; full-region-loss annually) must be executed on schedule. Failure to complete a scheduled drill within 30 days of due date is a P1 incident.
+
+**Rationale.** ADR-0044 commits to RPO/RTO targets. A target without rehearsal is a wish. The cadence is the enforcement; missing the cadence is the violation.
+
+**Enforcement (scheduled).**
+- M3: `ops/dr-drill-ledger.jsonl` (append-only, hash-chained) initialized.
+- M3: `scripts/check_dr_drill_cadence.py` runs daily; warns at 7 days past due; pages at 30 days.
+- M5+: drill records auditable as part of SOC 2 evidence package.
+
+**Status.** DEFERRED → M3.
+**Owner.** ops + control-plane-owner.
+**Closes review-issue.** #24.
+
+### INV-034 — Customer-data deletion within 30-day window via DEK destruction
+
+**Statement.** On verified customer offboarding or Article-17 deletion request, customer data must be cryptographically destroyed within 30 days via tenant-DEK destruction. Per-blob deletion is not relied upon; DEK destruction renders ciphertext mathematically unreadable.
+
+**Rationale.** ADR-0045 makes this our deletion contract. Without runtime enforcement, the 30-day promise is a liability.
+
+**Enforcement (scheduled).**
+- M5: `scripts/check_offboarding_deletion_drill.py` runs nightly; verifies last-week's offboarding workflow produced unreadable data within window.
+- M5: `tests/integration/offboarding-deletion-drill/` exercises the path end-to-end on a synthetic tenant.
+- M5: nightly drill record in `ops/deletion-ledger.jsonl`.
+
+**Exception.** Active legal-hold-ledger entries pause deletion for affected scope; documented in ADR-0045 §legal-hold.
+
+**Status.** DEFERRED → M5.
+**Owner.** audit-owner + ops.
+**Closes review-issue.** #25.
+
+### INV-035 — Audit-chain encrypted with separate audit DEK; survives customer offboarding for regulatory minimum
+
+**Statement.** Audit-chain entries are encrypted with `audit-DEK`, distinct from `tenant-data-DEK`. On customer offboarding, the tenant-data-DEK is destroyed within 30 days; the audit-DEK is retained for the regulatory minimum (default 7 years) before destruction. Article-17 requests do not delete audit-chain entries (lawful basis under Article 17(3)(b)).
+
+**Rationale.** Audit-chain integrity is a legal/regulatory commitment that outlives the contract. This invariant separates the deletion lifecycles cleanly.
+
+**Enforcement (scheduled).**
+- M5: distinct DEK enforcement at the audit-chain ingester layer; static check that audit-chain encryption path imports `audit_dek_provider` and not `tenant_dek_provider`.
+- M5: retention-policy table in `ops/audit-retention-policy.yaml` with per-customer overrides; `scripts/check_audit_retention_policy.py` validates.
+- M5+: nightly drill verifies a synthetic offboarded tenant's audit-chain remains queryable post-DEK-destruction-of-tenant-data.
+
+**Status.** DEFERRED → M5.
+**Owner.** audit-owner.
+**Closes review-issue.** #25 (audit-chain interaction).
+
+### INV-036 — Replay engine never inferences, substitutes, or degrades
+
+**Statement.** The replay engine produces byte-identical verdicts from recorded LLM I/O and tool I/O, or it fails closed. It does not re-inference, does not silently substitute retired tools, does not produce degraded results.
+
+**Rationale.** ADR-0047 specifies three failure modes (REPLAY_TOOL_RETIRED, REPLAY_SCHEMA_INCOMPATIBLE, model-unavailable-not-an-error). INV-017 already says replay fails closed; INV-036 names the specific behaviors that must remain absent.
+
+**Enforcement (scheduled).**
+- M5: `tests/replay/tool-retired/`, `tests/replay/schema-incompatible/`, `tests/replay/model-unavailable/`, `tests/replay/byte-identical/` (per ADR-0047).
+- M5: static check that replay-engine code imports no inference clients.
+- M5: golden replay corpus per major schema version at `tests/replay-corpus/<schema_version>/`.
+
+**Status.** DEFERRED → M5.
+**Owner.** replay-owner.
+**Closes review-issue.** #20.
+
+### INV-037 — Healer runtime is sandboxed via process, DB, network, and credential isolation
+
+**Statement.** The Healer service runs under a hardened runtime profile that enforces five layers of isolation (static checks; uid/gid 5001; DB role `zovark_healer_ro` with SELECT-only on `system_health`; network egress denylist; no mounted credentials), so that a compromise of healer code cannot escalate to data mutation, EDR action, key access, or vendor API calls.
+
+**Rationale.** ADR-0048 closes the strategic-review concern that INV-014 was static-only.
+
+**Enforcement (scheduled).**
+- M3: `ops/k8s/healer-network-policy.yaml`, `ops/k8s/healer-deployment.yaml` shipped.
+- M3: `tests/db/healer-grants.test.sql` validates DB grant lattice.
+- M3: `tests/integration/healer-runtime-isolation/` runs synthetic-compromise drill (per ADR-0048 §test-fixtures).
+
+**Status.** DEFERRED → M3.
+**Owner.** runtime + ops.
+**Closes review-issue.** #22.
+
+### INV-038 — Sigma rule publication is governed by alert budget, corpus freshness, drift detection, and analyst approval
+
+**Statement.** A Sigma rule transitions from `candidate` to `published` only when (1) corpus is ≤30 days old, (2) corpus drift status is "stable" (JS-divergence ≤ 0.15), (3) rule's alert budget (severity-tier-defined) is satisfied over the corpus window, and (4) `analyst_approval_id` is recorded per INV-015.
+
+**Rationale.** ADR-0049 replaces the operationally-infeasible 0.1% FP threshold with this budget model.
+
+**Enforcement (scheduled).**
+- M9: `tests/sigma/alert-budget/` (5 fixtures per ADR-0049).
+- M9: lifecycle-record schema `sigma_rule_published.schema.json`; `check_sigma_publication_gate.py` validates all four conditions.
+- M9: per-tenant alert-quarantine triggered automatically on first-30-days-budget-exceeded.
+
+**Status.** DEFERRED → M9.
+**Owner.** detection-owner.
+**Closes review-issue.** #23.
+
+### INV-039 — Verdict input is canonical and complete; no forbidden inputs
+
+**Statement.** `derive_verdict` accepts only a `VerdictInput` struct (Pydantic, frozen, extra=forbid) whose fields and tuple-orderings are defined in ADR-0046. The function and its transitive callees do not access wall-clock time, randomness, process-local state, unordered iteration, unsorted DB results, file-system metadata, or network I/O.
+
+**Rationale.** INV-004 (deterministic verdict) is a goal; INV-039 is the binding contract whose violation is detectable by static + runtime tests.
+
+**Enforcement (scheduled).**
+- M1: `tests/architecture/forbidden-imports-in-verdict.test.py` (AST scan).
+- M5: `tests/architecture/verdict-determinism.test.py` (two workers, randomized input order, byte-identical output).
+- M5: 10-mutation audit-chain corpus from ADR-0046 §mutation-test-corpus.
+- M5: `VerdictInput` Pydantic model frozen; field additions are breaking changes.
+
+**Status.** PARTIAL at v3.2.4.3 (forbidden-imports static check at M1; full byte-identical runtime test at M5).
+**Owner.** verdict-owner.
+**Closes review-issue.** #19, #21.
 ---
 
 ## Count arithmetic
