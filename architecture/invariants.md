@@ -1,7 +1,7 @@
 # Invariants — Zovark v1.0
 
-**Version:** v3.2.4.5
-**Counts:** authoritative source is `VERSION_METADATA.json`. As of the v3.2.4.5 post-apply baseline produced by the v3.2.4.6 patch package: **32 total** = 17 covered + 1 partial (INV-001) + 14 deferred. Zero hand-waved.
+**Version:** v3.2.5.0-baseline-consolidated
+**Counts:** authoritative inventory is `architecture/source-of-truth.md`. As of v3.2.5.0-baseline-consolidated: **39 total** = 9 covered + 5 partial + 25 deferred/design-target. Zero hand-waved.
 
 This file is **append-only** in normal flow. Modifications to existing entries require an ADR amendment per M1-CI-008 baseline-immutability gate.
 
@@ -11,7 +11,7 @@ This file is **append-only** in normal flow. Modifications to existing entries r
 
 **Statement.** Every tenant-scoped resource is accessed only via tenant-scoped queries. No cross-tenant read or write.
 **Established by:** ADR-0003.
-**Status:** **PARTIAL** at v3.2.4.5 (covered in test fixtures; runtime enforcement at M3 via M1-INGEST-003 → production auth).
+**Status:** **PARTIAL** at v3.2.5.0 (covered in test fixtures; runtime enforcement at M3 via M1-INGEST-003 → production auth).
 **Fitness function:** Planned M3 `check_tenant_boundary.py`; not present in this patch tree.
 
 ## INV-002 — Fail closed
@@ -43,19 +43,19 @@ This file is **append-only** in normal flow. Modifications to existing entries r
 
 **Statement.** Audit chain entries are hash-chained; any retroactive modification is detectable.
 **Established by:** ADR-0025.
-**Status:** COVERED in test fixtures with runtime hash chain at M5. [hypothesis:M5-runtime-evidence] Counted as COVERED for the v3.2.4.5 baseline arithmetic; runtime hash chain implementation lands at M5.
+**Status:** COVERED in test fixtures with runtime hash chain at M5. [hypothesis:M5-runtime-evidence] Runtime hash chain implementation lands at M5.
 
 ## INV-007 — Zero dead code
 
 **Statement.** No code in the production codebase is unreachable. Dead code fails the merge gate.
 **Established by:** ADR-0016.
-**Status:** COVERED.
+**Status:** DEFERRED → M3 (dead-code merge gate).
 
 ## INV-008 — Schema first
 
 **Statement.** Every persistent or wire-format payload conforms to a canonical schema. Code is generated from schema, not the other way around.
 **Established by:** ADR-0015.
-**Status:** COVERED.
+**Status:** PARTIAL (schemas present; runtime schema validation and code generation gate deferred → M3).
 
 ## INV-009 — Open-source-only dependencies
 
@@ -91,7 +91,7 @@ This file is **append-only** in normal flow. Modifications to existing entries r
 
 **Statement.** The Healer service (ADR-0022) cannot mutate state. It diagnoses and reports.
 **Established by:** ADR-0022.
-**Status:** COVERED.
+**Status:** DEFERRED → M3 (healer runtime read-only enforcement; no healer runtime in current Slice 001).
 
 ## INV-015 — Sigma rules require analyst approval
 
@@ -121,7 +121,7 @@ This file is **append-only** in normal flow. Modifications to existing entries r
 
 **Statement.** Every vault access requires per-action authorization; no broad credentials.
 **Established by:** ADR-0028.
-**Status:** COVERED.
+**Status:** DEFERRED → M3 (vault per-action authorization runtime enforcement and validation fixture).
 
 ## INV-020 — Immutable audit erasure boundary
 
@@ -133,19 +133,19 @@ This file is **append-only** in normal flow. Modifications to existing entries r
 
 **Statement.** Every billable action is attributed to a tenant via `tenant_usage_event.schema.json`.
 **Established by:** ADR-0024.
-**Status:** COVERED.
+**Status:** DEFERRED → M4 (tenant usage schema present; billable-action runtime attribution deferred).
 
 ## INV-022 — Quantified claim provenance
 
 **Statement.** Every quantified product claim (latency, accuracy, throughput) is traceable to a recorded `benchmark_artifact`.
 **Established by:** ADR-0031.
-**Status:** COVERED for the documentation convention. Enforcement by `scripts/check_claim_provenance.py` is an M0 deliverable and is not present in this patch tree.
+**Status:** COVERED by `scripts/check_claim_provenance.py` for the documentation convention.
 
 ## INV-023 — Bootstrap enforcement evidence
 
 **Statement.** Every fitness function in the bootstrap discipline has both a fail-fixture and a pass-fixture.
 **Established by:** ADR-0030.
-**Status:** COVERED.
+**Status:** PARTIAL (current validators and fixtures exist; complete pass/fail fixture gate for every bootstrap fitness function deferred).
 
 ## INV-024 — MVP scope consistency
 
@@ -157,7 +157,7 @@ This file is **append-only** in normal flow. Modifications to existing entries r
 
 **Statement.** Every ingest, audit, replay, verdict, and benchmark surface binds to an open standard registered in `open-standards-registry.yaml`.
 **Established by:** ADR-0033.
-**Status:** COVERED.
+**Status:** PARTIAL (open-standard schema/docs bindings present; open-standards registry and enforcement gate deferred).
 
 ## INV-026 — Integer-only numeric precision in deterministic paths
 
@@ -173,7 +173,7 @@ This file is **append-only** in normal flow. Modifications to existing entries r
 ## INV-028 — Feature lifecycle and dead-code housekeeping
 
 **Statement.** Every feature has a lifecycle status from `allowed_statuses`. Features in terminal states (`retired`, `deleted`, `rejected`) cannot have active runtime code.
-**Status:** COVERED.
+**Status:** DEFERRED → M3 (feature registry and lifecycle/dead-code gate).
 
 ---
 
@@ -309,7 +309,7 @@ This file is **append-only** in normal flow. Modifications to existing entries r
 - M5: 10-mutation audit-chain corpus from ADR-0046 §mutation-test-corpus.
 - M5: `VerdictInput` Pydantic model frozen; field additions are breaking changes.
 
-**Status.** PARTIAL at v3.2.4.3 (forbidden-imports static check at M1; full byte-identical runtime test at M5).
+**Status.** PARTIAL at v3.2.5.0 (forbidden-imports static check at M1; full byte-identical runtime test at M5).
 **Owner.** verdict-owner.
 **Closes review-issue.** #19, #21.
 ---
@@ -317,13 +317,15 @@ This file is **append-only** in normal flow. Modifications to existing entries r
 ## Count arithmetic
 
 ```
-Covered (17):  INV-004, INV-006, INV-007, INV-008, INV-009, INV-010, INV-014,
-               INV-017, INV-019, INV-021, INV-022, INV-023, INV-024, INV-025,
-               INV-026, INV-027, INV-028
-Partial (1):   INV-001
-Deferred (14): INV-002, INV-003, INV-005, INV-011, INV-012, INV-013, INV-015,
-               INV-016, INV-018, INV-020, INV-029, INV-030, INV-031, INV-032
-Total:         17 + 1 + 14 = 32
+Covered (9):   INV-004, INV-006, INV-009, INV-010, INV-017, INV-022, INV-024,
+               INV-026, INV-027
+Partial (5):   INV-001, INV-008, INV-023, INV-025, INV-039
+Deferred/design-target (25):
+               INV-002, INV-003, INV-005, INV-007, INV-011, INV-012, INV-013,
+               INV-014, INV-015, INV-016, INV-018, INV-019, INV-020, INV-021,
+               INV-028, INV-029, INV-030, INV-031, INV-032, INV-033, INV-034,
+               INV-035, INV-036, INV-037, INV-038
+Total:         9 + 5 + 25 = 39
 ```
 
 ## Deferred-INV milestone table
@@ -332,20 +334,31 @@ Total:         17 + 1 + 14 = 32
 INV-002  → M3   fail-closed runtime
 INV-003  → M10  air-gap operational proof
 INV-005  → M5   replay engine
+INV-007  → M3   dead-code merge gate
 INV-011  → M6   Wasmtime configuration runtime
 INV-012  → M3   service boundary tests
 INV-013  → M3   retired vocabulary runtime scan
+INV-014  → M3   healer read-only runtime enforcement
 INV-015  → M9   Sigma analyst approval gate
 INV-016  → M5   audit canonicalization runtime
 INV-018  → M5   verdict canonicalization runtime
+INV-019  → M3   vault per-action authorization enforcement
 INV-020  → M5   audit erasure boundary runtime
+INV-021  → M4   tenant usage attribution runtime
+INV-028  → M3   feature lifecycle and dead-code gate
 INV-029  → M2   control plane data classification
 INV-030  → M6   no direct runtime mutation
 INV-031  → M4   signed bundle enforcement
 INV-032  → M2   telemetry boundary enforcement
+INV-033  → M3   DR drill cadence enforcement
+INV-034  → M5   customer-data deletion drill
+INV-035  → M5   audit-chain DEK separation
+INV-036  → M5   replay never re-inferences
+INV-037  → M3   healer runtime sandbox
+INV-038  → M9   Sigma publication governance
 ```
 
-By M10, all 32 invariants are COVERED. M11+ is product expansion, not invariant closure.
+By M10, all 39 invariants are expected to be covered. M11+ is product expansion, not invariant closure.
 
 ## Restore-gap semantics
 
