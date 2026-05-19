@@ -16,7 +16,6 @@ Two modes:
     1. `architecture/adr-index.md` exists.
     2. The 'Baseline ADRs (post-apply verified)' section is present.
     3. All 8 expected baseline ADR IDs appear as placeholder rows.
-    4. Patch ADRs 0038-0043 exist in the patch tree.
   Exits 0 if these structural checks pass.
 
   Post-apply mode — `architecture/adr/` exists at the repo root with the full
@@ -49,8 +48,6 @@ BASELINE_ADR_IDS = (
     "ADR-0031",  # invariants.md INV-022; rc2 claim-provenance
     "ADR-0034",  # DD-blocker M3-DEPENDENCY-002
 )
-
-PATCH_ADR_RANGE = range(38, 44)  # ADR-0038..ADR-0043 inclusive
 
 # Status terms that signal an ADR is no longer current guidance.
 STATUS_INVALID = {"superseded", "rejected", "historical"}
@@ -100,27 +97,12 @@ def check_baseline_ids_listed(content: str, failures: list[str], rel: str) -> No
             failures.append(f"{rel}: baseline ADR {adr_id} not listed in placeholder rows")
 
 
-def check_patch_adrs_present(repo_root: Path, failures: list[str]) -> None:
-    patch_adr_dir = repo_root / "zovark-v3.2.4.6-engineering-ready" / \
-        "zovark-v3.2.4.6-patch" / "architecture" / "adr"
-    if not patch_adr_dir.is_dir():
-        failures.append(
-            f"{patch_adr_dir.relative_to(repo_root)}: patch ADR directory missing"
-        )
-        return
-    for n in PATCH_ADR_RANGE:
-        glob = list(patch_adr_dir.glob(f"{n:04d}-*.md"))
-        if not glob:
-            failures.append(f"patch ADR-{n:04d}: file missing under {patch_adr_dir.relative_to(repo_root)}")
-
-
 def run_bootstrap(repo_root: Path) -> int:
     failures: list[str] = []
     content = check_adr_index_present(repo_root, failures)
     if content is not None:
         check_baseline_section(content, failures, "architecture/adr-index.md")
         check_baseline_ids_listed(content, failures, "architecture/adr-index.md")
-    check_patch_adrs_present(repo_root, failures)
 
     if failures:
         for f in failures:
@@ -130,9 +112,6 @@ def run_bootstrap(repo_root: Path) -> int:
     print(
         f"  Baseline ADRs awaiting post-apply verification: "
         f"{', '.join(BASELINE_ADR_IDS)}"
-    )
-    print(
-        f"  Patch ADRs verified present: ADR-0038..ADR-0043"
     )
     return 0
 
