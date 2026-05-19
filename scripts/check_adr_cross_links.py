@@ -16,6 +16,8 @@ Two modes:
     1. `architecture/adr-index.md` exists.
     2. The 'Baseline ADRs (post-apply verified)' section is present.
     3. All 8 expected baseline ADR IDs appear as placeholder rows.
+    4. Binding ADRs declared in `architecture/source-of-truth.md` have files
+       under `architecture/adr/`.
   Exits 0 if these structural checks pass.
 
   Post-apply mode — `architecture/adr/` exists at the repo root with the full
@@ -97,12 +99,44 @@ def check_baseline_ids_listed(content: str, failures: list[str], rel: str) -> No
             failures.append(f"{rel}: baseline ADR {adr_id} not listed in placeholder rows")
 
 
+def check_binding_adrs_present(repo_root: Path, failures: list[str]) -> int:
+    source_path = repo_root / "architecture" / "source-of-truth.md"
+    adr_dir = repo_root / "architecture" / "adr"
+    if not source_path.exists():
+        failures.append("architecture/source-of-truth.md: file missing")
+        return 0
+    if not adr_dir.is_dir():
+        failures.append("architecture/adr: directory missing")
+        return 0
+
+    content = source_path.read_text(errors="ignore")
+    m = re.search(
+        r"^### Binding \(\d+\)\s*$"
+        r"(?P<body>.*?)"
+        r"^### Superseded \(\d+\)\s*$",
+        content,
+        re.MULTILINE | re.DOTALL,
+    )
+    if not m:
+        failures.append("architecture/source-of-truth.md: missing Binding ADR section")
+        return 0
+
+    binding_ids = re.findall(r"^\|\s*(ADR-\d{4})\s*\|", m.group("body"), re.MULTILINE)
+    for adr_id in binding_ids:
+        n = adr_id.split("-")[1]
+        pattern = f"architecture/adr/{n}-*.md"
+        if not list(adr_dir.glob(f"{n}-*.md")):
+            failures.append(f"{adr_id}: adr_missing — expected {pattern}")
+    return len(binding_ids)
+
+
 def run_bootstrap(repo_root: Path) -> int:
     failures: list[str] = []
     content = check_adr_index_present(repo_root, failures)
     if content is not None:
         check_baseline_section(content, failures, "architecture/adr-index.md")
         check_baseline_ids_listed(content, failures, "architecture/adr-index.md")
+    binding_count = check_binding_adrs_present(repo_root, failures)
 
     if failures:
         for f in failures:
@@ -113,6 +147,7 @@ def run_bootstrap(repo_root: Path) -> int:
         f"  Baseline ADRs awaiting post-apply verification: "
         f"{', '.join(BASELINE_ADR_IDS)}"
     )
+    print(f"  Binding ADR files verified present: {binding_count}")
     return 0
 
 

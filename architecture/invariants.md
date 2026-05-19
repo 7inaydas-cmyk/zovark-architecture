@@ -309,7 +309,7 @@ This file is **append-only** in normal flow. Modifications to existing entries r
 - M5: 10-mutation audit-chain corpus from ADR-0046 §mutation-test-corpus.
 - M5: `VerdictInput` Pydantic model frozen; field additions are breaking changes.
 
-**Status.** PARTIAL at v3.2.5.0 (forbidden-imports static check at M1; full byte-identical runtime test at M5).
+**Status.** DEFERRED → M5 (forbidden-imports static check and full byte-identical runtime test are not present in this tree).
 **Owner.** verdict-owner.
 **Closes review-issue.** #19, #21.
 ---
@@ -319,13 +319,13 @@ This file is **append-only** in normal flow. Modifications to existing entries r
 ```
 Covered (9):   INV-004, INV-006, INV-009, INV-010, INV-017, INV-022, INV-024,
                INV-026, INV-027
-Partial (5):   INV-001, INV-008, INV-023, INV-025, INV-039
-Deferred/design-target (25):
+Partial (4):   INV-001, INV-008, INV-023, INV-025
+Deferred/design-target (26):
                INV-002, INV-003, INV-005, INV-007, INV-011, INV-012, INV-013,
                INV-014, INV-015, INV-016, INV-018, INV-019, INV-020, INV-021,
                INV-028, INV-029, INV-030, INV-031, INV-032, INV-033, INV-034,
-               INV-035, INV-036, INV-037, INV-038
-Total:         9 + 5 + 25 = 39
+               INV-035, INV-036, INV-037, INV-038, INV-039
+Total:         9 + 4 + 26 = 39
 ```
 
 ## Deferred-INV milestone table
@@ -356,6 +356,7 @@ INV-035  → M5   audit-chain DEK separation
 INV-036  → M5   replay never re-inferences
 INV-037  → M3   healer runtime sandbox
 INV-038  → M9   Sigma publication governance
+INV-039  → M5   canonical verdict input enforcement
 ```
 
 By M10, all 39 invariants are expected to be covered. M11+ is product expansion, not invariant closure.
