@@ -13,8 +13,8 @@ founder sign-off (M1-DECISION-001) before tagging the bootstrap baseline.
 
 This branch also carries a targeted v3.2.4.4 positioning amendment:
 
-- `architecture/adr/0009-two-model-architecture.md` amends recovered
-  predecessor ADR-0009 to name RamaLama as the local-SLM runtime and to make
+- `architecture/adr/0009-two-model-architecture.md` amends predecessor
+  ADR-0009 to name RamaLama as the local-SLM runtime and to make
   cloud-only, local-only, and hybrid inference topology choices explicit.
 - `architecture/adr/0052-positioning-deterministic-replay.md` proposes
   deterministic replay and evidence integrity as the primary customer-facing
@@ -46,7 +46,7 @@ populate full metadata.
 | ADR | Short name | Verification status | Reference site(s) |
 |---|---|---|---|
 | ADR-0011 | (control-plane authority predecessor) | post-apply-verified | Amended by ADR-0038. |
-| ADR-0009 | (two-model architecture) | amendment-present | Amended by `architecture/adr/0009-two-model-architecture.md`; full predecessor source remains recovered material. |
+| ADR-0009 | (two-model architecture) | amendment-present | Amended by `architecture/adr/0009-two-model-architecture.md`; full predecessor source remains external baseline material. |
 | ADR-0024 | (audit erasure / tenant usage) | post-apply-verified | `invariants.md` INV-020, INV-021. |
 | ADR-0025 | (audit erasure boundary) | post-apply-verified | `invariants.md` INV-020. |
 | ADR-0027 | (verdict canonicalization) | post-apply-verified | `invariants.md` INV-018. |

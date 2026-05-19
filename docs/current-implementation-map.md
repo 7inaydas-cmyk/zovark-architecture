@@ -137,10 +137,10 @@ benchmark harness, customer-readiness bundle, or live product runtime.
 
 INV-028 feature-lifecycle note: no current applied/root
 `product/features/feature-registry.yaml` file is present in this repo snapshot.
-The only discovered feature-registry material is recovered patch-tree material,
+The only discovered feature-registry material is archived patch-tree material,
 including
 `zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/patches/feature-registry.yaml.append_v3_2_4_5`.
-That recovered material was inspected for lifecycle context. This PR does not
+That archived material was inspected for lifecycle context. This PR does not
 update a root feature registry because the local testbed runner is scoped as
 `F-002` Replay/tape workflow plumbing, not as a new product feature. Future
 product components, standalone testbed features, AlertForge ingest paths,

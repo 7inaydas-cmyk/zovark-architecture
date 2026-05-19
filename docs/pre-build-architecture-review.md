@@ -77,10 +77,10 @@ PR #44 did not perform a complete semantic review of all predecessor baseline AD
 recorded the expected post-apply baseline count as 43 ADRs, not 46, unless
 another external ADR source was later provided.
 
-PR #46 records a later recovery correction: older uploaded/session architecture
+PR #46 records a later discovery correction: older uploaded/session architecture
 material surfaced `ADR-0044` through `ADR-0051`.
-Those recovered ADRs are not automatically current repo source of truth and do
-not establish full ADR sync until imported or reconciled.
+Those ADRs are now handled through the consolidation source-of-truth sequence
+and do not establish runtime, customer, legal, compliance, or benchmark claims.
 
 This repo snapshot visibly ships `ADR-0038` through `ADR-0043`. `ADR-0001`
 through `ADR-0035` remain predecessor-baseline material pending post-apply

@@ -80,7 +80,7 @@ benchmark does not prove enterprise-scale ingest or completion throughput.
 | Production completion throughput | Not found. |
 | Full-corpus V3 completion rate | Not found; V3 benchmark snapshot was incomplete. |
 | Exact Fast Mode / Reasoning Mode runtime names | Not found as current `Zovark_final` runtime terms. |
-| RamaLama references in `Zovark_final` | Not found in the original ground-truth report. Later v3.2.4.4 amendment names RamaLama as the local-SLM runtime and classifies recovered `Zovark_swami` local-inference work as salvage material, not implemented runtime. |
+| RamaLama references in `Zovark_final` | Not found in the original ground-truth report. Later v3.2.4.4 amendment names RamaLama as the local-SLM runtime and classifies legacy `Zovark_swami` local-inference work as salvage material, not implemented runtime. |
 | Current proof-package schema mapping for V3 tool output | Not implemented. |
 | Separate durable `tool_call_records` table | Not found in inspected migrations. Tool data appears in task outputs and plan fields. |
 

@@ -6,7 +6,7 @@ customer-readiness claims.
 
 ## Zovark_swami Local-Inference Work
 
-The recovered `Zovark_swami` local-inference work is reclassified from deferred
+The legacy `Zovark_swami` local-inference work is reclassified from deferred
 future capability to salvage source for RamaLama integration under the ADR-0009
 amendment.
 
@@ -46,7 +46,7 @@ positioning does not depend on local inference being available.
 
 ## Not Yet Accepted
 
-This backlog does not make the recovered local-inference artifacts canonical
+This backlog does not make the legacy local-inference artifacts canonical
 runtime code. Before implementation, a future PR must reconcile:
 
 - model provenance and licensing;

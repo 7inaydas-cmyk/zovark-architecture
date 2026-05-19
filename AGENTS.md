@@ -35,8 +35,8 @@ unsafe-field rejection rules exist.
 Flag generated proof packages or fixtures containing secrets, tokens, real
 customer data, host-local absolute paths, or nondeterministic timestamps.
 
-Flag recovered `ADR-0044` through `ADR-0051` material treated as binding current
-implementation law before reconciliation.
+Flag archived or external architecture material treated as binding current
+implementation law without promotion to authoritative paths.
 
 Flag Context Compaction Memory runtime, storage, or retrieval implementation
 added while the PR claims docs/contracts only.
