@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.zovark.io/dr_drill_report/v1.0.0/schema.json",
+  "title": "DR drill report (ADR-0024 quarterly drill artifact)",
+  "description": "Written to ops/compliance/dr-drill-<yyyymmdd>.json after every quarterly disaster-recovery drill. Captures measured RPO/RTO actuals, restore steps executed, audit-chain validation outcome, and synthetic-investigation replay outcome.",
+  "type": "object",
+  "x-zovark-schema-version": "1.0.0",
+  "x-zovark-compatibility": "backward",
+  "x-zovark-license": "Apache-2.0",
+  "x-zovark-owner": "infra-owner",
+  "x-zovark-visibility": "public",
+  "x-zovark-standards-attribution": [
+    {"standard": "JSON-Schema-2020-12", "version": "2020-12", "role": "canonical", "license": "BSD-3-Clause", "source": "json-schema.org"}
+  ],
+  "x-zovark-breaking-change-requires-adr": true,
+  "required": [
+    "schema_version",
+    "drill_id",
+    "drill_started_at_ns",
+    "drill_completed_at_ns",
+    "operator_id",
+    "scenario",
+    "measured_rpo_ms",
+    "measured_rto_ms",
+    "audit_chain_validation_state",
+    "synthetic_investigation_replay_outcome",
+    "signature",
+    "signing_key_fingerprint"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "drill_id": {"type": "string", "format": "uuid"},
+    "drill_started_at_ns": {"type": "integer", "description": "Drill kickoff timestamp, ns since epoch"},
+    "drill_completed_at_ns": {"type": "integer"},
+    "operator_id": {"type": "string", "description": "Named operator who ran the drill"},
+    "scenario": {
+      "type": "string",
+      "enum": [
+        "postgres_primary_failover",
+        "az_failover",
+        "pitr_restore",
+        "tenant_accidental_deletion_restore",
+        "object_store_corruption_restore",
+        "vault_compromise_recovery"
+      ]
+    },
+    "measured_rpo_ms": {"type": "integer", "description": "Measured Recovery Point Objective in milliseconds; integer per INV-026"},
+    "measured_rto_ms": {"type": "integer", "description": "Measured Recovery Time Objective in milliseconds; integer per INV-026"},
+    "committed_rpo_ms": {"type": "integer", "description": "Committed RPO from policy-commitments.yaml at drill time"},
+    "committed_rto_ms": {"type": "integer", "description": "Committed RTO from policy-commitments.yaml at drill time"},
+    "rpo_within_commitment": {"type": "boolean"},
+    "rto_within_commitment": {"type": "boolean"},
+    "restore_steps_executed": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["step", "started_at_ns", "completed_at_ns", "outcome"],
+        "properties": {
+          "step": {"type": "string"},
+          "started_at_ns": {"type": "integer"},
+          "completed_at_ns": {"type": "integer"},
+          "outcome": {"type": "string", "enum": ["passed", "failed", "skipped"]},
+          "notes": {"type": "string"}
+        }
+      }
+    },
+    "audit_chain_validation_state": {
+      "type": "string",
+      "enum": [
+        "VALID_FULLY_SIGNED",
+        "VALID_WITH_UNSIGNED_TAIL",
+        "VALID_AFTER_RESTORE_WITH_DECLARED_GAP",
+        "BROKEN_AT_SEQUENCE",
+        "ROOT_SIGNATURE_INVALID",
+        "ROOT_RANGE_MISSING",
+        "ROOT_RANGE_OVERLAP",
+        "RESTORE_WITHOUT_GAP_MARKER"
+      ],
+      "description": "Per ADR-0025 verifier states"
+    },
+    "dr_restore_completed_event_id": {"type": "string", "format": "uuid", "description": "Reference to the DR_RESTORE_COMPLETED audit event appended during the drill"},
+    "synthetic_investigation_replay_outcome": {
+      "type": "object",
+      "required": ["mode", "passed"],
+      "properties": {
+        "mode": {"type": "string", "enum": ["mode_1_recorded_output", "mode_2_forensic_reexecution"]},
+        "passed": {"type": "boolean"},
+        "investigation_id": {"type": "string", "format": "uuid"},
+        "verdict_byte_identical": {"type": "boolean", "description": "Replay verdict matches recorded verdict byte-for-byte"}
+      }
+    },
+    "tenants_in_scope": {"type": "array", "items": {"type": "string", "format": "uuid"}, "description": "Tenant IDs covered by the drill (synthetic test tenants only)"},
+    "post_drill_review_owner": {"type": "string"},
+    "post_drill_review_completed_at_ns": {"type": "integer"},
+    "lessons_learned_doc_ref": {"type": "string", "description": "Path to architecture/retrospectives/dr-drill-<date>.md"},
+    "signature": {"type": "string", "contentEncoding": "base16", "description": "Ed25519 signature over the canonical JSON form of this report excluding the signature field"},
+    "signing_key_fingerprint": {"type": "string"}
+  },
+  "additionalProperties": false
+}

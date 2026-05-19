@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.zovark.io/update_bundle/v1.0.0/schema.json",
+  "title": "Update Bundle",
+  "description": "Signed software update artifact for tenant deployments. Per ADR-0024: TUF-style multi-role signing with rollback protection. air-gap deployments verify the same signatures offline.",
+  "type": "object",
+  "x-zovark-schema-version": "1.0.0",
+  "x-zovark-compatibility": "backward",
+  "x-zovark-license": "Apache-2.0",
+  "x-zovark-owner": "infra-owner",
+  "x-zovark-visibility": "internal",
+  "x-zovark-standards-attribution": [
+    {
+      "standard": "JSON-Schema-2020-12",
+      "version": "2020-12",
+      "role": "canonical",
+      "license": "BSD-3-Clause",
+      "source": "https://json-schema.org/draft/2020-12/schema"
+    }
+  ],
+  "x-zovark-breaking-change-requires-adr": true,
+  "additionalProperties": false,
+  "required": [
+    "bundle_id",
+    "version",
+    "release_channel",
+    "manifest_hash",
+    "signatures",
+    "min_supported_from",
+    "schema_version"
+  ],
+  "properties": {
+    "bundle_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-z0-9.]+)?$"
+    },
+    "release_channel": {
+      "enum": [
+        "stable",
+        "rc",
+        "design-partner",
+        "internal"
+      ]
+    },
+    "manifest_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "signatures": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 5,
+      "description": "Multi-role signatures (release-eng, security, compliance). Min 2 required for stable; 3 for production tenants. Counterparty rotation per ADR-0034.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "role",
+          "key_fingerprint",
+          "signature",
+          "signed_at_ns"
+        ],
+        "properties": {
+          "role": {
+            "enum": [
+              "release-eng",
+              "security",
+              "compliance",
+              "ops",
+              "founder"
+            ]
+          },
+          "key_fingerprint": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          },
+          "signature": {
+            "type": "string",
+            "minLength": 32,
+            "maxLength": 4096,
+            "pattern": "^[A-Za-z0-9+/=_-]+$"
+          },
+          "signed_at_ns": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "min_supported_from": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Rollback floor (TUF-style)."
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "tuf_metadata": {
+      "type": "object",
+      "description": "TUF root/snapshot/timestamp/targets metadata.",
+      "additionalProperties": false,
+      "properties": {
+        "root_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "snapshot_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "timestamp_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "targets_version": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}

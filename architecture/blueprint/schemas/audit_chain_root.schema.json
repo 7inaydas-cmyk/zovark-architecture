@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.zovark.io/audit_chain_root/v1.0.0/schema.json",
+  "title": "Audit Chain Root",
+  "description": "Signed root commitment over a contiguous sequence range. Per ADR-0025: customers can verify chain integrity offline using their public key; range_end MUST be within the tenant's seen events (verifier rejects ROOT_RANGE_OUT_OF_BOUNDS otherwise).",
+  "type": "object",
+  "x-zovark-schema-version": "1.0.0",
+  "x-zovark-compatibility": "backward",
+  "x-zovark-license": "Apache-2.0",
+  "x-zovark-owner": "security-owner",
+  "x-zovark-visibility": "internal",
+  "x-zovark-standards-attribution": [
+    {
+      "standard": "JSON-Schema-2020-12",
+      "version": "2020-12",
+      "role": "canonical",
+      "license": "BSD-3-Clause",
+      "source": "https://json-schema.org/draft/2020-12/schema"
+    }
+  ],
+  "x-zovark-breaking-change-requires-adr": true,
+  "additionalProperties": false,
+  "required": [
+    "range_start",
+    "range_end",
+    "tenant_id",
+    "root_hash",
+    "signature",
+    "signing_key_fingerprint",
+    "signed_at_ns"
+  ],
+  "properties": {
+    "range_start": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "range_end": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "tenant_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "root_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "Recomputed chain_hash AT range_end (NOT cumulative through tail)."
+    },
+    "signature": {
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 4096,
+      "pattern": "^[A-Za-z0-9+/=_-]+$",
+      "description": "Ed25519 signature over (tenant_id, range_start, range_end, root_hash, signed_at_ns) canonicalized. Test vector 'synthetic_signature_INVALID' is explicitly rejected."
+    },
+    "signing_key_fingerprint": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128
+    },
+    "signed_at_ns": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

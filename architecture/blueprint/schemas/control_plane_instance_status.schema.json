@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.zovark.io/v1/control_plane_instance_status.schema.json",
+  "title": "Zovark Control Plane Instance Status",
+  "description": "Per-instance status record stored by the Control Plane. Contains only allowlisted fields per ADR-0041. Stored with per-row encryption; pseudonym lookup requires elevated role + audit log entry per ADR-0038.",
+  "type": "object",
+  "additionalProperties": false,
+  "x-zovark-license": "Apache-2.0",
+  "x-zovark-open-source": true,
+  "x-zovark-publication": "source-available-with-product",
+  "x-zovark-schema-version": "1.0.0",
+  "x-zovark-compatibility": ">=v3.2.4.2",
+  "x-zovark-standards-attribution": [
+    {"standard": "Zovark", "role": "canonical"}
+  ],
+  "required": [
+    "instance_pseudonym",
+    "first_seen_at",
+    "last_seen_at",
+    "bundle_version",
+    "schema_version",
+    "feature_registry_version",
+    "topology_mode",
+    "health_status"
+  ],
+  "properties": {
+    "instance_pseudonym": {
+      "type": "string",
+      "pattern": "^pseudo-[0-9a-f]{32}$"
+    },
+    "first_seen_at": {"type": "string", "format": "date-time"},
+    "last_seen_at": {"type": "string", "format": "date-time"},
+    "bundle_version": {"type": "string"},
+    "schema_version": {"type": "string"},
+    "feature_registry_version": {"type": "string"},
+    "adapter_versions": {
+      "type": "object",
+      "additionalProperties": {"type": "string"}
+    },
+    "tool_catalog_version": {"type": "string"},
+    "topology_mode": {"type": "string", "enum": ["saas", "hybrid", "air-gap"]},
+    "health_status": {"type": "string", "enum": ["healthy", "degraded", "critical", "unknown"]},
+    "last_successful_replay_timestamp": {"type": "string", "format": "date-time"},
+    "last_audit_chain_verification_timestamp": {"type": "string", "format": "date-time"},
+    "last_update_applied_version": {"type": "string"},
+    "failed_update_attempts_count": {"type": "integer", "minimum": 0},
+    "disabled_capabilities": {
+      "type": "array",
+      "items": {"type": "string"}
+    }
+  },
+  "description-forbidden-fields": [
+    "customer_name", "customer_id", "hostname", "ip_address",
+    "investigation_id", "alert_id", "tenant_data", "audit_log_entries",
+    "vault_keys", "edr_credentials", "deployed_sigma_rules", "user_count",
+    "any_field_not_listed_above"
+  ]
+}
