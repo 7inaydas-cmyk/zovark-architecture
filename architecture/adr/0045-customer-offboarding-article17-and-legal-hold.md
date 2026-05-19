@@ -13,8 +13,8 @@ The v3.2.4.2 architecture has no documented customer-offboarding workflow. INV-0
 
 ### The two paths
 
-1. **Customer offboarding** (contract end). 30-day window from contract-end. All customer data — alerts, evidence, replay records, vault material, audit log entries, telemetry buffers — destroyed via cryptographic key shred (per-tenant DEK destroyed per ADR-0034; encrypted blobs become unreadable).
-2. **Article 17 deletion request** (in-contract). 30-day window from verified request. Specific data subject's records destroyed. Customer (data controller) verifies the request; Zovark (data processor) executes against a documented DSAR API.
+1. **Customer offboarding** (contract end). 30-day target window from contract-end for customer-controlled data and tenant-scoped operational data that is not legally or regulatorily retained audit-chain material — alerts, evidence, replay records, vault material, telemetry buffers, and non-retained identity-resolution mappings. Deletion is intended to use cryptographic key shred (per-tenant DEK destroyed per ADR-0034; encrypted blobs become unreadable) once the offboarding jobs and key-ledger workflow exist. Audit-chain entries, audit hashes, legal-hold records, and required retention metadata follow the audit-retention rules in "Audit-chain interaction" below.
+2. **Article 17 deletion request** (in-contract). 30-day target window from verified request. Specific data subject's records are targeted for destruction when they are not required audit-chain material. Customer (data controller) verifies the request; Zovark (data processor) will execute against the planned DSAR API once implemented.
 
 ### Cryptographic deletion mechanism
 
@@ -32,11 +32,11 @@ INV-020 says audit-event erasure can occur only via the legal-hold-honoring rete
 
 ### Legal hold
 
-When Zovark or a customer is served a legal preservation notice, deletion is **paused** for affected scope. Mechanism:
-- `ops/legal-hold-ledger.jsonl` (append-only, hash-chained) records every legal-hold event: scope, reason, served-by, served-at, expected-duration, lifted-at.
-- An active legal-hold entry blocks the offboarding-deletion job and the Article-17-deletion job for matching scope.
-- Operations on a held tenant produce an audit event recording the hold.
-- Lifting a hold requires two-party authorization: legal-counsel + security-officer.
+When Zovark or a customer is served a legal preservation notice, deletion is **paused** for affected scope. Planned mechanism:
+- `ops/legal-hold-ledger.jsonl` (append-only, hash-chained) will record every legal-hold event: scope, reason, served-by, served-at, expected-duration, lifted-at.
+- An active legal-hold entry will block the offboarding-deletion job and the Article-17-deletion job for matching scope.
+- Operations on a held tenant will produce an audit event recording the hold.
+- Lifting a hold will require two-party authorization: legal-counsel + security-officer.
 
 ### DSAR API
 
@@ -49,8 +49,8 @@ Article 15 export within 30 days is a design target pending DSAR API and export 
 
 ### Stop conditions
 
-- Any audit chain entry mutated or missing without a matching legal-hold-ledger entry → P0 incident, full audit-chain integrity check, customer notification within 24 hours. [policy-commitment:audit-owner,incident-review]
-- Any tenant DEK destroyed before its 30-day offboarding window completes → P0 incident, executive escalation.
+- Any audit chain entry mutated or missing without a matching legal-hold-ledger entry is intended to trigger P0 incident handling, a full audit-chain integrity check, and customer notification after incident/customer-notification workflow exists; this is not a current customer notification commitment. [policy-commitment:audit-owner,incident-review]
+- Any tenant DEK destroyed before its 30-day offboarding window completes is intended to trigger P0 incident handling and executive escalation after offboarding jobs and incident workflow exist.
 
 ### Test fixtures
 
@@ -65,7 +65,7 @@ Article 15 export within 30 days is a design target pending DSAR API and export 
 - Audit-chain encryption decision means audit logs survive customer offboarding for the regulatory window; this is a customer-contract negotiation point and must be communicated upfront.
 - Cryptographic deletion is faster than per-blob deletion but requires robust DEK management (ADR-0034 + ADR-0042).
 - DSAR API adds a new customer-facing surface that must be authn'd, audited, and rate-limited.
-- Legal hold becomes real-time operational concern; ledger must be highly available.
+- Legal hold will become a real-time operational concern; ledger must be highly available once implemented.
 
 ## Alternatives Considered
 

@@ -15,6 +15,8 @@ The Wasmtime 14-day Critical/High SLA from INV-011 is single-track and doesn't m
 
 ### Severity tiers and pager response
 
+This response table is a support/operations design target pending on-call rotation, paging configuration, incident/support ledgers, monitoring, and staffing evidence. It is not a current staffing model, customer commitment, marketing claim, or contract term.
+
 | Tier | Examples | Initial response | Escalation |
 |------|----------|------------------|-----------|
 | **P0** | Customer data exposed; audit chain integrity broken; key compromise; full Control Plane outage; vendor compromise affecting our supply chain | <15 min ack, <1 hour leadership-aware | Founder + security-officer + control-plane-owner immediately |
@@ -24,21 +26,21 @@ The Wasmtime 14-day Critical/High SLA from INV-011 is single-track and doesn't m
 
 ### Rotation
 
-Two-engineer primary rotation, weekly hand-off, with a designated secondary.
+Target rotation: two-engineer primary rotation, weekly hand-off, with a designated secondary.
 
-- **Production rotation:** at least one ops + one engineer-on-call per shift.
-- **Security rotation:** security-officer or designated alternate available for P0 escalation 24/7.
-- **Architect rotation:** architect-on-call available for cross-subsystem decisions during business hours; not 24/7 in v1.0.
+- **Production rotation target:** at least one ops + one engineer-on-call per shift.
+- **Security rotation target:** security-officer or designated alternate available for P0 escalation 24/7.
+- **Architect rotation target:** architect-on-call available for cross-subsystem decisions during business hours; not 24/7 in v1.0.
 
-Rotation tooling: PagerDuty (or open-source equivalent OnCallio/IIRIS per ADR-0035) once cost-budget permits; in v1.0 M1, a manual rotation in `ops/oncall.yaml` plus PagerDuty's free tier suffices.
+Rotation tooling target: PagerDuty (or open-source equivalent OnCallio/IIRIS per ADR-0035) once cost-budget permits; in v1.0 M1, a manual rotation in `ops/oncall.yaml` plus PagerDuty's free tier is the planned interim path.
 
-### Paging triggers
+### Paging trigger design targets
 
-- Synthetic monitoring of every customer-facing surface (status.zovark.io, control-plane API, update-distribution endpoint, telemetry receiver).
-- Audit-chain integrity check failure on any tenant.
-- DR drill cadence breach (per ADR-0044 §restore-drill-cadence).
-- Key-ledger anomaly (any key event without a corresponding ADR-amendment-or-incident reference).
-- Customer-reported P0 (via support channel; auto-routed if marked "security" or "data-exposed").
+- Planned synthetic monitoring of every customer-facing surface (status.zovark.io, control-plane API, update-distribution endpoint, telemetry receiver).
+- Planned audit-chain integrity check failure on any tenant.
+- Planned DR drill cadence breach (per ADR-0044 §restore-drill-cadence).
+- Planned key-ledger anomaly (any key event without a corresponding ADR-amendment-or-incident reference).
+- Planned customer-reported P0 (via support channel; auto-routed if marked "security" or "data-exposed").
 
 ### Vendor-compromise runbooks
 
@@ -53,9 +55,9 @@ Each vendor in the supply chain has a runbook at `ops/runbooks/vendor-{name}.md`
 - **PostgreSQL CVE** (M3 runbook): triage; SaaS-side patch within standard maintenance window; customer-instance: signed-bundle includes the patched PG; air-gap window same as Wasmtime.
 - **EDR vendor API compromise** (M3 runbook): rotate all customer EDR credentials in the vault; revoke pending EDR action authorizations; suspend approval-required EDR handoff for affected tenants/providers; analyst review before re-enabling handoff. Autonomous EDR action is not part of the current architecture and is retired through ADR-0021 in `architecture/source-of-truth.md`.
 - **LLM provider compromise** (M3 runbook): pause new investigations on the affected provider; replay continues unaffected (per ADR-0047 — replay does not re-inference); rotate API keys; switch to backup provider per ADR-0009 two-model architecture.
-- **Our own keys (per ADR-0042)** runbook lives in SECURITY-VULN-DISCLOSURE.md §8 and is rehearsed twice yearly.
+- **Our own keys (per ADR-0042)** runbook is planned for SECURITY-VULN-DISCLOSURE.md §8 and should be rehearsed twice yearly once implemented.
 
-Each runbook produces a record in `ops/incident-ledger.jsonl` (append-only, hash-chained) on every drill or real incident.
+Once incident-ledger implementation exists, each runbook should produce a record in `ops/incident-ledger.jsonl` (append-only, hash-chained) on every drill or real incident.
 
 ### Customer-support response targets
 
@@ -67,7 +69,7 @@ These are design targets for a future paid SaaS support program pending on-call 
 
 ### Pen-test / bug-bounty (closes issue #33)
 
-- **Pen-test:** third-party engagement scheduled before first design-partner onboarding (target: M5 quarter-end). Annual cadence after that. Findings tracked in `ops/security/pen-test-ledger.jsonl`.
+- **Pen-test:** third-party engagement planned before first design-partner onboarding (target: M5 quarter-end). Annual cadence after that. Findings will be tracked in `ops/security/pen-test-ledger.jsonl` once implemented.
 - **Bug-bounty:** deferred to M11+; tracked as DD_BLOCKERS M11-DESIGN-004. SECURITY-VULN-DISCLOSURE.md provides the responsible-disclosure interim path.
 
 ### Quarterly drills
@@ -77,11 +79,11 @@ These are design targets for a future paid SaaS support program pending on-call 
 - **Q3:** PostgreSQL CVE drill + DR full-region failover.
 - **Q4:** Our-own-keys compromise drill (per ADR-0042).
 
-Each drill records timing in the incident-ledger [policy-commitment:ops,quarterly-review]; failure to complete a drill within 30 days of due date → P1 incident. [policy-commitment:ops,quarterly-review]
+Once incident-ledger and on-call workflow exist, each drill should record timing in the incident-ledger [policy-commitment:ops,quarterly-review]; failure to complete a drill within 30 days of due date is the planned P1 policy after that workflow is implemented. [policy-commitment:ops,quarterly-review]
 
 ## Consequences
 
-- On-call adds operational headcount cost; budgeted as fixed line item from M3 onwards.
+- On-call adds operational headcount cost; budgeted as fixed line item from M3 onwards once the rotation is implemented.
 - Customer-support response targets require on-call, paging, incident/support ledger, monitoring, and staffing implementation before they can become contractual commitments.
 - Vendor-compromise runbooks (six of them) need to land at M3; that's a real engineering deliverable, not just policy.
 - Pen-test scheduling at M5 quarter-end means timeline slip on M5 delays first design-partner.
