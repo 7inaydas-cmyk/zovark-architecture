@@ -51,19 +51,19 @@ Each vendor in the supply chain has a runbook at `ops/runbooks/vendor-{name}.md`
   4. If a customer's import window pushes past 60 days for a Critical advisory [policy-commitment:ops,incident-review], customer success contacts the customer; if compromise risk is real, Zovark may recommend operational mitigations (capability disablement, monitoring increase) until the customer can import.
 - **Temporal compromise** (M3 runbook): assess workflow-history exposure; rotate Temporal API keys; verify no tenant data exfiltrated via Temporal logs; Temporal-side incident report.
 - **PostgreSQL CVE** (M3 runbook): triage; SaaS-side patch within standard maintenance window; customer-instance: signed-bundle includes the patched PG; air-gap window same as Wasmtime.
-- **EDR vendor API compromise** (M3 runbook): rotate all customer EDR credentials in the vault; revoke active EDR action authorizations; pause autonomous EDR actions; analyst review before resuming.
+- **EDR vendor API compromise** (M3 runbook): rotate all customer EDR credentials in the vault; revoke pending EDR action authorizations; suspend approval-required EDR handoff for affected tenants/providers; analyst review before re-enabling handoff. Autonomous EDR action is not part of the current architecture and is retired through ADR-0021 in `architecture/source-of-truth.md`.
 - **LLM provider compromise** (M3 runbook): pause new investigations on the affected provider; replay continues unaffected (per ADR-0047 — replay does not re-inference); rotate API keys; switch to backup provider per ADR-0009 two-model architecture.
 - **Our own keys (per ADR-0042)** runbook lives in SECURITY-VULN-DISCLOSURE.md §8 and is rehearsed twice yearly.
 
 Each runbook produces a record in `ops/incident-ledger.jsonl` (append-only, hash-chained) on every drill or real incident.
 
-### Customer-support SLA tiers
+### Customer-support response targets
 
-- **Tier 1 (P0 customer-reported):** ack within 1 business hour; engineer engaged within 4 business hours; resolution target within 24 business hours for fixable issues.
-- **Tier 2 (P1):** ack within 4 business hours; engagement within 1 business day; resolution within 5 business days.
-- **Tier 3 (P2/P3):** ack within 1 business day; engagement within 3 business days; resolution per next-release-cycle.
+- **Tier 1 (P0 customer-reported):** target ack within 1 business hour; engineer engaged within 4 business hours; resolution target within 24 business hours for fixable issues.
+- **Tier 2 (P1):** target ack within 4 business hours; engagement within 1 business day; resolution within 5 business days.
+- **Tier 3 (P2/P3):** target ack within 1 business day; engagement within 3 business days; resolution per next-release-cycle.
 
-These are **customer commitments** for paid SaaS contracts. Hybrid and air-gap customers may negotiate different tiers per contract.
+These are design targets for a future paid SaaS support program pending on-call rotation, paging configuration, incident/support ledgers, monitoring, and staffing evidence. They are not customer commitments, marketing claims, or contract terms until implemented and validated. Hybrid and air-gap customers may negotiate different tiers after that support program exists.
 
 ### Pen-test / bug-bounty (closes issue #33)
 
@@ -82,7 +82,7 @@ Each drill records timing in the incident-ledger [policy-commitment:ops,quarterl
 ## Consequences
 
 - On-call adds operational headcount cost; budgeted as fixed line item from M3 onwards.
-- Customer-support SLA tiers become contractual commitments; resourcing needs to scale with customer count.
+- Customer-support response targets require on-call, paging, incident/support ledger, monitoring, and staffing implementation before they can become contractual commitments.
 - Vendor-compromise runbooks (six of them) need to land at M3; that's a real engineering deliverable, not just policy.
 - Pen-test scheduling at M5 quarter-end means timeline slip on M5 delays first design-partner.
 

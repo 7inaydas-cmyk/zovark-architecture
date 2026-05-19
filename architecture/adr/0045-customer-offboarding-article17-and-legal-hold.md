@@ -40,13 +40,12 @@ When Zovark or a customer is served a legal preservation notice, deletion is **p
 
 ### DSAR API
 
-Customers can issue Article-17 / Article-15 (subject access) requests via:
-- `zovark dsar request --subject {subject_id} --type {article15|article17}` (CLI; logged to audit chain).
-- `zvadmin → DSAR` UI (Web; same audit logging).
-- A documented support channel for paper requests (1-business-day acknowledgment SLA per ADR-0050).
+The DSAR surface is a planned implementation target, not current runtime behavior. Once the DSAR API, offboarding job, authorization checks, audit logging, and validation are implemented, customers should be able to issue Article-17 / Article-15 requests via:
+- `zovark dsar request --subject {subject_id} --type {article15|article17}` (planned CLI; logged to audit chain).
+- `zvadmin → DSAR` UI (planned Web surface; same audit logging).
+- A documented support channel for paper requests once the support workflow exists.
 
-Article 15 requests produce a tarball of subject's data in OCSF + JSON formats within 30 days. [policy-commitment:audit-owner,quarterly-review]
-Article 17 requests produce a deletion-confirmation receipt (signed, hash-chained) within 30 days; actual cryptographic deletion performed in that window.
+Article 15 export within 30 days is a design target pending DSAR API and export validation. Article 17 signed deletion receipts within 30 days are likewise a design target pending HSM/key-ledger flow, offboarding deletion jobs, and validation. INV-034 remains the binding invariant for customer-data deletion via DEK destruction.
 
 ### Stop conditions
 
