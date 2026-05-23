@@ -71,10 +71,10 @@ The architecture is frozen only when:
 
 ## ADRs
 
-All 52 ADR numbers (ADR-0001 through ADR-0052) accounted for in one of four
+All 52 ADR numbers (ADR-0001 through ADR-0052) accounted for in one of five
 categories below.
 
-### Binding (26)
+### Binding (25)
 
 Files exist at `architecture/adr/`. Status: active/proposed/amended per
 `scripts/check_adr_cross_links.py`.
@@ -97,7 +97,6 @@ Files exist at `architecture/adr/`. Status: active/proposed/amended per
 | ADR-0040 | Research Pipeline and Gated Candidate Promotion |
 | ADR-0041 | Telemetry Boundary |
 | ADR-0042 | Cryptographic Key Management |
-| ADR-0043 | Open-Source Release Strategy |
 | ADR-0044 | Disaster Recovery & Business Continuity (SaaS topology) |
 | ADR-0045 | Customer Offboarding, GDPR Article 17, and Legal Hold |
 | ADR-0046 | Deterministic Verdict Canonicalization |
@@ -107,6 +106,22 @@ Files exist at `architecture/adr/`. Status: active/proposed/amended per
 | ADR-0050 | On-Call, Paging, and Vendor-Compromise Incident Response |
 | ADR-0051 | Calendar Reconciliation |
 | ADR-0052 | Deterministic Replay as Primary Differentiator |
+
+### Proposed / pending founder sign-off (1)
+
+File exists at `architecture/adr/`. Not binding until the stated approval
+condition is complete.
+
+| ADR | Title | Approval gate |
+|---|---|---|
+| ADR-0043 | Open-Source Release Strategy | M1-DECISION-001 founder sign-off |
+
+ADR-0043 may be used as a working assumption only where the ADR itself says so.
+It is not binding architecture law until M1-DECISION-001 founder approval
+occurs.
+
+Inventory arithmetic: 25 binding + 1 proposed/pending-founder + 11 superseded
+plus 4 retired plus 11 covered-by-invariant = 52 ADRs.
 
 ### Superseded (11)
 

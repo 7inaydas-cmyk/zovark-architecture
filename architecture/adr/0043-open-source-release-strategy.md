@@ -1,6 +1,6 @@
 # ADR-0043: Open-Source Release Strategy
 
-**Status:** accepted  
+**Status:** proposed  
 **Date:** 2026-04-30  
 **Owner:** architect  
 **Version context:** v3.2.5.0 consolidation promotion  

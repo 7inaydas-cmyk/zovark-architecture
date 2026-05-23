@@ -113,7 +113,7 @@ def check_binding_adrs_present(repo_root: Path, failures: list[str]) -> int:
     m = re.search(
         r"^### Binding \(\d+\)\s*$"
         r"(?P<body>.*?)"
-        r"^### Superseded \(\d+\)\s*$",
+        r"^### ",
         content,
         re.MULTILINE | re.DOTALL,
     )
