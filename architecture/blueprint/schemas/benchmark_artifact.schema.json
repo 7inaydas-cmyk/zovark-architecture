@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.zovark.io/benchmark_artifact/v1.0.0/schema.json",
+  "title": "Zovark benchmark artifact (ADR-0031)",
+  "description": "Schema for ops/compliance/benchmarks/<benchmark-id>.json. A claim with provenance [measured: <id>, <date>] must resolve to an artifact conforming to this schema.",
+  "type": "object",
+  "x-zovark-schema-version": "1.0.0",
+  "x-zovark-compatibility": "backward",
+  "x-zovark-license": "Apache-2.0",
+  "x-zovark-owner": "infra-owner",
+  "x-zovark-visibility": "public",
+  "x-zovark-standards-attribution": [
+    {
+      "standard": "JSON-Schema-2020-12",
+      "version": "2020-12",
+      "role": "canonical",
+      "license": "BSD-3-Clause",
+      "source": "https://json-schema.org/"
+    }
+  ],
+  "x-zovark-breaking-change-requires-adr": true,
+  "required": [
+    "benchmark_id",
+    "schema_version",
+    "ran_at",
+    "ran_by",
+    "commit",
+    "environment",
+    "scenario",
+    "measurements"
+  ],
+  "properties": {
+    "benchmark_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "schema_version": {
+      "const": "1.0"
+    },
+    "ran_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ran_by": {
+      "type": "string"
+    },
+    "commit": {
+      "type": "string"
+    },
+    "environment": {
+      "type": "object",
+      "required": [
+        "topology",
+        "cpu",
+        "gpu",
+        "memory_gb",
+        "postgres_version",
+        "python_version"
+      ],
+      "properties": {
+        "topology": {
+          "type": "string",
+          "enum": [
+            "cloud",
+            "hybrid",
+            "airgap"
+          ]
+        },
+        "cpu": {
+          "type": "string"
+        },
+        "gpu": {
+          "type": "string"
+        },
+        "memory_gb": {
+          "type": "number",
+          "x-zovark-float-tolerated": true,
+          "description": "Reported environment memory in GB. Float permitted; environment metadata, never consumed by deterministic verdict math."
+        },
+        "postgres_version": {
+          "type": "string"
+        },
+        "python_version": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "scenario": {
+      "type": "object",
+      "required": [
+        "name",
+        "duration_seconds"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "duration_seconds": {
+          "type": "number",
+          "x-zovark-float-tolerated": true,
+          "description": "Wall-clock benchmark duration. Float permitted; scenario metadata, never consumed by deterministic verdict math."
+        },
+        "concurrency": {
+          "type": "integer"
+        },
+        "input_corpus": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "measurements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "metric",
+          "value",
+          "unit"
+        ],
+        "properties": {
+          "metric": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number",
+            "x-zovark-float-tolerated": true,
+            "description": "Measured real value. Float is permitted because benchmark measurements are real-valued by nature; this field is consumed only by reporting/comparison, never by deterministic verdict math."
+          },
+          "unit": {
+            "type": "string"
+          },
+          "percentile": {
+            "type": "number",
+            "x-zovark-float-tolerated": true,
+            "description": "Percentile rank (0-100). Float permitted; consumed only by reporting."
+          },
+          "samples": {
+            "type": "integer"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "claims_calibrated": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "Names of capacity-claims.yaml entries this artifact upgrades from [hypothesis] to [measured]"
+      }
+    }
+  },
+  "additionalProperties": false
+}

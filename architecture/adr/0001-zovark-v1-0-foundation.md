@@ -1,0 +1,43 @@
+# ADR-0001: Zovark v1.0 foundation
+
+**Status:** accepted  
+**Date:** 2026-04-28  
+**Owner:** architect  
+**Version context:** v3.2.5.0 consolidation promotion from zovark-v1-bootstrap-v3.2.3.2-final.zip  
+**Source classification:** bootstrap predecessor ADR, mechanically normalized for current ADR format
+## Context
+
+Zovark v1.0 is a greenfield enterprise security operations center investigation and response product. The product targets enterprise SOCs, regulated industries, and ultimately defense and intelligence customers. The wedge against incumbent AI-SOC copilots rests on replay-grade evidence and coordinated-campaign correlation with approval-required response handoff. Autonomous-response capability is not part of the current architecture baseline and is retired through ADR-0021 in `architecture/source-of-truth.md`.
+
+The product is closed-source commercial. Customers receive licensed access. Open-source dependencies and standards-aligned schemas are the architecture target, but the product is proprietary. "No paid production dependencies" is a target pending implementation dependency inventory, release-bundle validation, and validator evidence; it is not claimed as a proven production deployment fact in this architecture-only baseline.
+
+## Decision
+
+Zovark is built as a closed-source commercial product targeting cloud SaaS first launch, hybrid enterprise in the next product phase, and air-gap enclave in the phase after that. The architecture is greenfield with explicit out-of-scope items including diode-only topology, federated learning, and confidential computing for cross-customer collaboration.
+
+The two load-bearing capabilities are:
+
+1. Replay-grade investigation records intended to support reconstruction of investigation evidence and tamper-evidence verification. Production proof guarantees depend on recorder, audit-chain, replay, and validation implementation evidence.
+2. Coordinated-campaign correlation across alerts with approval-required EDR handoff. No live EDR dispatch or autonomous response is implemented or binding in this baseline.
+
+## Consequences
+
+**Positive.** Clear strategic positioning. The dependency posture targets no paid production dependencies once implementation inventory and validators prove it. Standards-aligned schemas reduce procurement friction with enterprise buyers.
+
+**Negative.** Closed-source means no community contribution path; engineering effort is fully on the team. Three-topology roadmap means the codebase must accommodate all three from the start (no retrofits).
+
+**Risks accepted.** Greenfield means no existing customers. The product must reach first design partner before revenue arrives. Phasing decisions (cloud → hybrid → air-gap) align with sales cycle realism but also commit phase-2 customers to a wait.
+
+## Alternatives Considered
+
+N/A — original ADR did not address this.
+
+## Planned fitness functions
+
+- `tests/architecture/license-policy.test.py` — planned validation check that no `pyproject.toml`, `package.json`, `Cargo.toml`, or `go.mod` declares a paid production dependency.
+- `tests/architecture/topology-coverage.test.py` — planned validation check that every adapter declares its topology compatibility (cloud, hybrid, airgap) and that the dependency graph admits all three.
+
+## References
+
+- INV-001 (tenant boundary), INV-003 (air-gap-compatible)
+- `zovark.md` §1, §16

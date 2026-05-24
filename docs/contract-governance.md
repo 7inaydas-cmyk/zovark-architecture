@@ -76,8 +76,8 @@ runtime enforcement until:
 
 ## Vendor Schema Boundary
 
-ADR-0036 applies. Vendor schemas remain mapping/export surfaces unless an
-ADR-0036-compatible governance decision explicitly approves otherwise.
+INV-027 applies. Vendor schemas remain mapping/export surfaces unless an
+INV-027-compatible governance decision explicitly approves otherwise.
 
 Zovark-owned contracts must not make OCSF, SIEM, EDR, or other vendor schemas
 canonical dependencies for replay, audit, storage, verdict, or customer evidence.

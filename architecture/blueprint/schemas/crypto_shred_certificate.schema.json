@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.zovark.io/crypto_shred_certificate/v1.0.0/schema.json",
+  "title": "Tenant crypto-shred certificate (ADR-0024 Workflow B)",
+  "description": "Issued after the per-tenant DEK has been destroyed and the 24-hour irreversibility window has elapsed. Tenant payload columns are cryptographically unrecoverable; the audit hash chain remains valid via tombstone events.",
+  "type": "object",
+  "x-zovark-schema-version": "1.0.0",
+  "x-zovark-compatibility": "backward",
+  "x-zovark-license": "Apache-2.0",
+  "x-zovark-owner": "security-owner",
+  "x-zovark-visibility": "public",
+  "x-zovark-standards-attribution": [
+    {
+      "standard": "JSON-Schema-2020-12",
+      "version": "2020-12",
+      "role": "canonical",
+      "license": "BSD-3-Clause",
+      "source": "https://json-schema.org/"
+    }
+  ],
+  "x-zovark-breaking-change-requires-adr": true,
+  "required": [
+    "schema_version",
+    "tenant_id",
+    "mode",
+    "requested_by",
+    "approved_by",
+    "irreversibility_window_started_at_ns",
+    "destroyed_at_ns",
+    "destroyed_by",
+    "destroyed_key_ids",
+    "tombstone_event_ids",
+    "audit_chain_root_before",
+    "audit_chain_root_after",
+    "signature",
+    "signing_key_fingerprint"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "tenant_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "mode": {
+      "const": "crypto_shred"
+    },
+    "requested_by": {
+      "type": "string"
+    },
+    "approved_by": {
+      "type": "string",
+      "description": "Two-person approval"
+    },
+    "irreversibility_window_started_at_ns": {
+      "type": "integer"
+    },
+    "destroyed_at_ns": {
+      "type": "integer"
+    },
+    "destroyed_by": {
+      "type": "string"
+    },
+    "destroyed_key_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "tombstone_event_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "minItems": 3,
+      "description": "At minimum: TENANT_CRYPTO_SHRED_REQUESTED, TENANT_CRYPTO_SHRED_APPROVED, TENANT_CRYPTO_SHRED_EXECUTED"
+    },
+    "audit_chain_root_before": {
+      "type": "string",
+      "contentEncoding": "base16"
+    },
+    "audit_chain_root_after": {
+      "type": "string",
+      "contentEncoding": "base16"
+    },
+    "record_counts": {
+      "type": "object",
+      "description": "Bounded map of retained or destroyed record category names to integer counts.",
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
+      },
+      "maxProperties": 32,
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "signature": {
+      "type": "string",
+      "contentEncoding": "base64"
+    },
+    "signing_key_fingerprint": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

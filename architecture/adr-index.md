@@ -2,11 +2,10 @@
 
 This is the source of truth for the status of all architectural decisions.
 
-Source ADRs currently live in the v3.2.4.6 patch tree at
-`zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/architecture/adr/`.
-`VERSION_METADATA.json` records the expected post-apply baseline count as 43 ADRs.
-This snapshot ships ADR-0038 through ADR-0043; ADR-0001 through ADR-0037 remain in
-the predecessor baseline and must be verified after apply.
+Authoritative ADRs currently live under `architecture/adr/`. This
+consolidation snapshot ships the promoted ADR files at that path; retired and
+superseded predecessor items are tracked in the consolidation source-of-truth
+work.
 
 All six visible patch ADRs are status **proposed** and become **accepted** on merge of
 M1-ARCH-001 (ADR-0042 also requires M1-ARCH-002). ADR-0043 additionally requires
@@ -14,8 +13,8 @@ founder sign-off (M1-DECISION-001) before tagging the bootstrap baseline.
 
 This branch also carries a targeted v3.2.4.4 positioning amendment:
 
-- `architecture/adr/0009-two-model-architecture.md` amends recovered
-  predecessor ADR-0009 to name RamaLama as the local-SLM runtime and to make
+- `architecture/adr/0009-two-model-architecture.md` amends predecessor
+  ADR-0009 to name RamaLama as the local-SLM runtime and to make
   cloud-only, local-only, and hybrid inference topology choices explicit.
 - `architecture/adr/0052-positioning-deterministic-replay.md` proposes
   deterministic replay and evidence integrity as the primary customer-facing
@@ -47,7 +46,7 @@ populate full metadata.
 | ADR | Short name | Verification status | Reference site(s) |
 |---|---|---|---|
 | ADR-0011 | (control-plane authority predecessor) | post-apply-verified | Amended by ADR-0038. |
-| ADR-0009 | (two-model architecture) | amendment-present | Amended by `architecture/adr/0009-two-model-architecture.md`; full predecessor source remains recovered material. |
+| ADR-0009 | (two-model architecture) | amendment-present | Amended by `architecture/adr/0009-two-model-architecture.md`; full predecessor source remains external baseline material. |
 | ADR-0024 | (audit erasure / tenant usage) | post-apply-verified | `invariants.md` INV-020, INV-021. |
 | ADR-0025 | (audit erasure boundary) | post-apply-verified | `invariants.md` INV-020. |
 | ADR-0027 | (verdict canonicalization) | post-apply-verified | `invariants.md` INV-018. |

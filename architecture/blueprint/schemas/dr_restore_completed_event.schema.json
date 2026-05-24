@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.zovark.io/dr_restore_completed_event/v1.0.0/schema.json",
+  "title": "DISASTER_RECOVERY_RESTORE_COMPLETED audit event payload (ADR-0024 / ADR-0025 v3.1)",
+  "description": "Appended to the audit chain on every PITR, failover, or backup restore that may lose committed events. Required so verifiers can report VALID_AFTER_RESTORE_WITH_DECLARED_GAP rather than treating the chain as broken.",
+  "type": "object",
+  "x-zovark-schema-version": "1.0.0",
+  "x-zovark-compatibility": "backward",
+  "x-zovark-license": "Apache-2.0",
+  "x-zovark-owner": "infra-owner",
+  "x-zovark-visibility": "public",
+  "x-zovark-standards-attribution": [
+    {
+      "standard": "JSON-Schema-2020-12",
+      "version": "2020-12",
+      "role": "canonical",
+      "license": "BSD-3-Clause",
+      "source": "https://json-schema.org/"
+    }
+  ],
+  "x-zovark-breaking-change-requires-adr": true,
+  "required": [
+    "schema_version",
+    "tenant_id",
+    "restore_started_at_ns",
+    "restore_completed_at_ns",
+    "restored_to_lsn",
+    "restored_to_timestamp",
+    "post_restore_chain_root",
+    "known_data_loss_window_start",
+    "known_data_loss_window_end",
+    "operator_id",
+    "incident_id"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "tenant_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "restore_started_at_ns": {
+      "type": "integer"
+    },
+    "restore_completed_at_ns": {
+      "type": "integer"
+    },
+    "restored_to_lsn": {
+      "type": "string",
+      "description": "PostgreSQL LSN restored to"
+    },
+    "restored_to_timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "pre_restore_latest_root_hash_if_available": {
+      "type": "string",
+      "contentEncoding": "base16"
+    },
+    "post_restore_chain_root": {
+      "type": "string",
+      "contentEncoding": "base16"
+    },
+    "known_data_loss_window_start": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "known_data_loss_window_end": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "operator_id": {
+      "type": "string"
+    },
+    "incident_id": {
+      "type": "string"
+    },
+    "drill_run": {
+      "type": "boolean",
+      "description": "True if this was a scheduled drill, false if an actual incident"
+    }
+  },
+  "additionalProperties": false
+}

@@ -16,7 +16,8 @@ Two modes:
     1. `architecture/adr-index.md` exists.
     2. The 'Baseline ADRs (post-apply verified)' section is present.
     3. All 8 expected baseline ADR IDs appear as placeholder rows.
-    4. Patch ADRs 0038-0043 exist in the patch tree.
+    4. Binding ADRs declared in `architecture/source-of-truth.md` have files
+       under `architecture/adr/`.
   Exits 0 if these structural checks pass.
 
   Post-apply mode — `architecture/adr/` exists at the repo root with the full
@@ -49,8 +50,6 @@ BASELINE_ADR_IDS = (
     "ADR-0031",  # invariants.md INV-022; rc2 claim-provenance
     "ADR-0034",  # DD-blocker M3-DEPENDENCY-002
 )
-
-PATCH_ADR_RANGE = range(38, 44)  # ADR-0038..ADR-0043 inclusive
 
 # Status terms that signal an ADR is no longer current guidance.
 STATUS_INVALID = {"superseded", "rejected", "historical"}
@@ -100,18 +99,35 @@ def check_baseline_ids_listed(content: str, failures: list[str], rel: str) -> No
             failures.append(f"{rel}: baseline ADR {adr_id} not listed in placeholder rows")
 
 
-def check_patch_adrs_present(repo_root: Path, failures: list[str]) -> None:
-    patch_adr_dir = repo_root / "zovark-v3.2.4.6-engineering-ready" / \
-        "zovark-v3.2.4.6-patch" / "architecture" / "adr"
-    if not patch_adr_dir.is_dir():
-        failures.append(
-            f"{patch_adr_dir.relative_to(repo_root)}: patch ADR directory missing"
-        )
-        return
-    for n in PATCH_ADR_RANGE:
-        glob = list(patch_adr_dir.glob(f"{n:04d}-*.md"))
-        if not glob:
-            failures.append(f"patch ADR-{n:04d}: file missing under {patch_adr_dir.relative_to(repo_root)}")
+def check_binding_adrs_present(repo_root: Path, failures: list[str]) -> int:
+    source_path = repo_root / "architecture" / "source-of-truth.md"
+    adr_dir = repo_root / "architecture" / "adr"
+    if not source_path.exists():
+        failures.append("architecture/source-of-truth.md: file missing")
+        return 0
+    if not adr_dir.is_dir():
+        failures.append("architecture/adr: directory missing")
+        return 0
+
+    content = source_path.read_text(errors="ignore")
+    m = re.search(
+        r"^### Binding \(\d+\)\s*$"
+        r"(?P<body>.*?)"
+        r"^### ",
+        content,
+        re.MULTILINE | re.DOTALL,
+    )
+    if not m:
+        failures.append("architecture/source-of-truth.md: missing Binding ADR section")
+        return 0
+
+    binding_ids = re.findall(r"^\|\s*(ADR-\d{4})\s*\|", m.group("body"), re.MULTILINE)
+    for adr_id in binding_ids:
+        n = adr_id.split("-")[1]
+        pattern = f"architecture/adr/{n}-*.md"
+        if not list(adr_dir.glob(f"{n}-*.md")):
+            failures.append(f"{adr_id}: adr_missing — expected {pattern}")
+    return len(binding_ids)
 
 
 def run_bootstrap(repo_root: Path) -> int:
@@ -120,7 +136,7 @@ def run_bootstrap(repo_root: Path) -> int:
     if content is not None:
         check_baseline_section(content, failures, "architecture/adr-index.md")
         check_baseline_ids_listed(content, failures, "architecture/adr-index.md")
-    check_patch_adrs_present(repo_root, failures)
+    binding_count = check_binding_adrs_present(repo_root, failures)
 
     if failures:
         for f in failures:
@@ -131,9 +147,7 @@ def run_bootstrap(repo_root: Path) -> int:
         f"  Baseline ADRs awaiting post-apply verification: "
         f"{', '.join(BASELINE_ADR_IDS)}"
     )
-    print(
-        f"  Patch ADRs verified present: ADR-0038..ADR-0043"
-    )
+    print(f"  Binding ADR files verified present: {binding_count}")
     return 0
 
 

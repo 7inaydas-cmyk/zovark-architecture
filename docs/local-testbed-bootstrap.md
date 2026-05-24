@@ -6,26 +6,26 @@ Replay verifier.
 
 ## Feature Lifecycle
 
-ADR-0037 requires durable feature lifecycle discipline before adding new CLI,
+INV-028 requires durable feature lifecycle discipline before adding new CLI,
 testbed, AlertForge, benchmark, service, or schema work. No current applied/root
 `product/features/feature-registry.yaml` file is present in this repo snapshot.
-The only discovered feature-registry material is recovered patch-tree material,
+The only discovered feature-registry material is archived patch-tree material,
 including:
 
 ```text
 zovark-v3.2.4.6-engineering-ready/zovark-v3.2.4.6-patch/patches/feature-registry.yaml.append_v3_2_4_5
 ```
 
-That recovered material was inspected for lifecycle context. This runner is
+That archived material was inspected for lifecycle context. This runner is
 scoped as workflow plumbing for the existing `F-002` Replay engine and tape
-recorder feature referenced in recovered ownership metadata, not as a new
+recorder feature referenced in archived ownership metadata, not as a new
 product feature. No new feature ID is introduced and no root feature-registry
 entry is changed in this PR.
 
 The local runner remains a narrow static proof/Replay workflow. Any future
 product component, standalone testbed feature, AlertForge ingest path, benchmark
 harness, service, feature flag, or customer-facing workflow must add or update
-the feature registry according to ADR-0037 before implementation claims are
+the feature registry according to INV-028 before implementation claims are
 made.
 
 ## Prerequisites
@@ -101,10 +101,10 @@ The V1 output remains the existing nine-file package. It does not emit
 - Benchmarks or capacity claims.
 - Customer-readiness bundle or outreach material.
 - Signing, anchoring, SLSA, in-toto, legal admissibility, compliance
-  certification, or full implementation compliance claims for recovered
-  ADR-0044 through ADR-0051.
+  certification, or full implementation compliance claims for ADR-0044 through
+  ADR-0051.
 
-ADR-0036 remains a schema boundary constraint: local proof-package and export
+INV-027 remains a schema boundary constraint: local proof-package and export
 work must not make vendor/proprietary schemas canonical dependencies for Replay,
 audit, storage, verdict, or customer evidence.
 

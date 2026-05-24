@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.zovark.io/v1/research_experiment_result.schema.json",
+  "title": "Zovark Research Experiment Result",
+  "description": "Output record of a Research Pipeline experiment run. Records corpus, runner image, candidates produced, findings (incl. embargoed security findings via opaque reference), and metrics. Per ADR-0040.",
+  "type": "object",
+  "additionalProperties": false,
+  "x-zovark-license": "Apache-2.0",
+  "x-zovark-open-source": true,
+  "x-zovark-publication": "source-available-with-product",
+  "x-zovark-schema-version": "1.0.0",
+  "x-zovark-compatibility": ">=v3.2.4.2",
+  "x-zovark-standards-attribution": [
+    {
+      "standard": "Zovark",
+      "role": "canonical"
+    }
+  ],
+  "required": [
+    "experiment_id",
+    "experiment_type",
+    "corpus_id",
+    "runner_image_sha",
+    "started_at",
+    "finished_at",
+    "outcome",
+    "candidates_produced",
+    "findings",
+    "metrics"
+  ],
+  "properties": {
+    "experiment_id": {
+      "type": "string",
+      "pattern": "^ZVK-EXP-[0-9]{4}-[0-9]{6}$"
+    },
+    "experiment_type": {
+      "type": "string",
+      "enum": [
+        "template_gen",
+        "tool_gen",
+        "mapping_improvement",
+        "code_audit",
+        "red_team",
+        "benchmark",
+        "dead_code_scan",
+        "schema_drift_scan"
+      ]
+    },
+    "corpus_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+:[0-9a-f]{8,}$"
+    },
+    "runner_image_sha": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "Pinned runner image SHA for reproducibility."
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "finished_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "success",
+        "failure",
+        "timeout",
+        "skipped"
+      ]
+    },
+    "candidates_produced": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^ZVK-CAND-[0-9]{4}-[0-9]{6}$"
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "finding_kind",
+          "finding_id"
+        ],
+        "properties": {
+          "finding_kind": {
+            "type": "string",
+            "enum": [
+              "dead_code",
+              "schema_drift",
+              "performance_regression",
+              "security_potential",
+              "documentation_error",
+              "test_flakiness"
+            ]
+          },
+          "finding_id": {
+            "type": "string",
+            "description": "Public ID for non-security findings; opaque embargo reference (ZVK-VULN-EMBARGO-XXXX) for security_potential findings until embargo lifts."
+          }
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "number"
+      },
+      "description": "Bounded-cardinality research metric map. Keys are reviewed metric identifiers; values are numeric measurements only.",
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
+      },
+      "maxProperties": 64
+    }
+  }
+}

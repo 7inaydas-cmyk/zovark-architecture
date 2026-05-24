@@ -1,0 +1,289 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.zovark.io/v1/telemetry_envelope.schema.json",
+  "title": "Zovark Telemetry Envelope",
+  "description": "The single allowlisted schema for any data crossing the customer-instance to control-plane boundary. Per ADR-0041 and INV-032, no field may cross this boundary that is not enumerated here. payload_kind is bound to payload shape: a status envelope must carry a StatusPayload, etc.",
+  "type": "object",
+  "additionalProperties": false,
+  "x-zovark-license": "Apache-2.0",
+  "x-zovark-open-source": true,
+  "x-zovark-publication": "public-schema-registry",
+  "x-zovark-schema-version": "1.0.0",
+  "x-zovark-compatibility": ">=v3.2.4.5",
+  "x-zovark-standards-attribution": [
+    {
+      "standard": "Zovark",
+      "role": "canonical"
+    }
+  ],
+  "required": [
+    "envelope_version",
+    "instance_pseudonym",
+    "sent_at",
+    "payload_kind",
+    "payload",
+    "customer_audit_id"
+  ],
+  "properties": {
+    "envelope_version": {
+      "type": "string",
+      "enum": [
+        "1.0"
+      ]
+    },
+    "instance_pseudonym": {
+      "type": "string",
+      "pattern": "^pseudo-[0-9a-f]{32}$"
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "payload_kind": {
+      "type": "string",
+      "enum": [
+        "status",
+        "health",
+        "failure_signature",
+        "none"
+      ]
+    },
+    "payload": {
+      "description": "Payload is selected by payload_kind and validated by the conditional schemas below."
+    },
+    "customer_audit_id": {
+      "type": "string",
+      "format": "uuid"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "payload_kind": {
+            "const": "status"
+          }
+        },
+        "required": [
+          "payload_kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/StatusPayload"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "payload_kind": {
+            "const": "health"
+          }
+        },
+        "required": [
+          "payload_kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/HealthPayload"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "payload_kind": {
+            "const": "failure_signature"
+          }
+        },
+        "required": [
+          "payload_kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/FailureSignaturePayload"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "payload_kind": {
+            "const": "none"
+          }
+        },
+        "required": [
+          "payload_kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/NonePayload"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "VersionString": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._+:-]{0,63}$"
+    },
+    "StatusPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bundle_version",
+        "schema_version",
+        "feature_registry_version",
+        "adapter_versions",
+        "tool_catalog_version",
+        "topology_mode",
+        "disabled_capabilities"
+      ],
+      "properties": {
+        "bundle_version": {
+          "$ref": "#/$defs/VersionString"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/VersionString"
+        },
+        "feature_registry_version": {
+          "$ref": "#/$defs/VersionString"
+        },
+        "adapter_versions": {
+          "type": "object",
+          "additionalProperties": false,
+          "maxProperties": 6,
+          "properties": {
+            "splunk": {
+              "$ref": "#/$defs/VersionString"
+            },
+            "elastic": {
+              "$ref": "#/$defs/VersionString"
+            },
+            "sentinel": {
+              "$ref": "#/$defs/VersionString"
+            },
+            "wazuh": {
+              "$ref": "#/$defs/VersionString"
+            },
+            "generic": {
+              "$ref": "#/$defs/VersionString"
+            },
+            "edr": {
+              "$ref": "#/$defs/VersionString"
+            }
+          }
+        },
+        "tool_catalog_version": {
+          "$ref": "#/$defs/VersionString"
+        },
+        "topology_mode": {
+          "type": "string",
+          "enum": [
+            "saas",
+            "hybrid",
+            "air-gap"
+          ]
+        },
+        "disabled_capabilities": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
+          }
+        }
+      }
+    },
+    "HealthPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "health_status",
+        "last_successful_replay_timestamp",
+        "last_audit_chain_verification_timestamp",
+        "last_update_applied_version",
+        "failed_update_attempts_count"
+      ],
+      "properties": {
+        "health_status": {
+          "type": "string",
+          "enum": [
+            "healthy",
+            "degraded",
+            "critical"
+          ]
+        },
+        "last_successful_replay_timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_audit_chain_verification_timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_update_applied_version": {
+          "$ref": "#/$defs/VersionString"
+        },
+        "failed_update_attempts_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "FailureSignaturePayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "signature_hash",
+        "component",
+        "occurred_at"
+      ],
+      "properties": {
+        "signature_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "component": {
+          "type": "string",
+          "enum": [
+            "ingest",
+            "replay",
+            "audit",
+            "vault",
+            "edr-adapter",
+            "healer",
+            "mesh",
+            "tape-recorder"
+          ]
+        },
+        "occurred_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "NonePayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Used in 'manual' or 'disabled' modes to confirm liveness without sending any state."
+    }
+  }
+}

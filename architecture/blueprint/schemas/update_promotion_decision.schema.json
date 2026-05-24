@@ -1,0 +1,265 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.zovark.io/v1/update_promotion_decision.schema.json",
+  "title": "Zovark Update Promotion Decision",
+  "description": "Audit record produced when a candidate is approved, rejected, or escalated. Tier-gated reviewer composition rules per ADR-0040 \u00a710. Append-only.",
+  "type": "object",
+  "additionalProperties": false,
+  "x-zovark-license": "Apache-2.0",
+  "x-zovark-open-source": true,
+  "x-zovark-publication": "source-available-with-product",
+  "x-zovark-schema-version": "1.0.0",
+  "x-zovark-compatibility": ">=v3.2.4.5",
+  "x-zovark-standards-attribution": [
+    {
+      "standard": "Zovark",
+      "role": "canonical"
+    }
+  ],
+  "required": [
+    "decision_id",
+    "candidate_id",
+    "applied_risk_tier",
+    "decision",
+    "decided_by",
+    "decided_at",
+    "evidence"
+  ],
+  "properties": {
+    "decision_id": {
+      "type": "string",
+      "pattern": "^ZVK-DEC-[0-9]{4}-[0-9]{6}$"
+    },
+    "candidate_id": {
+      "type": "string",
+      "pattern": "^ZVK-CAND-[0-9]{4}-[0-9]{6}$"
+    },
+    "applied_risk_tier": {
+      "type": "integer",
+      "enum": [
+        1,
+        2,
+        3
+      ]
+    },
+    "decision": {
+      "type": "string",
+      "enum": [
+        "approved",
+        "rejected",
+        "escalated",
+        "withdrawn"
+      ]
+    },
+    "decided_by": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reviewer_id",
+          "reviewer_role",
+          "reviewed_at"
+        ],
+        "properties": {
+          "reviewer_id": {
+            "type": "string"
+          },
+          "reviewer_role": {
+            "type": "string",
+            "enum": [
+              "maintainer",
+              "security-officer",
+              "release-engineer",
+              "auto-soak"
+            ]
+          },
+          "reviewed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "decided_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "soak_window_observed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "soak_start",
+        "soak_end",
+        "soak_duration_seconds"
+      ],
+      "properties": {
+        "soak_start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "soak_end": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "soak_duration_seconds": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ci_run_ids"
+      ],
+      "properties": {
+        "ci_run_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "corpus_results": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "security_review_id": {
+          "type": "string"
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 8192
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "applied_risk_tier": {
+            "const": 1
+          }
+        },
+        "required": [
+          "applied_risk_tier"
+        ]
+      },
+      "then": {
+        "required": [
+          "soak_window_observed"
+        ],
+        "properties": {
+          "soak_window_observed": {
+            "properties": {
+              "soak_duration_seconds": {
+                "minimum": 86400
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "applied_risk_tier": {
+            "const": 2
+          }
+        },
+        "required": [
+          "applied_risk_tier"
+        ]
+      },
+      "then": {
+        "required": [
+          "soak_window_observed"
+        ],
+        "properties": {
+          "decided_by": {
+            "minItems": 1,
+            "contains": {
+              "properties": {
+                "reviewer_role": {
+                  "const": "maintainer"
+                }
+              }
+            },
+            "minContains": 1
+          },
+          "soak_window_observed": {
+            "properties": {
+              "soak_duration_seconds": {
+                "minimum": 172800
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "applied_risk_tier": {
+            "const": 3
+          }
+        },
+        "required": [
+          "applied_risk_tier"
+        ]
+      },
+      "then": {
+        "required": [
+          "soak_window_observed"
+        ],
+        "properties": {
+          "decided_by": {
+            "minItems": 3,
+            "allOf": [
+              {
+                "contains": {
+                  "properties": {
+                    "reviewer_role": {
+                      "const": "maintainer"
+                    }
+                  }
+                },
+                "minContains": 2
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "reviewer_role": {
+                      "const": "security-officer"
+                    }
+                  }
+                },
+                "minContains": 1
+              }
+            ]
+          },
+          "soak_window_observed": {
+            "properties": {
+              "soak_duration_seconds": {
+                "minimum": 604800
+              }
+            }
+          },
+          "evidence": {
+            "required": [
+              "ci_run_ids",
+              "security_review_id"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

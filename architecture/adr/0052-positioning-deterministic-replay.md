@@ -14,8 +14,8 @@ differentiator by itself and is not made available by this architecture-only PR.
 The differentiator is evidence integrity: every investigation should produce a
 byte-identical-replayable record; replay should not re-inference; auditors
 should be able to verify verdicts offline indefinitely, even after the original
-model is retired. This PR establishes that positioning direction without making
-recovered ADR-0046 or ADR-0047 active current source before reconciliation.
+model is retired. This ADR establishes that positioning direction and relies on
+ADR-0046 and ADR-0047 as authoritative evidence-integrity architecture.
 
 ## Decision
 
@@ -36,10 +36,9 @@ and is not a current supported deployment profile.
 
 - Customer-facing material leads with replay and evidence integrity, not
   air-gap.
-- Regulated-buyer conversations must not cite recovered ADR-0046, ADR-0047, or
-  INV-039 as active commitments until those materials are reconciled into the
-  current baseline. Until then, they remain candidate/future evidence-integrity
-  work that informs the positioning direction.
+- Regulated-buyer conversations anchor on ADR-0046, ADR-0047, and INV-039 as
+  the evidence-integrity architecture while continuing to avoid legal,
+  compliance, benchmark, or customer-readiness claims.
 - Air-gap remains in the buying-wedge story as a possible deployment target, not
   the wedge and not a current runtime capability.
 - Local inference through RamaLama, per the ADR-0009 amendment, is an approved
@@ -65,10 +64,10 @@ and is not a current supported deployment profile.
 - ADR-0009, as amended by v3.2.4.4
 - ADR-0038
 - ADR-0041
-- ADR-0046 as recovered candidate material pending reconciliation
-- ADR-0047 as recovered candidate material pending reconciliation
+- ADR-0046
+- ADR-0047
 - INV-036
-- INV-039 as recovered candidate material pending reconciliation
+- INV-039
 - INV-022 quantified claim provenance
 
 ## Boundary
@@ -76,6 +75,5 @@ and is not a current supported deployment profile.
 This ADR does not add runtime implementation, RamaLama code, benchmarks,
 customer-readiness material, legal admissibility claims, compliance
 certification claims, signing, anchoring, SLSA, or in-toto scope. It does not
-make recovered ADR-0046, ADR-0047, or INV-039 active current source before a
-separate reconciliation PR. It does not make air-gap, local-only, or hybrid
-inference topology currently customer-selectable or runtime-supported.
+make air-gap, local-only, or hybrid inference topology currently
+customer-selectable or runtime-supported.

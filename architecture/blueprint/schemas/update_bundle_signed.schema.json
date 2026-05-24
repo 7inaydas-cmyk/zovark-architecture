@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.zovark.io/v1/update_bundle_signed.schema.json",
+  "title": "Zovark Signed Update Bundle Manifest",
+  "description": "Manifest for a release bundle produced by the Update Factory. Two independent signatures required (one release-engineer + one security-officer); single-signature bundles are invalid; two signatures from the same role are also invalid.",
+  "type": "object",
+  "additionalProperties": false,
+  "x-zovark-license": "Apache-2.0",
+  "x-zovark-open-source": true,
+  "x-zovark-publication": "public-schema-registry",
+  "x-zovark-schema-version": "1.0.0",
+  "x-zovark-compatibility": ">=v3.2.4.5",
+  "x-zovark-standards-attribution": [
+    {
+      "standard": "Zovark",
+      "role": "canonical"
+    },
+    {
+      "standard": "CycloneDX",
+      "role": "referenced"
+    },
+    {
+      "standard": "SPDX",
+      "role": "referenced"
+    }
+  ],
+  "required": [
+    "bundle_id",
+    "bundle_version",
+    "source_commit",
+    "built_at",
+    "signatures",
+    "attestation",
+    "sbom_uri",
+    "compatibility_matrix",
+    "rollback_metadata",
+    "verification_command"
+  ],
+  "properties": {
+    "bundle_id": {
+      "type": "string",
+      "pattern": "^ZVK-BUNDLE-[0-9]{4}-[0-9]{6}$"
+    },
+    "bundle_version": {
+      "type": "string",
+      "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)?$"
+    },
+    "source_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "built_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "signatures": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "role",
+          "key_id",
+          "signature",
+          "algorithm"
+        ],
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "release-engineer",
+              "security-officer"
+            ]
+          },
+          "key_id": {
+            "type": "string",
+            "minLength": 8,
+            "description": "HSM key identifier; not the private key itself."
+          },
+          "signature": {
+            "type": "string",
+            "description": "Base64-encoded signature blob."
+          },
+          "algorithm": {
+            "type": "string",
+            "enum": [
+              "ECDSA-P384-SHA384",
+              "Ed25519",
+              "RSA-PSS-SHA512"
+            ]
+          }
+        }
+      },
+      "allOf": [
+        {
+          "contains": {
+            "properties": {
+              "role": {
+                "const": "release-engineer"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "role": {
+                "const": "security-officer"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ],
+      "description": "Exactly two signatures: one from release-engineer + one from security-officer. Two signatures from the same role are invalid (would defeat ADR-0039's separation-of-duties rule)."
+    },
+    "attestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sigstore_bundle_uri",
+        "slsa_level",
+        "build_workflow_ref"
+      ],
+      "properties": {
+        "sigstore_bundle_uri": {
+          "type": "string",
+          "format": "uri"
+        },
+        "slsa_level": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 4
+        },
+        "build_workflow_ref": {
+          "type": "string"
+        }
+      }
+    },
+    "sbom_uri": {
+      "type": "string",
+      "format": "uri",
+      "description": "URI to CycloneDX 1.5 SBOM with full dependency provenance."
+    },
+    "compatibility_matrix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version_range",
+        "feature_registry_version_range",
+        "runtime_version_range"
+      ],
+      "properties": {
+        "schema_version_range": {
+          "type": "string"
+        },
+        "feature_registry_version_range": {
+          "type": "string"
+        },
+        "runtime_version_range": {
+          "type": "string"
+        }
+      }
+    },
+    "rollback_metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rollback_to_bundle_id",
+        "rollback_steps_uri"
+      ],
+      "properties": {
+        "rollback_to_bundle_id": {
+          "type": "string"
+        },
+        "rollback_steps_uri": {
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    },
+    "air_gap_package_uri": {
+      "type": "string",
+      "format": "uri",
+      "description": "Optional URI to self-contained offline package."
+    },
+    "verification_command": {
+      "type": "string",
+      "const": "zovark update verify"
+    }
+  }
+}

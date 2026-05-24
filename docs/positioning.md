@@ -9,8 +9,9 @@ outreach.
 Zovark's positioning direction is replay-grade evidence integrity: every
 investigation should produce a byte-identical-replayable record, replay should
 not re-inference, and auditors should be able to verify verdicts offline after
-the original model is retired. Recovered ADR-0046, ADR-0047, and INV-039 remain
-candidate material until reconciled into the current baseline.
+the original model is retired. ADR-0046, ADR-0047, and INV-039 are the
+authoritative evidence-integrity architecture for deterministic verdict,
+replay-record, and bounded-context constraints.
 
 ## Customer-Facing Summary
 
@@ -48,15 +49,13 @@ inputs captured at investigation time.
 
 ## Evidence Integrity
 
-Evidence integrity is the positioning direction. Recovered ADR-0046, recovered
-ADR-0047, and recovered INV-039 describe candidate deterministic verdict,
-replay-record, and bounded-context material that must be reconciled before it is
-cited as active current architecture or customer-facing commitment.
+Evidence integrity is the positioning direction. ADR-0046, ADR-0047, and
+INV-039 describe deterministic verdict, replay-record, and bounded-context
+constraints for the current architecture.
 
-Until that reconciliation lands, the proof story should be framed as planned
-architecture direction: captured evidence, canonical verdict input,
-deterministic verdict, replay-compatible record, and offline verification that
-does not call live models or tools.
+The proof story should be framed as architecture direction: captured evidence,
+canonical verdict input, deterministic verdict, replay-compatible record, and
+offline verification that does not call live models or tools.
 
 ## Anti-Claims
 
@@ -73,6 +72,4 @@ This positioning does not claim:
 - that air-gap deployment is required for deterministic replay;
 - that air-gap is a current supported deployment profile;
 - that RamaLama is implemented in this architecture repo;
-- that recovered ADR-0046, ADR-0047, or INV-039 are active current source before
-  reconciliation; or
 - that customer outreach or customer-readiness material is complete.

@@ -1,7 +1,7 @@
 """Local proof/Replay testbed runner for static V3-like fixtures.
 
 Feature lifecycle: this runner is local workflow plumbing for F-002, the Replay
-engine and tape recorder feature recorded in the recovered ownership metadata.
+engine and tape recorder feature recorded in the archived ownership metadata.
 It does not introduce AlertForge ingest, live integrations, benchmarks, or a
 customer-ready product surface.
 """

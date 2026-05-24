@@ -205,11 +205,11 @@ This PR does not add:
 - Proof Package V1/V2 verifier behavior changes; or
 - V3 adapter behavior changes.
 
-ADR-0036 applies: these contracts are Zovark canonical contracts and do not make
+INV-027 applies: these contracts are Zovark canonical contracts and do not make
 vendor/proprietary schemas canonical dependencies. Future OCSF, SIEM, or EDR
 formats remain mapping/export surfaces only.
 
-ADR-0037 applies: no current applied/root
+INV-028 applies: no current applied/root
 `product/features/feature-registry.yaml` file is present in this repo snapshot.
 This PR adds architecture/contracts only and does not create an active runtime
 feature ID or implementation status. Future product components, standalone

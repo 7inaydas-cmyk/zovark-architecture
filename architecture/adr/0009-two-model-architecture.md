@@ -4,7 +4,7 @@
 **Original date:** 2026-04-28  
 **Amendment date:** 2026-05-16  
 **Version context:** predecessor baseline plus v3.2.4.4 amendment  
-**Source classification:** recovered predecessor ADR amendment; not runtime code
+**Source classification:** predecessor ADR amendment; not runtime code
 
 ## Context
 

@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.zovark.io/legal_hold_certificate/v1.0.0/schema.json",
+  "title": "Tenant legal-hold certificate (ADR-0024 Workflow C)",
+  "description": "Issued when a legal hold is placed or released on a tenant or specific investigation. Hold blocks deletion, crypto-shred, retention expiry, and aging.",
+  "type": "object",
+  "x-zovark-schema-version": "1.0.0",
+  "x-zovark-compatibility": "backward",
+  "x-zovark-license": "Apache-2.0",
+  "x-zovark-owner": "legal-owner",
+  "x-zovark-visibility": "public",
+  "x-zovark-standards-attribution": [
+    {
+      "standard": "JSON-Schema-2020-12",
+      "version": "2020-12",
+      "role": "canonical",
+      "license": "BSD-3-Clause",
+      "source": "https://json-schema.org/"
+    }
+  ],
+  "x-zovark-breaking-change-requires-adr": true,
+  "required": [
+    "schema_version",
+    "action",
+    "tenant_id",
+    "scope",
+    "requested_by",
+    "authorized_by",
+    "reason",
+    "placed_at_ns",
+    "audit_event_id",
+    "signature",
+    "signing_key_fingerprint"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "place",
+        "release"
+      ]
+    },
+    "tenant_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "scope": {
+      "type": "string",
+      "enum": [
+        "tenant",
+        "investigation",
+        "time_range"
+      ]
+    },
+    "investigation_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "time_range_start_ns": {
+      "type": "integer"
+    },
+    "time_range_end_ns": {
+      "type": "integer"
+    },
+    "requested_by": {
+      "type": "string"
+    },
+    "authorized_by": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 10
+    },
+    "placed_at_ns": {
+      "type": "integer"
+    },
+    "released_at_ns": {
+      "type": "integer"
+    },
+    "audit_event_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "signature": {
+      "type": "string",
+      "contentEncoding": "base64"
+    },
+    "signing_key_fingerprint": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

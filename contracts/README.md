@@ -10,7 +10,7 @@ Zovark architecture surfaces and must remain independent of vendor/proprietary
 schemas as canonical dependencies.
 
 Vendor schemas, including future SIEM, EDR, OCSF, or product-specific formats,
-are mapping/export surfaces only unless a future ADR-0036-compatible governance
+are mapping/export surfaces only unless a future INV-027-compatible governance
 decision says otherwise.
 
 ## Current Contracts
