@@ -85,6 +85,12 @@
     }
   ],
   "$defs": {
+    "VersionString": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._+:-]{0,63}$"
+    },
     "StatusPayload": {
       "type": "object",
       "additionalProperties": false,
@@ -98,18 +104,34 @@
         "disabled_capabilities"
       ],
       "properties": {
-        "bundle_version": {"type": "string"},
-        "schema_version": {"type": "string"},
-        "feature_registry_version": {"type": "string"},
+        "bundle_version": {"$ref": "#/$defs/VersionString"},
+        "schema_version": {"$ref": "#/$defs/VersionString"},
+        "feature_registry_version": {"$ref": "#/$defs/VersionString"},
         "adapter_versions": {
           "type": "object",
-          "additionalProperties": {"type": "string"}
+          "additionalProperties": false,
+          "maxProperties": 6,
+          "properties": {
+            "splunk": {"$ref": "#/$defs/VersionString"},
+            "elastic": {"$ref": "#/$defs/VersionString"},
+            "sentinel": {"$ref": "#/$defs/VersionString"},
+            "wazuh": {"$ref": "#/$defs/VersionString"},
+            "generic": {"$ref": "#/$defs/VersionString"},
+            "edr": {"$ref": "#/$defs/VersionString"}
+          }
         },
-        "tool_catalog_version": {"type": "string"},
+        "tool_catalog_version": {"$ref": "#/$defs/VersionString"},
         "topology_mode": {"type": "string", "enum": ["saas", "hybrid", "air-gap"]},
         "disabled_capabilities": {
           "type": "array",
-          "items": {"type": "string"}
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
+          }
         }
       }
     },
@@ -127,7 +149,7 @@
         "health_status": {"type": "string", "enum": ["healthy", "degraded", "critical"]},
         "last_successful_replay_timestamp": {"type": "string", "format": "date-time"},
         "last_audit_chain_verification_timestamp": {"type": "string", "format": "date-time"},
-        "last_update_applied_version": {"type": "string"},
+        "last_update_applied_version": {"$ref": "#/$defs/VersionString"},
         "failed_update_attempts_count": {"type": "integer", "minimum": 0}
       }
     },

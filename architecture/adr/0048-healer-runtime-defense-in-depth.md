@@ -53,7 +53,7 @@ These pass at v3.2.4.3 (already shipped). Necessary, not sufficient.
 
 ### Vault IPC contract (closes issue #32)
 
-Vault IPC pinned in `architecture/blueprint/schemas/vault_request.schema.json` and `vault_response.schema.json` (lands at M3 alongside production ingest auth, not M1; tracked as DD_BLOCKER M3-DEPENDENCY-002 in v3.2.4.3). At M3 they specify:
+Vault IPC schemas are planned M3 artifacts, expected to land as `architecture/blueprint/schemas/vault_request.schema.json` and `architecture/blueprint/schemas/vault_response.schema.json` alongside production ingest auth. Until those files exist, this ADR records the intended M3 field contract and does not treat the schemas as present canonical enforcement artifacts. At M3 they specify:
 - Request envelope: `tenant_id`, `action`, `target`, `actor`, `nonce`, `timestamp_logical`, `signature_over_canonical_request`.
 - Response envelope: `request_id`, `decision`, `evidence_id`, `expires_at`, `signature_over_canonical_response`.
 - Authn: mTLS with per-process cert; healer's cert has no signing-vault grants.
