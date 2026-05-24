@@ -11,7 +11,10 @@
   "x-zovark-schema-version": "1.0.0",
   "x-zovark-compatibility": ">=v3.2.4.2",
   "x-zovark-standards-attribution": [
-    {"standard": "Zovark", "role": "canonical"}
+    {
+      "standard": "Zovark",
+      "role": "canonical"
+    }
   ],
   "required": [
     "experiment_id",
@@ -52,11 +55,22 @@
       "pattern": "^sha256:[0-9a-f]{64}$",
       "description": "Pinned runner image SHA for reproducibility."
     },
-    "started_at": {"type": "string", "format": "date-time"},
-    "finished_at": {"type": "string", "format": "date-time"},
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "finished_at": {
+      "type": "string",
+      "format": "date-time"
+    },
     "outcome": {
       "type": "string",
-      "enum": ["success", "failure", "timeout", "skipped"]
+      "enum": [
+        "success",
+        "failure",
+        "timeout",
+        "skipped"
+      ]
     },
     "candidates_produced": {
       "type": "array",
@@ -70,11 +84,21 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["finding_kind", "finding_id"],
+        "required": [
+          "finding_kind",
+          "finding_id"
+        ],
         "properties": {
           "finding_kind": {
             "type": "string",
-            "enum": ["dead_code", "schema_drift", "performance_regression", "security_potential", "documentation_error", "test_flakiness"]
+            "enum": [
+              "dead_code",
+              "schema_drift",
+              "performance_regression",
+              "security_potential",
+              "documentation_error",
+              "test_flakiness"
+            ]
           },
           "finding_id": {
             "type": "string",
@@ -88,7 +112,14 @@
       "additionalProperties": {
         "type": "number"
       },
-      "description": "Bounded-cardinality research metrics. Each metric may use at most 4 fixed labels; this is a schema guard, not runtime telemetry enforcement."
+      "description": "Bounded-cardinality research metric map. Keys are reviewed metric identifiers; values are numeric measurements only.",
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
+      },
+      "maxProperties": 64
     }
   }
 }

@@ -25,7 +25,9 @@
           "$ref": "#/$defs/version_entry"
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "description": "Version-keyed bounded compatibility map; keys are semantic versions.",
+      "maxProperties": 64
     },
     "tool_catalog": {
       "type": "object",
@@ -34,7 +36,9 @@
           "$ref": "#/$defs/catalog_entry"
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "description": "Version-keyed bounded compatibility map; keys are semantic versions.",
+      "maxProperties": 64
     },
     "adapter_catalog": {
       "type": "object",
@@ -43,35 +47,60 @@
           "$ref": "#/$defs/adapter_catalog_entry"
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "description": "Version-keyed bounded compatibility map; keys are semantic versions.",
+      "maxProperties": 64
     },
     "model_artifacts": {
       "type": "object",
-      "required": ["replay_modes"],
+      "required": [
+        "replay_modes"
+      ],
       "additionalProperties": false,
       "properties": {
         "replay_modes": {
           "type": "object",
-          "required": ["mode_1_recorded_io_only", "mode_2_forensic_reexecution"],
+          "required": [
+            "mode_1_recorded_io_only",
+            "mode_2_forensic_reexecution"
+          ],
           "additionalProperties": false,
           "properties": {
             "mode_1_recorded_io_only": {
               "type": "object",
-              "required": ["model_digest_required"],
+              "required": [
+                "model_digest_required"
+              ],
               "properties": {
-                "model_digest_required": { "const": false },
-                "model_digest_recorded_for_provenance": { "type": "boolean" },
-                "notes": { "type": "string" }
-              }
+                "model_digest_required": {
+                  "const": false
+                },
+                "model_digest_recorded_for_provenance": {
+                  "type": "boolean"
+                },
+                "notes": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
             },
             "mode_2_forensic_reexecution": {
               "type": "object",
-              "required": ["model_digest_required"],
+              "required": [
+                "model_digest_required"
+              ],
               "properties": {
-                "model_digest_required": { "const": true },
-                "historical_runtime_container_required": { "type": "boolean" },
-                "notes": { "type": "string" }
-              }
+                "model_digest_required": {
+                  "const": true
+                },
+                "historical_runtime_container_required": {
+                  "type": "boolean"
+                },
+                "notes": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
             }
           }
         }
@@ -93,7 +122,9 @@
   "$defs": {
     "version_entry": {
       "type": "object",
-      "required": ["replayable_under"],
+      "required": [
+        "replayable_under"
+      ],
       "additionalProperties": false,
       "properties": {
         "replayable_under": {
@@ -104,13 +135,19 @@
           },
           "minItems": 1
         },
-        "migration_required": { "type": "boolean" },
-        "notes": { "type": "string" }
+        "migration_required": {
+          "type": "boolean"
+        },
+        "notes": {
+          "type": "string"
+        }
       }
     },
     "catalog_entry": {
       "type": "object",
-      "required": ["replayable_under"],
+      "required": [
+        "replayable_under"
+      ],
       "additionalProperties": false,
       "properties": {
         "replayable_under": {
@@ -120,14 +157,22 @@
             "pattern": "^\\d+\\.\\d+(?:\\.\\d+|\\.x)$"
           }
         },
-        "removed_tools": { "type": "array" },
-        "added_tools_after_v1.0.0": { "type": "array" },
-        "notes": { "type": "string" }
+        "removed_tools": {
+          "type": "array"
+        },
+        "added_tools_after_v1.0.0": {
+          "type": "array"
+        },
+        "notes": {
+          "type": "string"
+        }
       }
     },
     "adapter_catalog_entry": {
       "type": "object",
-      "required": ["replayable_under"],
+      "required": [
+        "replayable_under"
+      ],
       "additionalProperties": false,
       "properties": {
         "replayable_under": {
@@ -137,8 +182,12 @@
             "pattern": "^\\d+\\.\\d+(?:\\.\\d+|\\.x)$"
           }
         },
-        "breaking_changes": { "type": "array" },
-        "notes": { "type": "string" }
+        "breaking_changes": {
+          "type": "array"
+        },
+        "notes": {
+          "type": "string"
+        }
       }
     }
   }

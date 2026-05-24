@@ -11,7 +11,10 @@
   "x-zovark-schema-version": "1.0.0",
   "x-zovark-compatibility": ">=v3.2.4.5",
   "x-zovark-standards-attribution": [
-    {"standard": "Zovark", "role": "canonical"}
+    {
+      "standard": "Zovark",
+      "role": "canonical"
+    }
   ],
   "required": [
     "envelope_version",
@@ -24,7 +27,9 @@
   "properties": {
     "envelope_version": {
       "type": "string",
-      "enum": ["1.0"]
+      "enum": [
+        "1.0"
+      ]
     },
     "instance_pseudonym": {
       "type": "string",
@@ -36,10 +41,15 @@
     },
     "payload_kind": {
       "type": "string",
-      "enum": ["status", "health", "failure_signature", "none"]
+      "enum": [
+        "status",
+        "health",
+        "failure_signature",
+        "none"
+      ]
     },
     "payload": {
-      "type": "object"
+      "description": "Payload is selected by payload_kind and validated by the conditional schemas below."
     },
     "customer_audit_id": {
       "type": "string",
@@ -49,38 +59,78 @@
   "allOf": [
     {
       "if": {
-        "properties": {"payload_kind": {"const": "status"}},
-        "required": ["payload_kind"]
+        "properties": {
+          "payload_kind": {
+            "const": "status"
+          }
+        },
+        "required": [
+          "payload_kind"
+        ]
       },
       "then": {
-        "properties": {"payload": {"$ref": "#/$defs/StatusPayload"}}
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/StatusPayload"
+          }
+        }
       }
     },
     {
       "if": {
-        "properties": {"payload_kind": {"const": "health"}},
-        "required": ["payload_kind"]
+        "properties": {
+          "payload_kind": {
+            "const": "health"
+          }
+        },
+        "required": [
+          "payload_kind"
+        ]
       },
       "then": {
-        "properties": {"payload": {"$ref": "#/$defs/HealthPayload"}}
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/HealthPayload"
+          }
+        }
       }
     },
     {
       "if": {
-        "properties": {"payload_kind": {"const": "failure_signature"}},
-        "required": ["payload_kind"]
+        "properties": {
+          "payload_kind": {
+            "const": "failure_signature"
+          }
+        },
+        "required": [
+          "payload_kind"
+        ]
       },
       "then": {
-        "properties": {"payload": {"$ref": "#/$defs/FailureSignaturePayload"}}
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/FailureSignaturePayload"
+          }
+        }
       }
     },
     {
       "if": {
-        "properties": {"payload_kind": {"const": "none"}},
-        "required": ["payload_kind"]
+        "properties": {
+          "payload_kind": {
+            "const": "none"
+          }
+        },
+        "required": [
+          "payload_kind"
+        ]
       },
       "then": {
-        "properties": {"payload": {"$ref": "#/$defs/NonePayload"}}
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/NonePayload"
+          }
+        }
       }
     }
   ],
@@ -104,24 +154,51 @@
         "disabled_capabilities"
       ],
       "properties": {
-        "bundle_version": {"$ref": "#/$defs/VersionString"},
-        "schema_version": {"$ref": "#/$defs/VersionString"},
-        "feature_registry_version": {"$ref": "#/$defs/VersionString"},
+        "bundle_version": {
+          "$ref": "#/$defs/VersionString"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/VersionString"
+        },
+        "feature_registry_version": {
+          "$ref": "#/$defs/VersionString"
+        },
         "adapter_versions": {
           "type": "object",
           "additionalProperties": false,
           "maxProperties": 6,
           "properties": {
-            "splunk": {"$ref": "#/$defs/VersionString"},
-            "elastic": {"$ref": "#/$defs/VersionString"},
-            "sentinel": {"$ref": "#/$defs/VersionString"},
-            "wazuh": {"$ref": "#/$defs/VersionString"},
-            "generic": {"$ref": "#/$defs/VersionString"},
-            "edr": {"$ref": "#/$defs/VersionString"}
+            "splunk": {
+              "$ref": "#/$defs/VersionString"
+            },
+            "elastic": {
+              "$ref": "#/$defs/VersionString"
+            },
+            "sentinel": {
+              "$ref": "#/$defs/VersionString"
+            },
+            "wazuh": {
+              "$ref": "#/$defs/VersionString"
+            },
+            "generic": {
+              "$ref": "#/$defs/VersionString"
+            },
+            "edr": {
+              "$ref": "#/$defs/VersionString"
+            }
           }
         },
-        "tool_catalog_version": {"$ref": "#/$defs/VersionString"},
-        "topology_mode": {"type": "string", "enum": ["saas", "hybrid", "air-gap"]},
+        "tool_catalog_version": {
+          "$ref": "#/$defs/VersionString"
+        },
+        "topology_mode": {
+          "type": "string",
+          "enum": [
+            "saas",
+            "hybrid",
+            "air-gap"
+          ]
+        },
         "disabled_capabilities": {
           "type": "array",
           "maxItems": 32,
@@ -146,17 +223,39 @@
         "failed_update_attempts_count"
       ],
       "properties": {
-        "health_status": {"type": "string", "enum": ["healthy", "degraded", "critical"]},
-        "last_successful_replay_timestamp": {"type": "string", "format": "date-time"},
-        "last_audit_chain_verification_timestamp": {"type": "string", "format": "date-time"},
-        "last_update_applied_version": {"$ref": "#/$defs/VersionString"},
-        "failed_update_attempts_count": {"type": "integer", "minimum": 0}
+        "health_status": {
+          "type": "string",
+          "enum": [
+            "healthy",
+            "degraded",
+            "critical"
+          ]
+        },
+        "last_successful_replay_timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_audit_chain_verification_timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_update_applied_version": {
+          "$ref": "#/$defs/VersionString"
+        },
+        "failed_update_attempts_count": {
+          "type": "integer",
+          "minimum": 0
+        }
       }
     },
     "FailureSignaturePayload": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["signature_hash", "component", "occurred_at"],
+      "required": [
+        "signature_hash",
+        "component",
+        "occurred_at"
+      ],
       "properties": {
         "signature_hash": {
           "type": "string",
@@ -164,9 +263,21 @@
         },
         "component": {
           "type": "string",
-          "enum": ["ingest", "replay", "audit", "vault", "edr-adapter", "healer", "mesh", "tape-recorder"]
+          "enum": [
+            "ingest",
+            "replay",
+            "audit",
+            "vault",
+            "edr-adapter",
+            "healer",
+            "mesh",
+            "tape-recorder"
+          ]
         },
-        "occurred_at": {"type": "string", "format": "date-time"}
+        "occurred_at": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "NonePayload": {

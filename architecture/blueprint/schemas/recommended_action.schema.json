@@ -10,15 +10,38 @@
   "x-zovark-owner": "verdict-owner",
   "x-zovark-visibility": "internal",
   "x-zovark-standards-attribution": [
-    {"standard": "OCSF-1.1", "version": "1.1", "role": "referenced", "license": "Apache-2.0", "source": "https://schema.ocsf.io/"}
+    {
+      "standard": "OCSF-1.1",
+      "version": "1.1",
+      "role": "referenced",
+      "license": "Apache-2.0",
+      "source": "https://schema.ocsf.io/"
+    }
   ],
   "x-zovark-breaking-change-requires-adr": true,
-  "required": ["action_id", "action_class", "target_canonical", "confidence_basis_points", "reversible", "authorization_token"],
+  "required": [
+    "action_id",
+    "action_class",
+    "target_canonical",
+    "confidence_basis_points",
+    "reversible",
+    "authorization_token"
+  ],
   "properties": {
-    "action_id": {"type": "string", "format": "uuid"},
+    "action_id": {
+      "type": "string",
+      "format": "uuid"
+    },
     "action_class": {
       "type": "string",
-      "enum": ["isolate_host", "kill_process", "block_network", "quarantine_file", "revoke_session", "no_op"]
+      "enum": [
+        "isolate_host",
+        "kill_process",
+        "block_network",
+        "quarantine_file",
+        "revoke_session",
+        "no_op"
+      ]
     },
     "target_canonical": {
       "type": "string",
@@ -29,13 +52,25 @@
       "minimum": 0,
       "maximum": 10000
     },
-    "reversible": {"type": "boolean", "const": true},
+    "reversible": {
+      "type": "boolean",
+      "const": true
+    },
     "authorization_token": {
       "type": "string",
       "description": "Ed25519-signed per-action authorization per ADR-0028. Replay-protected."
     },
-    "expires_at_ns": {"type": "integer"},
-    "vendor_adapter": {"type": "string", "description": "Outbound adapter to dispatch to (e.g., 'wazuh', 'crowdstrike')"},
-    "rationale": {"type": "string", "maxLength": 1024}
-  }
+    "expires_at_ns": {
+      "type": "integer"
+    },
+    "vendor_adapter": {
+      "type": "string",
+      "description": "Outbound adapter to dispatch to (e.g., 'wazuh', 'crowdstrike')"
+    },
+    "rationale": {
+      "type": "string",
+      "maxLength": 1024
+    }
+  },
+  "additionalProperties": false
 }

@@ -83,7 +83,8 @@
         "python_version": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "scenario": {
       "type": "object",
@@ -106,7 +107,8 @@
         "input_corpus": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "measurements": {
       "type": "array",
@@ -138,7 +140,8 @@
           "samples": {
             "type": "integer"
           }
-        }
+        },
+        "additionalProperties": false
       }
     },
     "claims_calibrated": {

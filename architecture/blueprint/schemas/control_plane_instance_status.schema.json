@@ -11,7 +11,10 @@
   "x-zovark-schema-version": "1.0.0",
   "x-zovark-compatibility": ">=v3.2.4.2",
   "x-zovark-standards-attribution": [
-    {"standard": "Zovark", "role": "canonical"}
+    {
+      "standard": "Zovark",
+      "role": "canonical"
+    }
   ],
   "required": [
     "instance_pseudonym",
@@ -28,31 +31,142 @@
       "type": "string",
       "pattern": "^pseudo-[0-9a-f]{32}$"
     },
-    "first_seen_at": {"type": "string", "format": "date-time"},
-    "last_seen_at": {"type": "string", "format": "date-time"},
-    "bundle_version": {"type": "string"},
-    "schema_version": {"type": "string"},
-    "feature_registry_version": {"type": "string"},
+    "first_seen_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_seen_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "bundle_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._+:-]{0,63}$"
+    },
+    "schema_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._+:-]{0,63}$"
+    },
+    "feature_registry_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._+:-]{0,63}$"
+    },
     "adapter_versions": {
       "type": "object",
-      "additionalProperties": {"type": "string"}
+      "description": "Bounded adapter version map for reviewed adapter families only.",
+      "additionalProperties": false,
+      "maxProperties": 6,
+      "properties": {
+        "splunk": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._+:-]{0,63}$"
+        },
+        "elastic": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._+:-]{0,63}$"
+        },
+        "sentinel": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._+:-]{0,63}$"
+        },
+        "wazuh": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._+:-]{0,63}$"
+        },
+        "generic": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._+:-]{0,63}$"
+        },
+        "edr": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._+:-]{0,63}$"
+        }
+      }
     },
-    "tool_catalog_version": {"type": "string"},
-    "topology_mode": {"type": "string", "enum": ["saas", "hybrid", "air-gap"]},
-    "health_status": {"type": "string", "enum": ["healthy", "degraded", "critical", "unknown"]},
-    "last_successful_replay_timestamp": {"type": "string", "format": "date-time"},
-    "last_audit_chain_verification_timestamp": {"type": "string", "format": "date-time"},
-    "last_update_applied_version": {"type": "string"},
-    "failed_update_attempts_count": {"type": "integer", "minimum": 0},
+    "tool_catalog_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._+:-]{0,63}$"
+    },
+    "topology_mode": {
+      "type": "string",
+      "enum": [
+        "saas",
+        "hybrid",
+        "air-gap"
+      ]
+    },
+    "health_status": {
+      "type": "string",
+      "enum": [
+        "healthy",
+        "degraded",
+        "critical",
+        "unknown"
+      ]
+    },
+    "last_successful_replay_timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_audit_chain_verification_timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_update_applied_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._+:-]{0,63}$"
+    },
+    "failed_update_attempts_count": {
+      "type": "integer",
+      "minimum": 0
+    },
     "disabled_capabilities": {
       "type": "array",
-      "items": {"type": "string"}
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
+      }
     }
   },
   "description-forbidden-fields": [
-    "customer_name", "customer_id", "hostname", "ip_address",
-    "investigation_id", "alert_id", "tenant_data", "audit_log_entries",
-    "vault_keys", "edr_credentials", "deployed_sigma_rules", "user_count",
+    "customer_name",
+    "customer_id",
+    "hostname",
+    "ip_address",
+    "investigation_id",
+    "alert_id",
+    "tenant_data",
+    "audit_log_entries",
+    "vault_keys",
+    "edr_credentials",
+    "deployed_sigma_rules",
+    "user_count",
     "any_field_not_listed_above"
   ]
 }
