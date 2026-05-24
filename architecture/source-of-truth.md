@@ -222,13 +222,12 @@ All binding at `architecture/invariants.md`.
 | INV-038 | Sigma rule publication is governed by alert budget, corpus freshness, drift detection, and analyst approval |
 | INV-039 | Verdict input is canonical and complete; no forbidden inputs |
 
-## Schemas (25)
+## Schemas (23)
 
 Located at `architecture/blueprint/schemas/`. Alphabetical:
 
 - audit_chain_root.schema.json
 - audit_event.schema.json
-- bad.schema.json
 - benchmark_artifact.schema.json
 - campaign_record.schema.json
 - control_plane_instance_status.schema.json
@@ -236,7 +235,6 @@ Located at `architecture/blueprint/schemas/`. Alphabetical:
 - dr_drill_report.schema.json
 - dr_restore_completed_event.schema.json
 - finding.schema.json
-- good.schema.json
 - learning_pack.schema.json
 - legal_hold_certificate.schema.json
 - recommended_action.schema.json
@@ -258,8 +256,9 @@ Located at `architecture/blueprint/schemas/`. Alphabetical:
   PR #51 review for permitting raw llm/tool payloads (INV-039 violation). A
   tightened version aligned with ADR-0046 and ADR-0047 is pending and should be
   authored as a follow-up.
-- `bad.schema.json` (26 lines) and `good.schema.json` (1 line) may be test
-  fixtures rather than production schemas. Disposition pending review.
+- Resolved during PR #52 review: `bad.schema.json` and `good.schema.json` were
+  removed from the authoritative schema inventory because they were
+  fixture-like placeholders, not production schemas.
 
 ## Archive
 
@@ -272,7 +271,9 @@ above. The archive is reference-only, not validator-enforced, not authoritative.
 This baseline was established by the v3.2.5.0 consolidation effort (closed
 2026-05-19, eleven commits). The consolidation:
 
-- Carried over INV-001-032 and 25 schemas from PR #51 review state (commit 1)
+- Carried over INV-001-032 and 25 schemas from PR #51 review state (commit 1);
+  PR #52 review later removed two fixture-like placeholders, leaving 23
+  authoritative schemas
 - Extracted INV-033-039 from ZOVARK-v3.2.4.3-CLOSURE.md (commit 2)
 - Extracted ADR-0046 and ADR-0047 from the same closure document to bypass the
   v3.2.4.3 parser bug (commit 3)

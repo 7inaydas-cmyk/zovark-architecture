@@ -36,7 +36,8 @@ class ReplayRecord(BaseModel):
 
 ### Compatibility matrix
 
-`architecture/replay-compatibility-matrix.yaml`:
+`architecture/replay-compatibility.yaml` is the committed architecture replay
+compatibility contract:
 
 ```yaml
 record_format_versions:
@@ -47,7 +48,7 @@ record_format_versions:
     fallback_strategy: fail_closed
 ```
 
-The replay engine reads this matrix at startup. Every replay request is checked before any compute.
+The replay engine reads this matrix at startup when runtime replay is implemented. Every replay request is checked before any compute.
 
 ### Failure mode 1: recorded tool name no longer in catalog
 
