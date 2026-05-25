@@ -48,6 +48,13 @@ class VerdictInput(BaseModel):
     prompt_hash: str
 ```
 
+The concrete architecture contract artifact for this input is
+`architecture/blueprint/schemas/verdict_input.schema.json`. It expresses the
+ADR-0046 field set as a closed, bounded JSON Schema contract with local
+references to canonical scanner/finding input where appropriate. This artifact
+does not add runtime `derive_verdict` implementation; runtime enforcement
+remains scheduled under INV-039.
+
 ### Canonical sorting (closes "DB ordering" + "tool ordering" vectors)
 
 Every `tuple[T, ...]` input is sorted before being passed to `derive_verdict`:

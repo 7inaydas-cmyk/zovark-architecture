@@ -23,16 +23,28 @@ class ReplayRecord(BaseModel):
     record_format_version: str
     investigation_id: str
     tenant_id: TenantId
-    captured_at: str                  # logical clock, not wall clock
+    captured_logical_clock: int       # logical clock, not wall clock
+    replay_compatibility_contract: str # architecture/replay-compatibility.yaml
+    failure_policy: str               # fail_closed
     tool_catalog_version: str         # exact version pinned at capture
     model_id: str                     # exact build, not just family
+    model_version: str
     decoding_params: CanonicalDecodingParams
     prompt_hashes: tuple[str, ...]
+    verdict_input: VerdictInput
+    verdict_input_hash: str
     llm_io: tuple[LLMIORecord, ...]   # canonical-sorted
     tool_io: tuple[ToolIORecord, ...] # canonical-sorted
     db_snapshots: tuple[DBSnapshot, ...]
     verdict_envelope_hash: str        # the byte-identical-target
 ```
+
+The concrete architecture contract artifact for this record is
+`architecture/blueprint/schemas/replay_record.schema.json`. It captures the
+approved logical clock, the committed replay compatibility contract path, the
+recorded `VerdictInput`, model-visible I/O records, provenance, and hashes
+needed for deterministic replay proof. This artifact does not add replay-engine
+implementation; runtime enforcement remains scheduled under INV-036.
 
 ### Compatibility matrix
 
