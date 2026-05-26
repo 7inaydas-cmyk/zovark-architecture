@@ -263,6 +263,10 @@ Located at `architecture/blueprint/schemas/`. Alphabetical:
   the expanded replay compatibility failure-code vocabulary define canonical
   failure reporting authority. Runtime coverage mapping and replay-engine
   enforcement remain deferred to M5 per INV-036.
+- Resolved during issue #57 follow-up: `architecture/replay-compatibility.yaml`
+  now defines bounded replay compatibility row/outcome authority for canonical
+  failure codes. Runtime row mapping, runtime coverage claims, and replay-engine
+  enforcement remain deferred to M5 per INV-036.
 - Resolved during PR #52 review: `bad.schema.json` and `good.schema.json` were
   removed from the authoritative schema inventory because they were
   fixture-like placeholders, not production schemas.
