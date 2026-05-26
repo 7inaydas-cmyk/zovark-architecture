@@ -69,6 +69,8 @@ record_format_versions:
 
 The replay engine reads this matrix at startup when runtime replay is implemented. Every replay request is checked before any compute.
 
+The matrix also carries `failure_outcome_rows`: stable architecture row IDs that bind canonical replay failure codes to fail-closed compatibility outcomes and bounded runtime evidence requirements. Each canonical replay failure code appears in exactly one outcome row unless a future architecture change introduces an explicit bounded exclusion. These rows are architecture authority for future runtime row-mapping proof; they do not implement replay-engine behavior, do not claim runtime coverage completion, and do not create `REPLAY_COMPATIBILITY_MATRIX_COVERAGE_OK`.
+
 ### Failure mode 1: recorded tool name no longer in catalog
 
 When the replay record references a tool that exists in the recorded `tool_catalog_version` but not in the current catalog (the tool was retired), replay fails closed:

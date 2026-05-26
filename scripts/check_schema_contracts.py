@@ -35,6 +35,12 @@ REPLAY_COMPATIBILITY_CONTRACT = REPO_ROOT / "architecture" / "replay-compatibili
 REPLAY_FAILURE_CODE_REF = (
     "https://schemas.zovark.io/replay_failure_record/v1.0.0/schema.json#/$defs/ReplayFailureCode"
 )
+REPLAY_FAILURE_CATEGORY_REF = (
+    "https://schemas.zovark.io/replay_failure_record/v1.0.0/schema.json#/$defs/ReplayFailureCategory"
+)
+REPLAY_FAILURE_COMPONENT_REF = (
+    "https://schemas.zovark.io/replay_failure_record/v1.0.0/schema.json#/$defs/ReplayFailureComponent"
+)
 
 EXPECTED_SCHEMA_COUNT = 26
 
@@ -97,6 +103,61 @@ def replay_failure_codes(schema: dict[str, Any]) -> list[str]:
     if not isinstance(codes, list) or not all(isinstance(code, str) for code in codes):
         raise TypeError("ReplayFailureCode enum must be a list of strings")
     return codes
+
+
+def replay_failure_outcome_rows(matrix: dict[str, Any]) -> list[dict[str, Any]]:
+    rows = matrix.get("failure_outcome_rows")
+    if not isinstance(rows, list) or not all(isinstance(row, dict) for row in rows):
+        raise TypeError("failure_outcome_rows must be a list of objects")
+    return rows
+
+
+def check_replay_compatibility_rows(
+    matrix: dict[str, Any],
+    failure_codes: list[str],
+    failures: list[str],
+) -> None:
+    rows = replay_failure_outcome_rows(matrix)
+    row_ids: set[str] = set()
+    covered_codes: list[str] = []
+    valid_codes = set(failure_codes)
+
+    for row in rows:
+        row_id = row.get("row_id")
+        if not isinstance(row_id, str) or not row_id:
+            failures.append("architecture/replay-compatibility.yaml: failure_outcome_rows row missing row_id")
+            continue
+        if row_id in row_ids:
+            failures.append(f"architecture/replay-compatibility.yaml: duplicate failure_outcome_rows row_id {row_id}")
+        row_ids.add(row_id)
+
+        if row.get("outcome") != "fail_closed":
+            failures.append(f"architecture/replay-compatibility.yaml: {row_id} outcome must be fail_closed")
+
+        evidence = row.get("runtime_evidence_required")
+        if not isinstance(evidence, list) or "canonical_replay_failure_record" not in evidence:
+            failures.append(
+                f"architecture/replay-compatibility.yaml: {row_id} must require canonical_replay_failure_record evidence"
+            )
+
+        row_codes = row.get("failure_codes")
+        if not isinstance(row_codes, list) or not row_codes:
+            failures.append(f"architecture/replay-compatibility.yaml: {row_id} must list failure_codes")
+            continue
+        for code in row_codes:
+            if code not in valid_codes:
+                failures.append(f"architecture/replay-compatibility.yaml: {row_id} references non-canonical {code}")
+            covered_codes.append(code)
+
+    if len(covered_codes) != len(set(covered_codes)):
+        failures.append("architecture/replay-compatibility.yaml: failure_outcome_rows duplicate failure code coverage")
+    if set(covered_codes) != valid_codes:
+        missing = sorted(valid_codes - set(covered_codes))
+        extra = sorted(set(covered_codes) - valid_codes)
+        failures.append(
+            "architecture/replay-compatibility.yaml: failure_outcome_rows must cover ReplayFailureCode enum exactly "
+            f"missing={missing!r} extra={extra!r}"
+        )
 
 
 def path_join(path: list[str]) -> str:
@@ -404,6 +465,8 @@ def main() -> int:
             "replay_failure_record.schema.json ReplayFailureCode enum"
         )
 
+    check_replay_compatibility_rows(replay_compatibility_matrix, failure_codes, failures)
+
     compatibility_ref = (
         replay_compatibility_schema.get("properties", {})
         .get("structured_failure_codes", {})
@@ -412,6 +475,20 @@ def main() -> int:
     )
     if compatibility_ref != REPLAY_FAILURE_CODE_REF:
         failures.append("replay-compatibility.schema.json: structured_failure_codes must $ref ReplayFailureCode")
+
+    outcome_row_schema = replay_compatibility_schema.get("$defs", {}).get("failure_outcome_row", {})
+    outcome_row_properties = outcome_row_schema.get("properties", {})
+    outcome_code_ref = (
+        outcome_row_properties.get("failure_codes", {}).get("items", {}).get("$ref")
+    )
+    if outcome_code_ref != REPLAY_FAILURE_CODE_REF:
+        failures.append("replay-compatibility.schema.json: failure_outcome_rows failure_codes must $ref ReplayFailureCode")
+    outcome_category_ref = outcome_row_properties.get("compatibility_dimension", {}).get("$ref")
+    if outcome_category_ref != REPLAY_FAILURE_CATEGORY_REF:
+        failures.append("replay-compatibility.schema.json: failure_outcome_rows compatibility_dimension must $ref ReplayFailureCategory")
+    outcome_component_ref = outcome_row_properties.get("component", {}).get("$ref")
+    if outcome_component_ref != REPLAY_FAILURE_COMPONENT_REF:
+        failures.append("replay-compatibility.schema.json: failure_outcome_rows component must $ref ReplayFailureComponent")
 
     replay_record_ref = (
         replay_schema.get("properties", {})
@@ -492,6 +569,24 @@ def main() -> int:
         "replay_failure_record unknown failure code",
         failures,
     )
+    expect_invalid(
+        replay_compatibility_schema,
+        schemas_by_id,
+        with_path_value(replay_compatibility_matrix, ["failure_outcome_rows", 0, "runtime_coverage_claim"], True),
+        "replay compatibility outcome row extra field",
+        failures,
+    )
+    expect_invalid(
+        replay_compatibility_schema,
+        schemas_by_id,
+        with_path_value(
+            replay_compatibility_matrix,
+            ["failure_outcome_rows", 0, "failure_codes"],
+            ["REPLAY_RUNTIME_LOCAL_ONLY"],
+        ),
+        "replay compatibility outcome row unknown failure code",
+        failures,
+    )
     for forbidden_field in (
         "raw_prompt",
         "raw_llm_payload",
@@ -519,6 +614,7 @@ def main() -> int:
     print("ORDER_METADATA_OK verdict_input replay_record")
     print("CONTRACT_EXAMPLES_OK verdict_input replay_record replay_failure_record")
     print("REPLAY_COMPATIBILITY_CODES_OK")
+    print("ARCH_REPLAY_COMPATIBILITY_ROW_COVERAGE_OK")
     print("ARCH_REPLAY_FAILURE_CONTRACT_OK")
     print("SCHEMA_CONTRACTS_OK")
     return 0
