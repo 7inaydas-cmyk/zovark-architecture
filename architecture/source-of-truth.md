@@ -222,7 +222,7 @@ All binding at `architecture/invariants.md`.
 | INV-038 | Sigma rule publication is governed by alert budget, corpus freshness, drift detection, and analyst approval |
 | INV-039 | Verdict input is canonical and complete; no forbidden inputs |
 
-## Schemas (25)
+## Schemas (26)
 
 Located at `architecture/blueprint/schemas/`. Alphabetical:
 
@@ -239,6 +239,7 @@ Located at `architecture/blueprint/schemas/`. Alphabetical:
 - legal_hold_certificate.schema.json
 - recommended_action.schema.json
 - replay-compatibility.schema.json
+- replay_failure_record.schema.json
 - replay_record.schema.json
 - research_experiment_result.schema.json
 - retention_certificate.schema.json
@@ -258,6 +259,10 @@ Located at `architecture/blueprint/schemas/`. Alphabetical:
   `replay_record.schema.json` were added as bounded architecture contracts for
   deterministic verdict/replay proof. Runtime derivation and replay-engine
   enforcement remain deferred to M5 per INV-036 and INV-039.
+- Resolved during issue #55 follow-up: `replay_failure_record.schema.json` and
+  the expanded replay compatibility failure-code vocabulary define canonical
+  failure reporting authority. Runtime coverage mapping and replay-engine
+  enforcement remain deferred to M5 per INV-036.
 - Resolved during PR #52 review: `bad.schema.json` and `good.schema.json` were
   removed from the authoritative schema inventory because they were
   fixture-like placeholders, not production schemas.

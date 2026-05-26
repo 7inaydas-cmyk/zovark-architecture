@@ -22,11 +22,21 @@ except Exception as exc:  # pragma: no cover - explicit local environment gate
     print(f"JSONSCHEMA_NOT_AVAILABLE: {exc!r}")
     sys.exit(1)
 
+try:
+    import yaml
+except Exception as exc:  # pragma: no cover - explicit local environment gate
+    print(f"YAML_NOT_AVAILABLE: {exc!r}")
+    sys.exit(1)
+
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCHEMA_DIR = REPO_ROOT / "architecture" / "blueprint" / "schemas"
+REPLAY_COMPATIBILITY_CONTRACT = REPO_ROOT / "architecture" / "replay-compatibility.yaml"
+REPLAY_FAILURE_CODE_REF = (
+    "https://schemas.zovark.io/replay_failure_record/v1.0.0/schema.json#/$defs/ReplayFailureCode"
+)
 
-EXPECTED_SCHEMA_COUNT = 25
+EXPECTED_SCHEMA_COUNT = 26
 
 FORBIDDEN_FIELD_NAMES = {
     "captured_at",
@@ -39,6 +49,7 @@ FORBIDDEN_FIELD_NAMES = {
     "mtime",
     "network_io",
     "pid",
+    "process_state",
     "prompt_payload",
     "random_seed",
     "raw_llm_payload",
@@ -72,6 +83,20 @@ def collect_refs(node: Any, refs: list[str]) -> None:
     elif isinstance(node, list):
         for value in node:
             collect_refs(value, refs)
+
+
+def load_replay_compatibility_matrix() -> dict[str, Any]:
+    matrix = yaml.safe_load(REPLAY_COMPATIBILITY_CONTRACT.read_text())
+    if not isinstance(matrix, dict):
+        raise TypeError("architecture/replay-compatibility.yaml must load as an object")
+    return matrix
+
+
+def replay_failure_codes(schema: dict[str, Any]) -> list[str]:
+    codes = schema["$defs"]["ReplayFailureCode"]["enum"]
+    if not isinstance(codes, list) or not all(isinstance(code, str) for code in codes):
+        raise TypeError("ReplayFailureCode enum must be a list of strings")
+    return codes
 
 
 def path_join(path: list[str]) -> str:
@@ -201,7 +226,7 @@ def valid_verdict_input() -> dict[str, Any]:
     }
 
 
-def valid_replay_record() -> dict[str, Any]:
+def valid_replay_record(failure_codes: list[str]) -> dict[str, Any]:
     return {
         "schema_version": "1.0.0",
         "record_format_version": "1.0.0",
@@ -251,10 +276,24 @@ def valid_replay_record() -> dict[str, Any]:
             }
         ],
         "verdict_envelope_hash": sha("5"),
-        "structured_failure_codes": [
-            "REPLAY_TOOL_RETIRED",
-            "REPLAY_SCHEMA_INCOMPATIBLE",
-        ],
+        "structured_failure_codes": failure_codes,
+    }
+
+
+def valid_replay_failure_record() -> dict[str, Any]:
+    return {
+        "schema_version": "1.0.0",
+        "failure_code": "REPLAY_VERDICT_INPUT_HASH_MISMATCH",
+        "failure_category": "hash_integrity",
+        "tenant_id": "22222222-2222-4222-8222-222222222222",
+        "investigation_id": "33333333-3333-4333-8333-333333333333",
+        "replay_compatibility_contract": "architecture/replay-compatibility.yaml",
+        "replay_record_hash": sha("6"),
+        "component": "verdict_input",
+        "field_path": "verdict_input_hash",
+        "expected_hash": sha("7"),
+        "observed_hash": sha("8"),
+        "fail_closed_reason": "Synthetic bounded replay failure record for schema contract validation.",
     }
 
 
@@ -309,7 +348,7 @@ def main() -> int:
         except Exception as exc:
             failures.append(f"{path.relative_to(REPO_ROOT)}: metaschema failure: {exc}")
         check_object_closure(schema, [path.name], failures)
-        if path.name in {"verdict_input.schema.json", "replay_record.schema.json"}:
+        if path.name in {"verdict_input.schema.json", "replay_record.schema.json", "replay_failure_record.schema.json"}:
             check_forbidden_field_names(schema, [path.name], failures)
 
     for path, schema in schemas_by_path.items():
@@ -324,6 +363,9 @@ def main() -> int:
 
     verdict_schema = schemas_by_path[SCHEMA_DIR / "verdict_input.schema.json"]
     replay_schema = schemas_by_path[SCHEMA_DIR / "replay_record.schema.json"]
+    replay_failure_schema = schemas_by_path[SCHEMA_DIR / "replay_failure_record.schema.json"]
+    replay_compatibility_schema = schemas_by_path[SCHEMA_DIR / "replay-compatibility.schema.json"]
+    failure_codes = replay_failure_codes(replay_failure_schema)
 
     check_sort_metadata(
         verdict_schema,
@@ -345,12 +387,40 @@ def main() -> int:
     )
 
     verdict_input = valid_verdict_input()
-    replay_record = valid_replay_record()
+    replay_record = valid_replay_record(failure_codes)
+    replay_failure_record = valid_replay_failure_record()
+    replay_compatibility_matrix = load_replay_compatibility_matrix()
     try:
         expect_valid(verdict_schema, schemas_by_id, verdict_input)
         expect_valid(replay_schema, schemas_by_id, replay_record)
+        expect_valid(replay_failure_schema, schemas_by_id, replay_failure_record)
+        expect_valid(replay_compatibility_schema, schemas_by_id, replay_compatibility_matrix)
     except Exception as exc:
         failures.append(f"valid example rejected: {exc}")
+
+    if replay_compatibility_matrix.get("structured_failure_codes") != failure_codes:
+        failures.append(
+            "architecture/replay-compatibility.yaml: structured_failure_codes must match "
+            "replay_failure_record.schema.json ReplayFailureCode enum"
+        )
+
+    compatibility_ref = (
+        replay_compatibility_schema.get("properties", {})
+        .get("structured_failure_codes", {})
+        .get("items", {})
+        .get("$ref")
+    )
+    if compatibility_ref != REPLAY_FAILURE_CODE_REF:
+        failures.append("replay-compatibility.schema.json: structured_failure_codes must $ref ReplayFailureCode")
+
+    replay_record_ref = (
+        replay_schema.get("properties", {})
+        .get("structured_failure_codes", {})
+        .get("items", {})
+        .get("$ref")
+    )
+    if replay_record_ref != REPLAY_FAILURE_CODE_REF:
+        failures.append("replay_record.schema.json: structured_failure_codes must $ref ReplayFailureCode")
 
     expect_invalid(
         verdict_schema,
@@ -408,6 +478,35 @@ def main() -> int:
         "replay_record raw_rows",
         failures,
     )
+    expect_invalid(
+        replay_failure_schema,
+        schemas_by_id,
+        with_path_value(replay_failure_record, ["unexpected_field"], "not allowed"),
+        "replay_failure_record extra field",
+        failures,
+    )
+    expect_invalid(
+        replay_failure_schema,
+        schemas_by_id,
+        with_path_value(replay_failure_record, ["failure_code"], "REPLAY_RUNTIME_LOCAL_ONLY"),
+        "replay_failure_record unknown failure code",
+        failures,
+    )
+    for forbidden_field in (
+        "raw_prompt",
+        "raw_llm_payload",
+        "hidden_reasoning",
+        "raw_tool_output",
+        "filesystem_metadata",
+        "process_state",
+    ):
+        expect_invalid(
+            replay_failure_schema,
+            schemas_by_id,
+            with_path_value(replay_failure_record, [forbidden_field], "forbidden"),
+            f"replay_failure_record forbidden {forbidden_field}",
+            failures,
+        )
 
     if failures:
         for failure in failures:
@@ -418,7 +517,9 @@ def main() -> int:
     print("OBJECT_CLOSURE_OK authoritative schemas")
     print("LOCAL_REF_CLOSURE_OK authoritative schemas")
     print("ORDER_METADATA_OK verdict_input replay_record")
-    print("CONTRACT_EXAMPLES_OK verdict_input replay_record")
+    print("CONTRACT_EXAMPLES_OK verdict_input replay_record replay_failure_record")
+    print("REPLAY_COMPATIBILITY_CODES_OK")
+    print("ARCH_REPLAY_FAILURE_CONTRACT_OK")
     print("SCHEMA_CONTRACTS_OK")
     return 0
 

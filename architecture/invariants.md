@@ -256,7 +256,7 @@ This file is **append-only** in normal flow. Modifications to existing entries r
 
 **Statement.** The replay engine produces byte-identical verdicts from recorded LLM I/O and tool I/O, or it fails closed. It does not re-inference, does not silently substitute retired tools, does not produce degraded results.
 
-**Rationale.** ADR-0047 specifies three failure modes (REPLAY_TOOL_RETIRED, REPLAY_SCHEMA_INCOMPATIBLE, model-unavailable-not-an-error). INV-017 already says replay fails closed; INV-036 names the specific behaviors that must remain absent.
+**Rationale.** ADR-0047 specifies replay fail-closed semantics, canonical replay failure reporting via `replay_failure_record.schema.json`, and the original replay modes (tool-retired, schema-incompatible, model-unavailable-not-an-error). INV-017 already says replay fails closed; INV-036 names the specific behaviors that must remain absent.
 
 **Enforcement (scheduled).**
 - M5: `tests/replay/tool-retired/`, `tests/replay/schema-incompatible/`, `tests/replay/model-unavailable/`, `tests/replay/byte-identical/` (per ADR-0047).

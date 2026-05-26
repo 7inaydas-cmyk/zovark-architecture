@@ -46,6 +46,13 @@ recorded `VerdictInput`, model-visible I/O records, provenance, and hashes
 needed for deterministic replay proof. This artifact does not add replay-engine
 implementation; runtime enforcement remains scheduled under INV-036.
 
+The concrete architecture contract artifact for fail-closed replay reporting is
+`architecture/blueprint/schemas/replay_failure_record.schema.json`. It defines
+the canonical replay failure-code vocabulary and a bounded failure-record shape
+for replay validation outcomes. This artifact does not add replay-engine
+implementation or runtime coverage mapping; runtime enforcement remains
+scheduled under INV-036.
+
 ### Compatibility matrix
 
 `architecture/replay-compatibility.yaml` is the committed architecture replay
