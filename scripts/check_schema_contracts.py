@@ -33,6 +33,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 SCHEMA_DIR = REPO_ROOT / "architecture" / "blueprint" / "schemas"
 REPLAY_COMPATIBILITY_CONTRACT = REPO_ROOT / "architecture" / "replay-compatibility.yaml"
 REPLAY_TOOL_CATALOG_DIR = REPO_ROOT / "architecture" / "replay" / "catalogs"
+RUNTIME_PROOF_LOOP_COMPLETION_CONTRACT = REPO_ROOT / "architecture" / "proof" / "runtime-proof-loop-completion.yaml"
 REPLAY_FAILURE_CODE_REF = (
     "https://schemas.zovark.io/replay_failure_record/v1.0.0/schema.json#/$defs/ReplayFailureCode"
 )
@@ -45,7 +46,50 @@ REPLAY_FAILURE_COMPONENT_REF = (
 REPLAY_TOOL_RETIRED_CODE = "REPLAY_TOOL_RETIRED"
 REPLAY_TOOL_RETIRED_ROW_ID = "tool_compatibility.tool_retired"
 
-EXPECTED_SCHEMA_COUNT = 27
+EXPECTED_SCHEMA_COUNT = 28
+
+REQUIRED_RUNTIME_PROOF_LOOP_MARKERS = {
+    "SCANNER_FIXTURE_SCHEMA_OK",
+    "VERDICT_FIXTURE_SCHEMA_OK",
+    "VERDICT_INPUT_FIXTURE_SCHEMA_OK",
+    "REPLAY_RECORD_FIXTURE_SCHEMA_OK",
+    "DETERMINISTIC_VERDICT_DERIVATION_OK",
+    "REPLAY_VALIDATION_PROOF_OK",
+    "REPLAY_VALIDATION_FAIL_CLOSED_CASES_OK",
+    "REPLAY_COMPATIBILITY_MATRIX_SCHEMA_OK",
+    "REPLAY_COMPATIBILITY_ROW_COVERAGE_SCHEMA_OK",
+    "REPLAY_TOOL_CATALOG_AUTHORITY_IMPORT_OK",
+    "REPLAY_FAILURE_RECORD_SCHEMA_OK",
+    "REPLAY_FAILURE_RECORD_FIXTURE_SCHEMA_OK",
+    "REPLAY_FAILURE_CANONICAL_CODE_MAPPING_OK",
+    "REPLAY_FAILURE_RECORD_EMISSION_OK",
+    "REPLAY_COMPATIBILITY_MATRIX_ROW_MAPPING_OK",
+    "REPLAY_DECODING_PARAMS_FAIL_CLOSED_OK",
+    "REPLAY_TOOL_RETIRED_FAIL_CLOSED_OK",
+    "REPLAY_COMPATIBILITY_MATRIX_COVERAGE_OK",
+    "CONTRACT_METASCHEMA_OK",
+}
+
+REQUIRED_RUNTIME_PROOF_DEFERRED_POLICY = {
+    "audit_chain_output": "future_scoped",
+    "runtime_investigation_execution": "future_scoped",
+    "alertforge_scenario_validation": "non_goal",
+    "benchmark_proof": "non_goal",
+    "dashboard_and_external_claims": "non_goal",
+    "production_sla_compliance_workflows": "non_goal",
+}
+
+REQUIRED_RUNTIME_PROOF_NON_GOALS = {
+    "AlertForge validation",
+    "benchmarks",
+    "dashboard readiness",
+    "customer outreach readiness",
+    "customer readiness",
+    "product readiness",
+    "production readiness",
+    "compliance readiness",
+    "SLA readiness",
+}
 
 FORBIDDEN_FIELD_NAMES = {
     "captured_at",
@@ -112,6 +156,13 @@ def load_replay_tool_catalogs() -> dict[str, dict[str, Any]]:
             raise TypeError(f"{path.relative_to(REPO_ROOT)} missing catalog_version")
         catalogs[catalog_version] = catalog
     return catalogs
+
+
+def load_runtime_proof_loop_completion_contract() -> dict[str, Any]:
+    contract = yaml.safe_load(RUNTIME_PROOF_LOOP_COMPLETION_CONTRACT.read_text())
+    if not isinstance(contract, dict):
+        raise TypeError("architecture/proof/runtime-proof-loop-completion.yaml must load as an object")
+    return contract
 
 
 def replay_failure_codes(schema: dict[str, Any]) -> list[str]:
@@ -340,6 +391,82 @@ def check_replay_tool_catalog_authority(
             failures.append(f"architecture/replay/catalogs retired tool {tool_name}: not present in last active catalog")
         if identity in current_active:
             failures.append(f"architecture/replay/catalogs retired tool {tool_name}: still active in current catalog")
+
+
+def check_runtime_proof_loop_completion_authority(contract: dict[str, Any], failures: list[str]) -> None:
+    if contract.get("proof_marker") != "ARCH_RUNTIME_PROOF_LOOP_COMPLETION_CRITERIA_OK":
+        failures.append("runtime-proof-loop-completion.yaml: proof_marker mismatch")
+    if contract.get("scope") != "deterministic_replay_proof_loop":
+        failures.append("runtime-proof-loop-completion.yaml: scope must be deterministic_replay_proof_loop")
+
+    transition = contract.get("status_transition")
+    if not isinstance(transition, dict):
+        failures.append("runtime-proof-loop-completion.yaml: status_transition must be an object")
+        return
+    if transition.get("runtime_proof_loop_complete_allowed") is not True:
+        failures.append("runtime-proof-loop-completion.yaml: completion must be explicitly allowed")
+    if transition.get("runtime_must_import_or_cite_authority") is not True:
+        failures.append("runtime-proof-loop-completion.yaml: runtime must import or cite architecture authority")
+    if transition.get("completion_claim") != "deterministic_replay_proof_loop_complete":
+        failures.append("runtime-proof-loop-completion.yaml: completion claim must be scoped to deterministic replay")
+    authority = transition.get("required_architecture_authority")
+    if not isinstance(authority, list) or "ADR-0053" not in authority:
+        failures.append("runtime-proof-loop-completion.yaml: required_architecture_authority must include ADR-0053")
+
+    markers = contract.get("required_proof_markers")
+    if not isinstance(markers, list) or set(markers) != REQUIRED_RUNTIME_PROOF_LOOP_MARKERS:
+        failures.append(
+            "runtime-proof-loop-completion.yaml: required_proof_markers must match scoped deterministic replay proof set "
+            f"missing={sorted(REQUIRED_RUNTIME_PROOF_LOOP_MARKERS - set(markers or []))!r} "
+            f"extra={sorted(set(markers or []) - REQUIRED_RUNTIME_PROOF_LOOP_MARKERS)!r}"
+        )
+
+    evidence_handles = set(contract.get("evidence_handle_requirements", []))
+    for required_handle in ("test_file_path", "coverage_evidence_path", "expected_count"):
+        if required_handle not in evidence_handles:
+            failures.append(f"runtime-proof-loop-completion.yaml: missing evidence handle {required_handle}")
+
+    policies = contract.get("deferred_entry_policy")
+    if not isinstance(policies, list):
+        failures.append("runtime-proof-loop-completion.yaml: deferred_entry_policy must be a list")
+        return
+    actual_policy: dict[str, str] = {}
+    for policy in policies:
+        if not isinstance(policy, dict):
+            failures.append("runtime-proof-loop-completion.yaml: deferred_entry_policy entries must be objects")
+            continue
+        entry_id = policy.get("entry_id")
+        classification = policy.get("classification")
+        if isinstance(entry_id, str) and isinstance(classification, str):
+            actual_policy[entry_id] = classification
+        if entry_id in REQUIRED_RUNTIME_PROOF_DEFERRED_POLICY and policy.get("blocking_for_completion") is not False:
+            failures.append(f"runtime-proof-loop-completion.yaml: {entry_id} must be non-blocking")
+    if actual_policy != REQUIRED_RUNTIME_PROOF_DEFERRED_POLICY:
+        failures.append(
+            "runtime-proof-loop-completion.yaml: deferred policy must classify current runtime deferred entries exactly "
+            f"expected={REQUIRED_RUNTIME_PROOF_DEFERRED_POLICY!r} actual={actual_policy!r}"
+        )
+
+    constraints = contract.get("proof_status_constraints")
+    if not isinstance(constraints, dict):
+        failures.append("runtime-proof-loop-completion.yaml: proof_status_constraints must be an object")
+    else:
+        for key in (
+            "no_pytest_execution",
+            "no_ci_log_parsing",
+            "no_dynamic_completion_inference_from_local_state_alone",
+            "requires_architecture_provenance",
+        ):
+            if constraints.get(key) is not True:
+                failures.append(f"runtime-proof-loop-completion.yaml: proof_status_constraints.{key} must be true")
+
+    non_goals = set(contract.get("non_goal_boundaries", []))
+    missing_non_goals = REQUIRED_RUNTIME_PROOF_NON_GOALS - non_goals
+    if missing_non_goals:
+        failures.append(
+            "runtime-proof-loop-completion.yaml: missing required non-goal boundaries "
+            f"{sorted(missing_non_goals)!r}"
+        )
 
 
 def path_join(path: list[str]) -> str:
@@ -614,6 +741,9 @@ def main() -> int:
     replay_failure_schema = schemas_by_path[SCHEMA_DIR / "replay_failure_record.schema.json"]
     replay_compatibility_schema = schemas_by_path[SCHEMA_DIR / "replay-compatibility.schema.json"]
     replay_tool_catalog_schema = schemas_by_path[SCHEMA_DIR / "replay_tool_catalog.schema.json"]
+    runtime_proof_loop_completion_schema = schemas_by_path[
+        SCHEMA_DIR / "runtime_proof_loop_completion.schema.json"
+    ]
     failure_codes = replay_failure_codes(replay_failure_schema)
 
     check_sort_metadata(
@@ -640,11 +770,13 @@ def main() -> int:
     replay_failure_record = valid_replay_failure_record()
     replay_compatibility_matrix = load_replay_compatibility_matrix()
     replay_tool_catalogs = load_replay_tool_catalogs()
+    runtime_proof_loop_completion = load_runtime_proof_loop_completion_contract()
     try:
         expect_valid(verdict_schema, schemas_by_id, verdict_input)
         expect_valid(replay_schema, schemas_by_id, replay_record)
         expect_valid(replay_failure_schema, schemas_by_id, replay_failure_record)
         expect_valid(replay_compatibility_schema, schemas_by_id, replay_compatibility_matrix)
+        expect_valid(runtime_proof_loop_completion_schema, schemas_by_id, runtime_proof_loop_completion)
         for replay_tool_catalog in replay_tool_catalogs.values():
             expect_valid(replay_tool_catalog_schema, schemas_by_id, replay_tool_catalog)
     except Exception as exc:
@@ -658,6 +790,7 @@ def main() -> int:
 
     check_replay_compatibility_rows(replay_compatibility_matrix, failure_codes, failures)
     check_replay_tool_catalog_authority(replay_compatibility_matrix, replay_tool_catalogs, failures)
+    check_runtime_proof_loop_completion_authority(runtime_proof_loop_completion, failures)
 
     compatibility_ref = (
         replay_compatibility_schema.get("properties", {})
@@ -821,6 +954,27 @@ def main() -> int:
             "replay tool catalog raw_tool_output",
             failures,
         )
+    expect_invalid(
+        runtime_proof_loop_completion_schema,
+        schemas_by_id,
+        with_path_value(runtime_proof_loop_completion, ["unexpected_field"], "not allowed"),
+        "runtime proof-loop completion extra field",
+        failures,
+    )
+    expect_invalid(
+        runtime_proof_loop_completion_schema,
+        schemas_by_id,
+        with_path_value(runtime_proof_loop_completion, ["proof_status_constraints", "no_pytest_execution"], False),
+        "runtime proof-loop completion pytest execution constraint",
+        failures,
+    )
+    expect_invalid(
+        runtime_proof_loop_completion_schema,
+        schemas_by_id,
+        with_path_value(runtime_proof_loop_completion, ["proof_marker"], "REPLAY_COMPATIBILITY_MATRIX_COVERAGE_OK"),
+        "runtime proof-loop completion wrong proof marker",
+        failures,
+    )
     for forbidden_field in (
         "raw_prompt",
         "raw_llm_payload",
@@ -851,6 +1005,7 @@ def main() -> int:
     print("ARCH_REPLAY_COMPATIBILITY_ROW_COVERAGE_OK")
     print("ARCH_REPLAY_FAILURE_CONTRACT_OK")
     print("ARCH_REPLAY_TOOL_CATALOG_RETIREMENT_AUTHORITY_OK")
+    print("ARCH_RUNTIME_PROOF_LOOP_COMPLETION_CRITERIA_OK")
     print("SCHEMA_CONTRACTS_OK")
     return 0
 

@@ -19,6 +19,9 @@ This branch also carries a targeted v3.2.4.4 positioning amendment:
 - `architecture/adr/0052-positioning-deterministic-replay.md` proposes
   deterministic replay and evidence integrity as the primary customer-facing
   differentiator.
+- `architecture/adr/0053-runtime-proof-loop-completion-criteria.md` defines
+  scoped deterministic replay proof-loop completion criteria and the boundary
+  that separates that proof loop from readiness and external-claim lanes.
 
 These files are documentation/ADR amendments only. They do not import the full
 predecessor ADR baseline, implement RamaLama, or change runtime behavior.
@@ -32,6 +35,7 @@ predecessor ADR baseline, implement RamaLama, or change runtime behavior.
 | ADR-0042 | Cryptographic Key Management | proposed | M1 architecture; M4 implementation | INV-031 | unsafe old-key transition pattern | none | none | none | document-only in this patch; HSM/key-ledger gates planned M4 | yes | `.../architecture/adr/0042-cryptographic-key-management.md`, `.../SECURITY-VULN-DISCLOSURE.md` | Active proposal. No HSM, key ledger, or rotation-age script exists in this tree. |
 | ADR-0043 | Open-Source Release Strategy | proposed strategic pivot | M1 decision; M1/M6 release operations | INV-009, INV-027, INV-031 | closed-source commercial scope statement | none | none | none | proposed decision plus draft license text; release-channel implementation not present | yes | `.../architecture/adr/0043-open-source-release-strategy.md`, `.../LICENSE-source-available.md` | Founder sign-off and counsel review required before acceptance. |
 | ADR-0052 | Deterministic Replay as Primary Differentiator | proposed | positioning; customer-facing story; no runtime implementation | INV-022, INV-036, INV-039 | none | none | ADR-0009 | none | document-only; no benchmarks, runtime, or customer-readiness material | yes | `architecture/adr/0052-positioning-deterministic-replay.md`, `docs/positioning.md` | Positions deterministic replay/evidence integrity as primary differentiator; air-gap remains a planned regulated-deployment target pending runtime support, operator controls, validation, and deployment evidence. |
+| ADR-0053 | Runtime Proof-Loop Completion Criteria | accepted | deterministic replay proof-loop completion authority; no runtime implementation | INV-036, INV-039 | none | none | none | none | schema and proof authority artifact only; runtime import/update is follow-up work | no | `architecture/adr/0053-runtime-proof-loop-completion-criteria.md`, `architecture/proof/runtime-proof-loop-completion.yaml`, `architecture/blueprint/schemas/runtime_proof_loop_completion.schema.json` | Defines scoped proof-loop completion criteria without AlertForge, benchmark, dashboard, customer, product, production, compliance, SLA, audit-chain, or replay-engine readiness claims. |
 
 ## Baseline ADRs (post-apply verified)
 

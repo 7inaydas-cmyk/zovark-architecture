@@ -1,0 +1,206 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.zovark.io/runtime_proof_loop_completion/v1.0.0/schema.json",
+  "title": "Runtime proof-loop completion criteria",
+  "description": "Architecture-owned criteria for scoped deterministic replay proof-loop completion. This contract authorizes only the replay proof-loop status transition and does not imply customer, product, production, compliance, SLA, benchmark, dashboard, AlertForge, outreach, or replay-engine readiness.",
+  "type": "object",
+  "x-zovark-schema-version": "1.0.0",
+  "x-zovark-compatibility": "backward",
+  "x-zovark-license": "Apache-2.0",
+  "x-zovark-owner": "replay-owner",
+  "x-zovark-visibility": "internal",
+  "x-zovark-breaking-change-requires-adr": true,
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "authority_id",
+    "scope",
+    "status_transition",
+    "required_proof_markers",
+    "required_evidence_classes",
+    "evidence_handle_requirements",
+    "deferred_entry_policy",
+    "proof_status_constraints",
+    "non_goal_boundaries",
+    "proof_marker"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "authority_id": {
+      "$ref": "#/$defs/BoundedIdentifier"
+    },
+    "scope": {
+      "type": "string",
+      "const": "deterministic_replay_proof_loop"
+    },
+    "status_transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime_proof_loop_complete_allowed",
+        "required_architecture_authority",
+        "runtime_must_import_or_cite_authority",
+        "completion_claim"
+      ],
+      "properties": {
+        "runtime_proof_loop_complete_allowed": {
+          "type": "boolean",
+          "const": true
+        },
+        "required_architecture_authority": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/BoundedText"
+          },
+          "minItems": 1,
+          "maxItems": 16,
+          "uniqueItems": true
+        },
+        "runtime_must_import_or_cite_authority": {
+          "type": "boolean",
+          "const": true
+        },
+        "completion_claim": {
+          "type": "string",
+          "const": "deterministic_replay_proof_loop_complete"
+        }
+      }
+    },
+    "required_proof_markers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ProofMarker"
+      },
+      "minItems": 1,
+      "maxItems": 64,
+      "uniqueItems": true
+    },
+    "required_evidence_classes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/BoundedIdentifier"
+      },
+      "minItems": 1,
+      "maxItems": 32,
+      "uniqueItems": true
+    },
+    "evidence_handle_requirements": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "test_file_path",
+          "contract_paths",
+          "yaml_artifact_path",
+          "runtime_artifact_paths",
+          "coverage_evidence_path",
+          "expected_count"
+        ]
+      },
+      "minItems": 1,
+      "maxItems": 16,
+      "uniqueItems": true
+    },
+    "deferred_entry_policy": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/DeferredEntryPolicy"
+      },
+      "minItems": 1,
+      "maxItems": 32,
+      "uniqueItems": true
+    },
+    "proof_status_constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "no_pytest_execution",
+        "no_ci_log_parsing",
+        "no_dynamic_completion_inference_from_local_state_alone",
+        "requires_architecture_provenance"
+      ],
+      "properties": {
+        "no_pytest_execution": {
+          "type": "boolean",
+          "const": true
+        },
+        "no_ci_log_parsing": {
+          "type": "boolean",
+          "const": true
+        },
+        "no_dynamic_completion_inference_from_local_state_alone": {
+          "type": "boolean",
+          "const": true
+        },
+        "requires_architecture_provenance": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "non_goal_boundaries": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/BoundedText"
+      },
+      "minItems": 1,
+      "maxItems": 32,
+      "uniqueItems": true
+    },
+    "proof_marker": {
+      "type": "string",
+      "const": "ARCH_RUNTIME_PROOF_LOOP_COMPLETION_CRITERIA_OK"
+    }
+  },
+  "$defs": {
+    "BoundedIdentifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._:-]+$"
+    },
+    "BoundedText": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "ProofMarker": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Z0-9_]+_OK$"
+    },
+    "DeferredEntryPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entry_id",
+        "classification",
+        "blocking_for_completion",
+        "rationale"
+      ],
+      "properties": {
+        "entry_id": {
+          "$ref": "#/$defs/BoundedIdentifier"
+        },
+        "classification": {
+          "type": "string",
+          "enum": [
+            "blocking",
+            "future_scoped",
+            "non_goal"
+          ]
+        },
+        "blocking_for_completion": {
+          "type": "boolean"
+        },
+        "rationale": {
+          "$ref": "#/$defs/BoundedText"
+        }
+      }
+    }
+  }
+}
