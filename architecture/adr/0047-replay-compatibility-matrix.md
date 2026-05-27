@@ -79,6 +79,23 @@ When the replay record references a tool that exists in the recorded `tool_catal
 REPLAY_TOOL_RETIRED: tool={tool_name} recorded_version={recorded_version} current_version={current_version}
 ```
 
+The machine-readable authority for this failure mode is
+`architecture/blueprint/schemas/replay_tool_catalog.schema.json` plus the
+versioned catalog artifacts under `architecture/replay/catalogs/`.
+`architecture/replay-compatibility.yaml` names the current tool catalog version
+and the catalog artifact path for each replay catalog version. A replay tool
+identity is the pair `(tool_name, tool_version)`, matching
+`ReplayToolIORecord`.
+
+The deterministic retirement rule is: if a replay record references a tool
+identity that exists in the recorded catalog artifact, is absent from the active
+tools in the current catalog artifact, and appears in the current catalog's
+`retired_tools` ledger with `failure_code: REPLAY_TOOL_RETIRED` and
+`row_id: tool_compatibility.tool_retired`, replay may fail closed with
+`REPLAY_TOOL_RETIRED`. This rule defines architecture authority only; it does
+not implement runtime replay-engine behavior and does not claim runtime
+coverage completion.
+
 Replay does NOT attempt successor mapping. Does NOT silently downgrade. Does NOT inference. The investigation's verdict cannot be re-derived; replay produces a typed error.
 
 Customer remediation: pin the customer instance to the recorded `tool_catalog_version` (read-only; for replay only). Customer instances run multiple historical catalogs side-by-side for replay; only the current catalog is used for new investigations.

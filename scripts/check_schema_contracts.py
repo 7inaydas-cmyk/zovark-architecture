@@ -32,6 +32,7 @@ except Exception as exc:  # pragma: no cover - explicit local environment gate
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCHEMA_DIR = REPO_ROOT / "architecture" / "blueprint" / "schemas"
 REPLAY_COMPATIBILITY_CONTRACT = REPO_ROOT / "architecture" / "replay-compatibility.yaml"
+REPLAY_TOOL_CATALOG_DIR = REPO_ROOT / "architecture" / "replay" / "catalogs"
 REPLAY_FAILURE_CODE_REF = (
     "https://schemas.zovark.io/replay_failure_record/v1.0.0/schema.json#/$defs/ReplayFailureCode"
 )
@@ -41,8 +42,10 @@ REPLAY_FAILURE_CATEGORY_REF = (
 REPLAY_FAILURE_COMPONENT_REF = (
     "https://schemas.zovark.io/replay_failure_record/v1.0.0/schema.json#/$defs/ReplayFailureComponent"
 )
+REPLAY_TOOL_RETIRED_CODE = "REPLAY_TOOL_RETIRED"
+REPLAY_TOOL_RETIRED_ROW_ID = "tool_compatibility.tool_retired"
 
-EXPECTED_SCHEMA_COUNT = 26
+EXPECTED_SCHEMA_COUNT = 27
 
 FORBIDDEN_FIELD_NAMES = {
     "captured_at",
@@ -96,6 +99,19 @@ def load_replay_compatibility_matrix() -> dict[str, Any]:
     if not isinstance(matrix, dict):
         raise TypeError("architecture/replay-compatibility.yaml must load as an object")
     return matrix
+
+
+def load_replay_tool_catalogs() -> dict[str, dict[str, Any]]:
+    catalogs: dict[str, dict[str, Any]] = {}
+    for path in sorted(REPLAY_TOOL_CATALOG_DIR.glob("*.yaml")):
+        catalog = yaml.safe_load(path.read_text())
+        if not isinstance(catalog, dict):
+            raise TypeError(f"{path.relative_to(REPO_ROOT)} must load as an object")
+        catalog_version = catalog.get("catalog_version")
+        if not isinstance(catalog_version, str):
+            raise TypeError(f"{path.relative_to(REPO_ROOT)} missing catalog_version")
+        catalogs[catalog_version] = catalog
+    return catalogs
 
 
 def replay_failure_codes(schema: dict[str, Any]) -> list[str]:
@@ -158,6 +174,172 @@ def check_replay_compatibility_rows(
             "architecture/replay-compatibility.yaml: failure_outcome_rows must cover ReplayFailureCode enum exactly "
             f"missing={missing!r} extra={extra!r}"
         )
+
+
+def tool_identity(entry: dict[str, Any]) -> tuple[str, str] | None:
+    tool_name = entry.get("tool_name")
+    tool_version = entry.get("tool_version")
+    if isinstance(tool_name, str) and isinstance(tool_version, str):
+        return (tool_name, tool_version)
+    return None
+
+
+def retired_tool_reference(entry: dict[str, Any]) -> tuple[str, str, str, str, str, str] | None:
+    identity = tool_identity(entry)
+    last_active = entry.get("last_active_catalog_version")
+    retired_in = entry.get("retired_in_catalog_version")
+    failure_code = entry.get("failure_code")
+    row_id = entry.get("row_id")
+    if (
+        identity is not None
+        and isinstance(last_active, str)
+        and isinstance(retired_in, str)
+        and isinstance(failure_code, str)
+        and isinstance(row_id, str)
+    ):
+        return (*identity, last_active, retired_in, failure_code, row_id)
+    return None
+
+
+def check_unique_tool_identities(
+    catalog: dict[str, Any],
+    *,
+    catalog_version: str,
+    failures: list[str],
+) -> None:
+    for field_name in ("tools", "retired_tools"):
+        entries = catalog.get(field_name)
+        if not isinstance(entries, list):
+            failures.append(f"replay tool catalog {catalog_version}: {field_name} must be a list")
+            continue
+        identities: list[tuple[str, str]] = []
+        for entry in entries:
+            if not isinstance(entry, dict):
+                failures.append(f"replay tool catalog {catalog_version}: {field_name} entries must be objects")
+                continue
+            identity = tool_identity(entry)
+            if identity is None:
+                failures.append(f"replay tool catalog {catalog_version}: {field_name} entry missing tool identity")
+                continue
+            identities.append(identity)
+        if len(identities) != len(set(identities)):
+            failures.append(f"replay tool catalog {catalog_version}: duplicate {field_name} tool identity")
+
+
+def check_replay_tool_catalog_authority(
+    matrix: dict[str, Any],
+    catalogs: dict[str, dict[str, Any]],
+    failures: list[str],
+) -> None:
+    tool_catalog = matrix.get("tool_catalog")
+    if not isinstance(tool_catalog, dict):
+        failures.append("architecture/replay-compatibility.yaml: tool_catalog must be an object")
+        return
+
+    current_version = matrix.get("current_tool_catalog_version")
+    if not isinstance(current_version, str):
+        failures.append("architecture/replay-compatibility.yaml: current_tool_catalog_version must be set")
+        return
+    if current_version not in tool_catalog:
+        failures.append("architecture/replay-compatibility.yaml: current_tool_catalog_version must be a tool_catalog key")
+        return
+    if current_version not in catalogs:
+        failures.append("architecture/replay-compatibility.yaml: current_tool_catalog_version catalog artifact is missing")
+        return
+
+    matrix_versions = set(tool_catalog)
+    catalog_versions = set(catalogs)
+    if matrix_versions != catalog_versions:
+        failures.append(
+            "architecture/replay-compatibility.yaml: tool_catalog versions must match replay catalog artifacts "
+            f"matrix={sorted(matrix_versions)!r} catalogs={sorted(catalog_versions)!r}"
+        )
+
+    for version, entry in tool_catalog.items():
+        if not isinstance(entry, dict):
+            failures.append(f"architecture/replay-compatibility.yaml: tool_catalog {version} must be an object")
+            continue
+        artifact = entry.get("catalog_artifact")
+        expected_artifact = f"architecture/replay/catalogs/{version}.yaml"
+        if artifact != expected_artifact:
+            failures.append(
+                f"architecture/replay-compatibility.yaml: tool_catalog {version} catalog_artifact must be {expected_artifact}"
+            )
+        catalog = catalogs.get(version)
+        if catalog is not None and catalog.get("catalog_version") != version:
+            failures.append(f"architecture/replay/catalogs/{version}.yaml: catalog_version must match filename")
+
+    tool_retired_rows = [
+        row
+        for row in replay_failure_outcome_rows(matrix)
+        if REPLAY_TOOL_RETIRED_CODE in row.get("failure_codes", [])
+    ]
+    if len(tool_retired_rows) != 1:
+        failures.append("architecture/replay-compatibility.yaml: REPLAY_TOOL_RETIRED must map to exactly one row")
+        return
+    if tool_retired_rows[0].get("row_id") != REPLAY_TOOL_RETIRED_ROW_ID:
+        failures.append("architecture/replay-compatibility.yaml: REPLAY_TOOL_RETIRED row_id mismatch")
+
+    for version, catalog in catalogs.items():
+        check_unique_tool_identities(catalog, catalog_version=version, failures=failures)
+
+    current_catalog = catalogs[current_version]
+    current_active = {
+        identity
+        for entry in current_catalog.get("tools", [])
+        if isinstance(entry, dict) and (identity := tool_identity(entry)) is not None
+    }
+    current_retired_entries = [
+        entry
+        for entry in current_catalog.get("retired_tools", [])
+        if isinstance(entry, dict)
+    ]
+    if not current_retired_entries:
+        failures.append("architecture/replay/catalogs current catalog must include at least one retired tool proof entry")
+
+    matrix_removed_entries = tool_catalog[current_version].get("removed_tools", [])
+    if not isinstance(matrix_removed_entries, list):
+        failures.append("architecture/replay-compatibility.yaml: current removed_tools must be a list")
+        matrix_removed_entries = []
+    current_retired_refs = {
+        ref
+        for entry in current_retired_entries
+        if (ref := retired_tool_reference(entry)) is not None
+    }
+    matrix_removed_refs = {
+        ref
+        for entry in matrix_removed_entries
+        if isinstance(entry, dict) and (ref := retired_tool_reference(entry)) is not None
+    }
+    if current_retired_refs != matrix_removed_refs:
+        failures.append("architecture/replay-compatibility.yaml: current removed_tools must match current catalog retired_tools")
+
+    for entry in current_retired_entries:
+        ref = retired_tool_reference(entry)
+        if ref is None:
+            failures.append("architecture/replay/catalogs current retired_tools entry is malformed")
+            continue
+        tool_name, tool_version, last_active, retired_in, failure_code, row_id = ref
+        identity = (tool_name, tool_version)
+        if failure_code != REPLAY_TOOL_RETIRED_CODE:
+            failures.append("architecture/replay/catalogs current retired_tools entry must use REPLAY_TOOL_RETIRED")
+        if row_id != REPLAY_TOOL_RETIRED_ROW_ID:
+            failures.append("architecture/replay/catalogs current retired_tools entry must map to tool_retired row")
+        if retired_in != current_version:
+            failures.append("architecture/replay/catalogs current retired_tools retired_in_catalog_version mismatch")
+        last_catalog = catalogs.get(last_active)
+        if last_catalog is None:
+            failures.append(f"architecture/replay/catalogs retired tool {tool_name}: missing last active catalog")
+            continue
+        last_active_tools = {
+            active_identity
+            for active_entry in last_catalog.get("tools", [])
+            if isinstance(active_entry, dict) and (active_identity := tool_identity(active_entry)) is not None
+        }
+        if identity not in last_active_tools:
+            failures.append(f"architecture/replay/catalogs retired tool {tool_name}: not present in last active catalog")
+        if identity in current_active:
+            failures.append(f"architecture/replay/catalogs retired tool {tool_name}: still active in current catalog")
 
 
 def path_join(path: list[str]) -> str:
@@ -409,7 +591,12 @@ def main() -> int:
         except Exception as exc:
             failures.append(f"{path.relative_to(REPO_ROOT)}: metaschema failure: {exc}")
         check_object_closure(schema, [path.name], failures)
-        if path.name in {"verdict_input.schema.json", "replay_record.schema.json", "replay_failure_record.schema.json"}:
+        if path.name in {
+            "verdict_input.schema.json",
+            "replay_record.schema.json",
+            "replay_failure_record.schema.json",
+            "replay_tool_catalog.schema.json",
+        }:
             check_forbidden_field_names(schema, [path.name], failures)
 
     for path, schema in schemas_by_path.items():
@@ -426,6 +613,7 @@ def main() -> int:
     replay_schema = schemas_by_path[SCHEMA_DIR / "replay_record.schema.json"]
     replay_failure_schema = schemas_by_path[SCHEMA_DIR / "replay_failure_record.schema.json"]
     replay_compatibility_schema = schemas_by_path[SCHEMA_DIR / "replay-compatibility.schema.json"]
+    replay_tool_catalog_schema = schemas_by_path[SCHEMA_DIR / "replay_tool_catalog.schema.json"]
     failure_codes = replay_failure_codes(replay_failure_schema)
 
     check_sort_metadata(
@@ -451,11 +639,14 @@ def main() -> int:
     replay_record = valid_replay_record(failure_codes)
     replay_failure_record = valid_replay_failure_record()
     replay_compatibility_matrix = load_replay_compatibility_matrix()
+    replay_tool_catalogs = load_replay_tool_catalogs()
     try:
         expect_valid(verdict_schema, schemas_by_id, verdict_input)
         expect_valid(replay_schema, schemas_by_id, replay_record)
         expect_valid(replay_failure_schema, schemas_by_id, replay_failure_record)
         expect_valid(replay_compatibility_schema, schemas_by_id, replay_compatibility_matrix)
+        for replay_tool_catalog in replay_tool_catalogs.values():
+            expect_valid(replay_tool_catalog_schema, schemas_by_id, replay_tool_catalog)
     except Exception as exc:
         failures.append(f"valid example rejected: {exc}")
 
@@ -466,6 +657,7 @@ def main() -> int:
         )
 
     check_replay_compatibility_rows(replay_compatibility_matrix, failure_codes, failures)
+    check_replay_tool_catalog_authority(replay_compatibility_matrix, replay_tool_catalogs, failures)
 
     compatibility_ref = (
         replay_compatibility_schema.get("properties", {})
@@ -498,6 +690,13 @@ def main() -> int:
     )
     if replay_record_ref != REPLAY_FAILURE_CODE_REF:
         failures.append("replay_record.schema.json: structured_failure_codes must $ref ReplayFailureCode")
+
+    current_catalog_version_schema = replay_compatibility_schema.get("properties", {}).get(
+        "current_tool_catalog_version",
+        {},
+    )
+    if current_catalog_version_schema.get("$ref") != "#/$defs/version_string":
+        failures.append("replay-compatibility.schema.json: current_tool_catalog_version must use version_string")
 
     expect_invalid(
         verdict_schema,
@@ -587,6 +786,41 @@ def main() -> int:
         "replay compatibility outcome row unknown failure code",
         failures,
     )
+    expect_invalid(
+        replay_compatibility_schema,
+        schemas_by_id,
+        with_path_value(
+            replay_compatibility_matrix,
+            ["tool_catalog", "1.1.0", "removed_tools", 0, "raw_tool_output"],
+            "raw",
+        ),
+        "replay compatibility removed tool extra field",
+        failures,
+    )
+    current_catalog_version = replay_compatibility_matrix.get("current_tool_catalog_version")
+    if isinstance(current_catalog_version, str) and current_catalog_version in replay_tool_catalogs:
+        current_tool_catalog = replay_tool_catalogs[current_catalog_version]
+        expect_invalid(
+            replay_tool_catalog_schema,
+            schemas_by_id,
+            with_path_value(current_tool_catalog, ["unexpected_field"], "not allowed"),
+            "replay tool catalog extra field",
+            failures,
+        )
+        expect_invalid(
+            replay_tool_catalog_schema,
+            schemas_by_id,
+            with_path_value(current_tool_catalog, ["retired_tools", 0, "failure_code"], "REPLAY_RUNTIME_LOCAL_ONLY"),
+            "replay tool catalog retired tool unknown failure code",
+            failures,
+        )
+        expect_invalid(
+            replay_tool_catalog_schema,
+            schemas_by_id,
+            with_path_value(current_tool_catalog, ["tools", 0, "raw_tool_output"], "raw"),
+            "replay tool catalog raw_tool_output",
+            failures,
+        )
     for forbidden_field in (
         "raw_prompt",
         "raw_llm_payload",
@@ -612,10 +846,11 @@ def main() -> int:
     print("OBJECT_CLOSURE_OK authoritative schemas")
     print("LOCAL_REF_CLOSURE_OK authoritative schemas")
     print("ORDER_METADATA_OK verdict_input replay_record")
-    print("CONTRACT_EXAMPLES_OK verdict_input replay_record replay_failure_record")
+    print("CONTRACT_EXAMPLES_OK verdict_input replay_record replay_failure_record replay_tool_catalog")
     print("REPLAY_COMPATIBILITY_CODES_OK")
     print("ARCH_REPLAY_COMPATIBILITY_ROW_COVERAGE_OK")
     print("ARCH_REPLAY_FAILURE_CONTRACT_OK")
+    print("ARCH_REPLAY_TOOL_CATALOG_RETIREMENT_AUTHORITY_OK")
     print("SCHEMA_CONTRACTS_OK")
     return 0
 
