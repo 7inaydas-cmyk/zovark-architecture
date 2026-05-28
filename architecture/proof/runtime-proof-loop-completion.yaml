@@ -1,0 +1,94 @@
+schema_version: "1.0.0"
+authority_id: runtime_proof_loop_completion.v1
+scope: deterministic_replay_proof_loop
+status_transition:
+  runtime_proof_loop_complete_allowed: true
+  required_architecture_authority:
+    - ADR-0053
+    - architecture/proof/runtime-proof-loop-completion.yaml
+  runtime_must_import_or_cite_authority: true
+  completion_claim: deterministic_replay_proof_loop_complete
+required_proof_markers:
+  - SCANNER_FIXTURE_SCHEMA_OK
+  - VERDICT_FIXTURE_SCHEMA_OK
+  - VERDICT_INPUT_FIXTURE_SCHEMA_OK
+  - REPLAY_RECORD_FIXTURE_SCHEMA_OK
+  - DETERMINISTIC_VERDICT_DERIVATION_OK
+  - REPLAY_VALIDATION_PROOF_OK
+  - REPLAY_VALIDATION_FAIL_CLOSED_CASES_OK
+  - REPLAY_COMPATIBILITY_MATRIX_SCHEMA_OK
+  - REPLAY_COMPATIBILITY_ROW_COVERAGE_SCHEMA_OK
+  - REPLAY_TOOL_CATALOG_AUTHORITY_IMPORT_OK
+  - REPLAY_FAILURE_RECORD_SCHEMA_OK
+  - REPLAY_FAILURE_RECORD_FIXTURE_SCHEMA_OK
+  - REPLAY_FAILURE_CANONICAL_CODE_MAPPING_OK
+  - REPLAY_FAILURE_RECORD_EMISSION_OK
+  - REPLAY_COMPATIBILITY_MATRIX_ROW_MAPPING_OK
+  - REPLAY_DECODING_PARAMS_FAIL_CLOSED_OK
+  - REPLAY_TOOL_RETIRED_FAIL_CLOSED_OK
+  - REPLAY_COMPATIBILITY_MATRIX_COVERAGE_OK
+  - CONTRACT_METASCHEMA_OK
+required_evidence_classes:
+  - contract_metaschema_validation
+  - scanner_fixture_schema_validation
+  - verdict_fixture_schema_validation
+  - imported_contract_schema_validation
+  - canonical_fixture_validation
+  - deterministic_verdict_derivation
+  - replay_validation_fail_closed_cases
+  - canonical_failure_code_mapping
+  - canonical_failure_record_emission
+  - replay_compatibility_row_mapping
+  - replay_compatibility_matrix_coverage_equality
+  - replay_tool_catalog_authority_import
+evidence_handle_requirements:
+  - test_file_path
+  - contract_paths
+  - yaml_artifact_path
+  - runtime_artifact_paths
+  - coverage_evidence_path
+  - expected_count
+deferred_entry_policy:
+  - entry_id: audit_chain_output
+    classification: future_scoped
+    blocking_for_completion: false
+    rationale: Audit-chain runtime output is a separate M5 lane and is not required for scoped deterministic replay proof-loop completion.
+  - entry_id: runtime_investigation_execution
+    classification: future_scoped
+    blocking_for_completion: false
+    rationale: Runtime investigation execution is a separate lane and is not required for scoped deterministic replay proof-loop completion.
+  - entry_id: alertforge_scenario_validation
+    classification: non_goal
+    blocking_for_completion: false
+    rationale: AlertForge scenario validation is outside the deterministic replay proof-loop completion scope.
+  - entry_id: benchmark_proof
+    classification: non_goal
+    blocking_for_completion: false
+    rationale: Benchmarks are outside the deterministic replay proof-loop completion scope and remain governed by claim-provenance rules.
+  - entry_id: dashboard_and_external_claims
+    classification: non_goal
+    blocking_for_completion: false
+    rationale: Dashboard and external-claim surfaces are outside the deterministic replay proof-loop completion scope.
+  - entry_id: production_sla_compliance_workflows
+    classification: non_goal
+    blocking_for_completion: false
+    rationale: Production, SLA, and compliance workflows are outside the deterministic replay proof-loop completion scope.
+proof_status_constraints:
+  no_pytest_execution: true
+  no_ci_log_parsing: true
+  no_dynamic_completion_inference_from_local_state_alone: true
+  requires_architecture_provenance: true
+non_goal_boundaries:
+  - AlertForge validation
+  - benchmarks
+  - dashboard readiness
+  - customer outreach readiness
+  - customer readiness
+  - product readiness
+  - production readiness
+  - compliance readiness
+  - SLA readiness
+  - runtime investigation execution
+  - audit-chain output
+  - replay-engine production readiness
+proof_marker: ARCH_RUNTIME_PROOF_LOOP_COMPLETION_CRITERIA_OK

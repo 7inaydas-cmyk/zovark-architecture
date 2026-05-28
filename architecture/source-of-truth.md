@@ -71,10 +71,10 @@ The architecture is frozen only when:
 
 ## ADRs
 
-All 52 ADR numbers (ADR-0001 through ADR-0052) accounted for in one of five
+All 53 ADR numbers (ADR-0001 through ADR-0053) accounted for in one of five
 categories below.
 
-### Binding (25)
+### Binding (26)
 
 Files exist at `architecture/adr/`. Status: active/proposed/amended per
 `scripts/check_adr_cross_links.py`.
@@ -106,6 +106,7 @@ Files exist at `architecture/adr/`. Status: active/proposed/amended per
 | ADR-0050 | On-Call, Paging, and Vendor-Compromise Incident Response |
 | ADR-0051 | Calendar Reconciliation |
 | ADR-0052 | Deterministic Replay as Primary Differentiator |
+| ADR-0053 | Runtime Proof-Loop Completion Criteria |
 
 ### Proposed / pending founder sign-off (1)
 
@@ -120,8 +121,8 @@ ADR-0043 may be used as a working assumption only where the ADR itself says so.
 It is not binding architecture law until M1-DECISION-001 founder approval
 occurs.
 
-Inventory arithmetic: 25 binding + 1 proposed/pending-founder + 11 superseded
-plus 4 retired plus 11 covered-by-invariant = 52 ADRs.
+Inventory arithmetic: 26 binding + 1 proposed/pending-founder + 11 superseded
+plus 4 retired plus 11 covered-by-invariant = 53 ADRs.
 
 ### Superseded (11)
 
@@ -222,7 +223,7 @@ All binding at `architecture/invariants.md`.
 | INV-038 | Sigma rule publication is governed by alert budget, corpus freshness, drift detection, and analyst approval |
 | INV-039 | Verdict input is canonical and complete; no forbidden inputs |
 
-## Schemas (27)
+## Schemas (28)
 
 Located at `architecture/blueprint/schemas/`. Alphabetical:
 
@@ -244,6 +245,7 @@ Located at `architecture/blueprint/schemas/`. Alphabetical:
 - replay_tool_catalog.schema.json
 - research_experiment_result.schema.json
 - retention_certificate.schema.json
+- runtime_proof_loop_completion.schema.json
 - scanner_finding_envelope.schema.json
 - telemetry_envelope.schema.json
 - tenant_usage_event.schema.json
@@ -273,6 +275,12 @@ Located at `architecture/blueprint/schemas/`. Alphabetical:
   authority for `REPLAY_TOOL_RETIRED`. Runtime retired-tool validation, runtime
   coverage claims, and replay-engine enforcement remain deferred to M5 per
   INV-036.
+- Resolved during issue #61 follow-up:
+  `runtime_proof_loop_completion.schema.json` and
+  `architecture/proof/runtime-proof-loop-completion.yaml` define bounded
+  architecture authority for scoped deterministic replay proof-loop completion.
+  This authority does not imply AlertForge, benchmark, dashboard, customer,
+  product, production, compliance, SLA, audit-chain, or replay-engine readiness.
 - Resolved during PR #52 review: `bad.schema.json` and `good.schema.json` were
   removed from the authoritative schema inventory because they were
   fixture-like placeholders, not production schemas.
