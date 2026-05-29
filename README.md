@@ -1,5 +1,10 @@
 # Zovark
 
+> **Product anchor.** Zovark turns EDR-style security alerts into deterministic,
+> replayable AI-assisted investigation packages that a SOC analyst can inspect and
+> approve. Target users: SOC / security operations teams that need auditable AI
+> investigation evidence, not opaque summaries.
+
 Zovark is the audit-grade evidence layer for AI-assisted SOC response.
 
 In product terms, Zovark is the AI-native proof layer for high-stakes security

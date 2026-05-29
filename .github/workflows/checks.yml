@@ -1,0 +1,40 @@
+name: checks
+
+# Wires the repository's existing test suite and validation scripts (no new tests are
+# introduced). Runs on every PR and on pushes to main so a fresh clone has a known-green
+# build+test path. jsonschema is pinned to 4.17.3 because scripts/check_schema_contracts.py
+# uses the (pre-4.18) RefResolver API for local $defs resolution.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Tests
+        run: uv run --with pytest python3 -m pytest tests/ -q
+
+      - name: Schema contracts
+        run: uv run --with "jsonschema==4.17.3" --with PyYAML python3 scripts/check_schema_contracts.py
+
+      - name: Claim provenance
+        run: uv run python3 scripts/check_claim_provenance.py
+
+      - name: MVP scope consistency
+        run: uv run python3 scripts/check_mvp_scope_consistency.py
+
+      - name: ADR cross-links
+        run: uv run python3 scripts/check_adr_cross_links.py
+
+      - name: YC demo validation
+        run: uv run --with "jsonschema==4.17.3" --with PyYAML python3 scripts/validate_yc_demo.py
