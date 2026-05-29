@@ -22,9 +22,9 @@ release.
 
 | Repo | GitHub | `main` SHA (verified 2026-05-29) |
 |---|---|---|
-| architecture | `7inaydas-cmyk/zovark-architecture` | `a980e0351a998b92ca046eddbd884b13f907fa57` * |
-| runtime | `7inaydas-cmyk/zovark-runtime` | `e3d100db9b5fbdb0777018a0344c5e23f7dc6ea2` |
-| reviewops | `7inaydas-cmyk/zovark-reviewops` | `ef276c88c0d2db14c4b4499681ce0801c8a37e42` |
+| architecture | `7inaydas-cmyk/zovark-architecture` | `a2a004c074fed9fcd84c15b5d994c438fa3ebf32` * |
+| runtime | `7inaydas-cmyk/zovark-runtime` | `86f1d0b6f76601a468f67df229700ace6c809069` |
+| reviewops | `7inaydas-cmyk/zovark-reviewops` | `3c6195536b86a91c8dad1fed4ecd88bb2b625c43` |
 
 \* The architecture `main` SHA advances by one commit when the PR that adds this file
 merges; clone `main` HEAD (below) for the latest.
