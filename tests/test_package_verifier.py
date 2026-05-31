@@ -12,7 +12,7 @@ import pytest
 from zovark.slice001 import ZovarkValidationError
 from zovark.slice001.audit import attach_audit_entry, derive_audit_entry
 from zovark.slice001.cli import main
-from zovark.slice001.findings import attach_findings
+from zovark.slice001.findings import attach_findings, derive_findings
 from zovark.slice001.handoff import attach_handoff, derive_handoff
 from zovark.slice001.ingest import normalize_evidence
 from zovark.slice001.package_verifier import (
@@ -203,28 +203,6 @@ def _v2_marker() -> dict:
         },
         "package_version": V2_PACKAGE_CONTRACT,
     }
-
-
-def _set_notify_only_v2_conditions(
-    marker: dict,
-    *,
-    false_positive_required: bool,
-) -> None:
-    marker["conditions"]["benign_verdict"] = false_positive_required
-    marker["conditions"]["containment_recommended"] = False
-    marker["conditions"]["customer_impact_language_present"] = False
-    marker["conditions"]["response_action_present"] = False
-
-
-def _first_evidence_source_ref(package_dir: Path) -> str:
-    evidence = _load_json(package_dir, "evidence-ledger.json")
-    return f"evidence:{evidence[0]['evidence_id']}"
-
-
-def _retarget_v2_source_refs(marker: dict, source_ref: str) -> None:
-    for obj in marker["objects"].values():
-        if obj["source_refs"]:
-            obj["source_refs"] = [source_ref]
 
 
 def _add_v2_marker(package_dir: Path, marker: dict | None = None) -> None:
@@ -467,67 +445,159 @@ def test_v2_required_customer_report_cannot_be_not_applicable(tmp_path):
     )
 
 
-def test_v2_benign_verdict_without_false_positive_reasoning_fails(tmp_path):
+# NOTE: The deterministic rule engine only produces high/critical findings, so the
+# only derivable verdict/action is confirmed_malicious / isolate_host. notify-only,
+# benign, and low/medium-confidence packages are NOT derivable; the strengthened
+# verifier (full-chain re-derivation from evidence) rejects them with
+# `findings_mismatch` before any V2 marker logic runs. The V2 false-positive-reasoning
+# branch is therefore forward-looking until the analysis can produce non-malicious
+# verdicts. The V2 conditional-object enforcement itself stays covered end-to-end by
+# the demo (confirmed_malicious) `rollback_plan` tests below. See
+# DESIGN_verifier_rederivation.md.
+
+
+def test_benign_verdict_package_rejected_when_not_derived_from_evidence(tmp_path):
+    # A package claiming a benign verdict over evidence that does not derive benign is
+    # exactly the dangerous-direction forgery this fix closes: it is now rejected.
     package_dir = _write_notify_only_package(tmp_path, severity="low")
-    marker = _v2_marker()
-    _set_notify_only_v2_conditions(marker, false_positive_required=True)
-    _retarget_v2_source_refs(marker, _first_evidence_source_ref(package_dir))
-    del marker["objects"]["false_positive_reasoning"]
-    _add_v2_marker(package_dir, marker)
-
     _assert_failure_code(
         lambda: verify_proof_package(package_dir),
-        "v2_conditional_object_missing",
+        "findings_mismatch",
     )
 
 
-def test_v2_low_confidence_verdict_without_false_positive_reasoning_fails(tmp_path):
+def test_low_confidence_verdict_package_rejected_when_not_derived_from_evidence(tmp_path):
     package_dir = _write_notify_only_package(tmp_path, severity="medium")
-    marker = _v2_marker()
-    _set_notify_only_v2_conditions(marker, false_positive_required=True)
-    _retarget_v2_source_refs(marker, _first_evidence_source_ref(package_dir))
-    del marker["objects"]["false_positive_reasoning"]
-    _add_v2_marker(package_dir, marker)
-
     _assert_failure_code(
         lambda: verify_proof_package(package_dir),
-        "v2_conditional_object_missing",
+        "findings_mismatch",
     )
 
 
-def test_v2_false_positive_reasoning_cannot_be_not_applicable_when_required(tmp_path):
-    package_dir = _write_notify_only_package(tmp_path, severity="medium")
-    marker = _v2_marker()
-    _set_notify_only_v2_conditions(marker, false_positive_required=True)
-    _retarget_v2_source_refs(marker, _first_evidence_source_ref(package_dir))
-    marker["objects"]["false_positive_reasoning"]["status"] = "not_applicable"
-    marker["objects"]["false_positive_reasoning"]["source_refs"] = []
-    marker["objects"]["false_positive_reasoning"][
-        "data_unavailable_reason"
-    ] = "not_applicable"
-    _add_v2_marker(package_dir, marker)
+def test_false_positive_reasoning_required_for_non_malicious_verdicts():
+    # Pin the classification the (forward-looking) V2 false-positive branch relies on,
+    # now that non-malicious packages cannot be exercised end-to-end.
+    assert _verdict_requires_false_positive_reasoning("benign") is True
+    assert _verdict_requires_false_positive_reasoning("suspicious_unconfirmed") is True
+    assert (
+        _verdict_requires_false_positive_reasoning("inconclusive_insufficient_evidence")
+        is True
+    )
+    assert _verdict_requires_false_positive_reasoning("confirmed_malicious") is False
 
+
+_MALICIOUS_INPUT = {
+    "alert_id": "alert-rederive-001",
+    "alert_type": "edr_alert",
+    "description": "Suspicious PowerShell execution detected",
+    "host": "workstation-99.corp.example",
+    "severity": "high",
+    "timestamp": "2026-05-01T10:00:00Z",
+    "process_events": [
+        {
+            "command_line": "powershell.exe -EncodedCommand <base64>",
+            "event_id": "pe-001",
+            "event_type": "process_event",
+            "parent_pid": 1024,
+            "pid": 4812,
+            "process_name": "powershell.exe",
+            "timestamp": "2026-05-01T10:00:01Z",
+        }
+    ],
+    "network_events": [
+        {
+            "destination_ip": "203.0.113.50",
+            "destination_port": 443,
+            "event_id": "ne-001",
+            "event_type": "network_event",
+            "pid": 4812,
+            "process_name": "powershell.exe",
+            "protocol": "HTTPS",
+            "timestamp": "2026-05-01T10:00:02Z",
+        }
+    ],
+}
+
+
+def _write_forged_findings_package(tmp_path: Path, forged_findings) -> Path:
+    """Build a self-consistent package over genuinely-malicious evidence whose findings
+    are forged (the rest of the chain recomputed from them)."""
+    package_dir = tmp_path / "forged-package"
+    evidence = normalize_evidence(_MALICIOUS_INPUT)
+    tape = create_tape(_MALICIOUS_INPUT, evidence, tenant_id="tenant-001")
+    tape = attach_timeline(tape, build_initial_timeline(tape))
+    tape = attach_findings(tape, forged_findings, False)
+    tape = attach_verdict(tape, derive_verdict(tape))
+    tape["audit_ref"] = "audit-entry-1"
+    tape = attach_handoff(tape, derive_handoff(tape))
+    tape = attach_audit_entry(tape, derive_audit_entry(tape))
+    tape = attach_replay_report(tape, derive_replay_report(tape))
+    write_proof_package(tape, package_dir)
+    return package_dir
+
+
+def test_fabricated_findings_over_malicious_evidence_rejected(tmp_path):
+    # The dangerous-direction case: malicious evidence, but findings forged to a single
+    # low finding so the whole chain is internally consistent at a benign verdict.
+    evidence = normalize_evidence(_MALICIOUS_INPUT)
+    package_dir = _write_forged_findings_package(
+        tmp_path,
+        [
+            {
+                "evidence_refs": [evidence[0]["evidence_id"]],
+                "model_contribution": False,
+                "severity": "low",
+                "title": "Routine activity (forged)",
+            }
+        ],
+    )
+    # The package is internally self-consistent at verdict=benign...
+    assert _load_json(package_dir, "verdict.json")["value"] == "benign"
+    # ...but the findings do not follow from the evidence, so verification rejects it.
     _assert_failure_code(
         lambda: verify_proof_package(package_dir),
-        "v2_required_object_not_applicable",
+        "findings_mismatch",
     )
 
 
-def test_v2_false_positive_reasoning_with_unresolved_refs_fails(tmp_path):
-    package_dir = _write_notify_only_package(tmp_path, severity="medium")
-    marker = _v2_marker()
-    _set_notify_only_v2_conditions(marker, false_positive_required=True)
-    _retarget_v2_source_refs(marker, _first_evidence_source_ref(package_dir))
-    marker["objects"]["false_positive_reasoning"] = _v2_object(
-        "false_positive_reasoning",
-        source_refs=["made-up-ref"],
-    )
-    _add_v2_marker(package_dir, marker)
+def test_valid_malicious_package_still_verifies(tmp_path):
+    # Accept-valid preserved: a package whose findings DO derive from the evidence
+    # verifies clean.
+    package_dir = tmp_path / "valid-package"
+    evidence = normalize_evidence(_MALICIOUS_INPUT)
+    tape = create_tape(_MALICIOUS_INPUT, evidence, tenant_id="tenant-001")
+    tape = attach_timeline(tape, build_initial_timeline(tape))
+    findings, no_findings_flag = derive_findings(tape)
+    tape = attach_findings(tape, findings, no_findings_flag)
+    tape = attach_verdict(tape, derive_verdict(tape))
+    tape["audit_ref"] = "audit-entry-1"
+    tape = attach_handoff(tape, derive_handoff(tape))
+    tape = attach_audit_entry(tape, derive_audit_entry(tape))
+    tape = attach_replay_report(tape, derive_replay_report(tape))
+    write_proof_package(tape, package_dir)
+    summary = verify_proof_package(package_dir)
+    assert summary["status"] == "verified"
+    assert summary["verdict"] == "confirmed_malicious"
 
-    _assert_failure_code(
-        lambda: verify_proof_package(package_dir),
-        "v2_source_ref_unresolved",
+
+def test_malformed_non_finite_artifact_fails_closed(tmp_path):
+    # A non-finite number smuggled into an artifact must fail closed, not crash.
+    package_dir = _write_forged_findings_package(
+        tmp_path,
+        [
+            {
+                "evidence_refs": [normalize_evidence(_MALICIOUS_INPUT)[0]["evidence_id"]],
+                "model_contribution": False,
+                "severity": "low",
+                "title": "x",
+            }
+        ],
     )
+    (package_dir / "verdict.json").write_text(
+        '{"value": Infinity}\n', encoding="utf-8"
+    )
+    with pytest.raises(ZovarkValidationError):
+        verify_proof_package(package_dir)
 
 
 def test_v2_confirmed_malicious_does_not_require_false_positive_reasoning(tmp_path):
@@ -628,17 +698,14 @@ def test_v2_marker_condition_mismatch_fails_even_with_conditional_objects(tmp_pa
     )
 
 
-def test_v2_marker_true_conditions_without_verified_action_fail_closed(tmp_path):
+def test_notify_only_package_rejected_when_not_derived_from_evidence(tmp_path):
+    # notify_only requires no high/critical findings, but the rule engine only produces
+    # high/critical -> notify_only is not derivable; the verifier rejects it before any
+    # V2 condition logic runs.
     package_dir = _write_notify_only_package(tmp_path)
-    marker = _v2_marker()
-    marker["conditions"]["containment_recommended"] = True
-    marker["conditions"]["customer_impact_language_present"] = True
-    marker["conditions"]["response_action_present"] = True
-    _add_v2_marker(package_dir, marker)
-
     _assert_failure_code(
         lambda: verify_proof_package(package_dir),
-        "v2_condition_mismatch",
+        "findings_mismatch",
     )
 
 

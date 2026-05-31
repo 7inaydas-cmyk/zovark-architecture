@@ -9,9 +9,10 @@ from typing import Any, NoReturn
 
 from zovark.slice001 import ZovarkValidationError
 from zovark.slice001.audit import GENESIS_HASH, derive_audit_entry
+from zovark.slice001.findings import derive_findings
 from zovark.slice001.handoff import derive_handoff
 from zovark.slice001.replay import derive_replay_report
-from zovark.slice001.verdict import APPROVED_VERDICTS
+from zovark.slice001.verdict import APPROVED_VERDICTS, derive_verdict
 from zovark.slice001.writer import (
     EXPECTED_OUTPUT_FILES,
     JSON_OUTPUT_FILES,
@@ -123,8 +124,22 @@ def validate_loaded_proof_package(package: dict[str, Any]) -> dict[str, Any]:
 
 def verify_proof_package(package_dir: str | Path) -> dict[str, Any]:
     """Load and verify a proof-package directory offline."""
-    package = load_proof_package(package_dir)
-    return validate_loaded_proof_package(package)
+    try:
+        package = load_proof_package(package_dir)
+        return validate_loaded_proof_package(package)
+    except ZovarkValidationError:
+        raise
+    except RecursionError as exc:
+        raise ZovarkValidationError(
+            "malformed_input: proof-package JSON nesting is too deep"
+        ) from exc
+    except (UnicodeError, ValueError) as exc:
+        # e.g. a lone surrogate that fails UTF-8 encoding during re-derivation, or a
+        # non-finite/oversized numeric value surfacing late. Fail closed rather than
+        # crash; this never turns a tampered package into a verified one.
+        raise ZovarkValidationError(
+            f"malformed_input: proof package contains invalid data: {exc}"
+        ) from exc
 
 
 def _validate_loaded_v1_package(package: dict[str, Any]) -> dict[str, Any]:
@@ -187,16 +202,42 @@ def _validate_file_set(package_dir: Path) -> str:
     return package_shape
 
 
+_MAX_ARTIFACT_BYTES = 16 * 1024 * 1024  # fail closed on oversized artifact files
+
+
+def _reject_non_finite(token: str) -> NoReturn:
+    raise ZovarkValidationError(f"malformed_json: non-finite number ({token})")
+
+
 def _load_json_file(path: Path) -> Any:
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        raw = path.read_bytes()
+    except OSError as exc:
+        raise ZovarkValidationError(
+            f"malformed_json: {path.name} could not be read"
+        ) from exc
+    if len(raw) > _MAX_ARTIFACT_BYTES:
+        raise ZovarkValidationError(f"malformed_json: {path.name} exceeds the size limit")
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ZovarkValidationError(f"malformed_json: {path.name} is not UTF-8") from exc
+    try:
+        return json.loads(text, parse_constant=_reject_non_finite)
+    except ZovarkValidationError:
+        raise  # precise non-finite message from _reject_non_finite
     except json.JSONDecodeError as exc:
         raise ZovarkValidationError(
             f"malformed_json: {path.name} is not valid JSON"
         ) from exc
-    except OSError as exc:
+    except RecursionError as exc:
         raise ZovarkValidationError(
-            f"malformed_json: {path.name} could not be read"
+            f"malformed_json: {path.name} nesting is too deep"
+        ) from exc
+    except ValueError as exc:
+        # e.g. integer literal exceeding Python's int-string conversion limit.
+        raise ZovarkValidationError(
+            f"malformed_json: {path.name} contains an out-of-range value: {exc}"
         ) from exc
 
 
@@ -208,6 +249,7 @@ def _reconstruct_verified_tape(package: dict[str, Any]) -> dict[str, Any]:
         _fail("tape_state_invalid", "investigation-tape.json state must be closed")
 
     _validate_extracted_views(package, tape)
+    _validate_derived_chain(tape)
 
     handoff = deepcopy(package["edr-handoff.json"])
     try:
@@ -261,6 +303,52 @@ def _reconstruct_verified_tape(package: dict[str, Any]) -> dict[str, Any]:
     full_tape = deepcopy(sealed_tape)
     full_tape["replay_report"] = replay_report
     return full_tape
+
+
+def _validate_derived_chain(tape: dict[str, Any]) -> None:
+    """Re-derive the reasoning chain from the recorded evidence and reject mismatches.
+
+    The rest of the verifier re-derives the handoff/audit/replay (and, via those,
+    the verdict) from the recorded *findings*, and re-checks every evidence hash. It
+    did not, however, re-derive the *findings* from the evidence — so a self-consistent
+    package whose findings were fabricated or suppressed (e.g. a malicious alert
+    downgraded to ``benign``) verified clean. The findings are the actual reasoning
+    step that determines the verdict and the recommended EDR action.
+
+    This closes the chain: re-derive findings from the recorded evidence and the
+    verdict from those findings, and reject any divergence. Evidence integrity itself
+    (hash == raw_content) is re-verified independently when the replay report is
+    re-derived. This only adds rejection paths; a valid package is unaffected.
+    """
+
+    try:
+        expected_findings, expected_no_findings_flag = derive_findings(tape)
+    except ZovarkValidationError as exc:
+        raise ZovarkValidationError(
+            f"findings_mismatch: could not derive findings from evidence: {exc}"
+        ) from exc
+    if tape.get("findings") != expected_findings:
+        _fail(
+            "findings_mismatch",
+            "findings.json does not follow from the recorded evidence",
+        )
+    if bool(tape.get("no_findings_flag", False)) != expected_no_findings_flag:
+        _fail(
+            "findings_mismatch",
+            "no_findings_flag does not follow from the recorded evidence",
+        )
+
+    try:
+        expected_verdict = derive_verdict(tape)
+    except ZovarkValidationError as exc:
+        raise ZovarkValidationError(
+            f"verdict_mismatch: could not derive verdict from findings: {exc}"
+        ) from exc
+    if tape.get("verdict") != expected_verdict:
+        _fail(
+            "verdict_mismatch",
+            "verdict.json does not follow from the recorded findings",
+        )
 
 
 def _validate_extracted_views(
