@@ -19,16 +19,16 @@ Models ship as OCI artifacts. Cloud deployments pull from a hosted artifact regi
 
 **Positive.** Model swaps are configuration changes, not code changes. Same code path serves all three topologies. Cloud benchmark transport during development uses the same gateway as production.
 
-**Negative.** The gateway is a critical-path component. Bugs in the gateway affect every investigation. Mitigation: extensive testing in `tests/contract/inference/`.
+**Negative.** The gateway is a critical-path component. Bugs in the gateway affect every investigation. Mitigation: extensive planned testing under `tests/contract/inference/` (not yet built).
 
 ## Alternatives Considered
 
 N/A — original ADR did not address this.
 
-## Fitness functions
+## Fitness functions (planned, not yet built)
 
-- `tests/architecture/inference-gateway-only.test.py` — static AST walk asserting no module makes language-model API calls outside the gateway.
-- `tests/contract/inference/openai-compat.test.py` — asserts the gateway implements the OpenAI-compatible API surface against a recorded test corpus.
+- `tests/architecture/inference-gateway-only.test.py` — will statically (AST) assert no module makes language-model API calls outside the gateway.
+- `tests/contract/inference/openai-compat.test.py` — will assert the gateway implements the OpenAI-compatible API surface against a recorded test corpus.
 
 ## References
 

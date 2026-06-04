@@ -258,6 +258,8 @@ Located at `architecture/blueprint/schemas/`. Alphabetical:
 
 ### Known gaps
 
+> Tracker note: the `issue #NN` and `PR #NN` references in this section and in "Consolidation history" refer to the `7inaydas-cmyk/zovark-architecture` tracker, not any downstream consumer repo.
+
 - Resolved during issue #53 follow-up: `verdict_input.schema.json` and
   `replay_record.schema.json` were added as bounded architecture contracts for
   deterministic verdict/replay proof. Runtime derivation and replay-engine

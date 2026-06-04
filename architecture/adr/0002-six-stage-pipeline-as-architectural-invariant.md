@@ -25,10 +25,10 @@ The fast-path router can skip EXECUTE for fully-templated investigations. The ar
 
 N/A — original ADR did not address this.
 
-## Fitness functions
+## Fitness functions (planned, not yet built)
 
-- `tests/architecture/pipeline-stages.test.py` — asserts that the pipeline implementation contains exactly six stages with the named order.
-- `tests/architecture/pipeline-replayability.test.py` — replays a synthetic workflow and asserts byte-identical reconstruction of stage transitions.
+- `tests/architecture/pipeline-stages.test.py` — will assert that the pipeline implementation contains exactly six stages with the named order.
+- `tests/architecture/pipeline-replayability.test.py` — will replay a synthetic workflow and assert byte-identical reconstruction of stage transitions.
 
 ## References
 

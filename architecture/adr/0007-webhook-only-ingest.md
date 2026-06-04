@@ -25,10 +25,10 @@ SIEM platforms that don't push webhooks natively (poll-only, syslog-only) are no
 
 N/A — original ADR did not address this.
 
-## Fitness functions
+## Fitness functions (planned, not yet built)
 
-- `tests/contract/ingest/idempotency.test.py` — for each ingest endpoint, asserts duplicate webhook delivery returns the cached result.
-- `tests/architecture/ingest-pattern.test.py` — asserts no module under `src/adapters/inbound/` implements pull-mode or message-queue-mode ingest.
+- `tests/contract/ingest/idempotency.test.py` — will, for each ingest endpoint, assert duplicate webhook delivery returns the cached result.
+- `tests/architecture/ingest-pattern.test.py` — will assert no module under `src/adapters/inbound/` implements pull-mode or message-queue-mode ingest.
 
 ## References
 

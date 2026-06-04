@@ -8,6 +8,8 @@
 **Established by:** v3.2.4.3.
 **Related:** INV-004 (deterministic verdict), INV-006 (tamper evident), INV-018 (verdict canonicalization), INV-026 (integer-only numeric precision), INV-039 (canonical verdict input contract), ADR-0019 (mesh agent pool), ADR-0020 (tape recorder), ADR-0027 (verdict determinism canonicalization).
 
+> Tracker note: issue and PR numbers in this ADR (e.g. `#21`, `#27`) refer to the `7inaydas-cmyk/zovark-architecture` tracker, not any downstream consumer repo.
+
 ## Context
 
 INV-004 promises byte-identical verdicts across two workers. The strategic review identified six failure vectors: floating-point in scoring, time-based inputs, ordering of LLM call results, ordering of tool execution results, database query result ordering, RLS-induced query plan variance. INV-026 closes the floating-point vector. The other five are not closed by any prior ADR. This ADR closes them, plus pins the audit-chain `row_canonical` definition and the mutation test corpus.
@@ -104,7 +106,7 @@ Enforced by:
 
 ### Mutation test corpus (closes issue #21 vector "mutation testing implicit")
 
-Explicit, not implicit. Lives at `tests/audit-chain/mutations/`. Exactly these mutations:
+Explicit, not implicit. Planned (M5, not yet built); will live at `tests/audit-chain/mutations/`. Exactly these mutations:
 
 1. `OMIT_FIELD`: drop one of the `row_canonical` required fields.
 2. `REORDER_KEYS`: serialize JSON with non-canonical key order.
@@ -135,11 +137,11 @@ Six-stage pipeline (INGEST → ANALYZE → EXECUTE → ASSESS → GOVERN → STO
 
 The "~50 campaigns/hour" and "~1.2× single-call latency" claims from prior iterations are **provisionally retired**: any document referencing them must add `[hypothesis]` and a benchmark-artifact ID, or be removed by M5. M5 produces measured numbers under the saturation benchmark; we replace this table with `[measured]` values.
 
-### Enforcement
+### Enforcement (planned, not yet built in this repo)
 
-- `tests/architecture/verdict-determinism.test.py` (M1 stub; M5 full): given two workers and same `VerdictInput`, asserts byte-identical `VerdictEnvelope`. Includes randomized DB insertion order, tool-result order, LLM-record order; canonical sorting must absorb the randomization.
-- `tests/architecture/forbidden-imports-in-verdict.test.py` (M1): static AST check that `derive_verdict` and callees do not import `time`, `datetime`, `random`, `secrets`, `os.urandom`, or use `set` / unordered `dict` iteration.
-- `tests/audit-chain/mutations/` (M5): the 10 mutations above.
+- `tests/architecture/verdict-determinism.test.py` (planned, M1 stub; M5 full): will, given two workers and same `VerdictInput`, assert byte-identical `VerdictEnvelope`. Includes randomized DB insertion order, tool-result order, LLM-record order; canonical sorting must absorb the randomization.
+- `tests/architecture/forbidden-imports-in-verdict.test.py` (planned, M1): will statically (AST) check that `derive_verdict` and callees do not import `time`, `datetime`, `random`, `secrets`, `os.urandom`, or use `set` / unordered `dict` iteration.
+- `tests/audit-chain/mutations/` (planned, M5): the 10 mutations above.
 
 ## Consequences
 

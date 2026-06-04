@@ -69,7 +69,9 @@ record_format_versions:
 
 The replay engine reads this matrix at startup when runtime replay is implemented. Every replay request is checked before any compute.
 
-The matrix also carries `failure_outcome_rows`: stable architecture row IDs that bind canonical replay failure codes to fail-closed compatibility outcomes and bounded runtime evidence requirements. Each canonical replay failure code appears in exactly one outcome row unless a future architecture change introduces an explicit bounded exclusion. These rows are architecture authority for future runtime row-mapping proof; they do not implement replay-engine behavior, do not claim runtime coverage completion, and do not create `REPLAY_COMPATIBILITY_MATRIX_COVERAGE_OK`.
+The matrix also carries `failure_outcome_rows`: stable architecture row IDs that bind canonical replay failure codes to fail-closed compatibility outcomes and bounded runtime evidence requirements. Each canonical replay failure code appears in exactly one outcome row unless a future architecture change introduces an explicit bounded exclusion. These rows are architecture authority for future runtime row-mapping proof; they do not implement replay-engine behavior and do not by themselves claim runtime coverage completion. These architecture rows alone do not establish `REPLAY_COMPATIBILITY_MATRIX_COVERAGE_OK`; that marker is established only by a separate runtime row-equality proof (defined below).
+
+Runtime row-equality coverage marker. A runtime proof MAY assert `REPLAY_COMPATIBILITY_MATRIX_COVERAGE_OK` with the narrow meaning that the canonical failure codes in `failure_outcome_rows` (declared here) are row-for-row equal to the set covered by runtime fail-closed tests and runtime row-mapping (`covered_rows_source` vs `declared_rows_source`). This marker asserts row-equality coverage of the declared failure rows only. It does not assert completeness of the replay-compatibility matrix, replay-engine behavior, or runtime readiness; the three preceding constraints still hold.
 
 ### Failure mode 1: recorded tool name no longer in catalog
 
@@ -110,7 +112,7 @@ REPLAY_SCHEMA_INCOMPATIBLE: record_schema={record_schema_version} compatible_ran
 
 Every major schema bump ships a **golden replay corpus**: a fixed set of replay records under the old schema that the new replay engine must verify byte-identically. If it cannot, the schema bump is invalid and rolled back.
 
-The corpus is stored at `tests/replay-corpus/{schema_version}/` and runs in CI on every PR.
+The corpus will be stored at `tests/replay-corpus/{schema_version}/` and will run in CI on every PR (planned, M5; not yet built).
 
 ### Failure mode 3: recorded model version no longer available
 
@@ -129,7 +131,7 @@ A tool may be retired only via:
 
 ### Test fixtures (M5)
 
-`tests/replay/`:
+Planned, not yet built. These fixtures will live under `tests/replay/`:
 - `tool-retired/`: replay record references retired tool; expects `REPLAY_TOOL_RETIRED`.
 - `schema-incompatible/`: replay record schema outside matrix range; expects `REPLAY_SCHEMA_INCOMPATIBLE`.
 - `model-unavailable/`: replay record references unavailable model; expects byte-identical replay (model unavailability is not an error).

@@ -5,6 +5,8 @@
 **Established by:** issue #61 follow-up  
 **Scope:** architecture authority for scoped deterministic replay proof-loop completion; no runtime implementation
 
+> Tracker note: issue and PR numbers in this ADR (e.g. `#61`) refer to the `7inaydas-cmyk/zovark-architecture` tracker, not any downstream consumer repo.
+
 ## Context
 
 Runtime has completed the A1-A4 deterministic replay proof chain:
